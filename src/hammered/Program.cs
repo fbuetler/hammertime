@@ -1,3 +1,3 @@
 ﻿
-using var game = new hammered.Game1();
+using var game = new hammered.GameMain();
 game.Run();
