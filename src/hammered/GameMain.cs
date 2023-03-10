@@ -14,9 +14,12 @@ public class GameMain : Game
     private Matrix _worldMatrix, _viewMatrix, _projectionMatrix;
 
     Model rubiksCubeModel;
-    float blockSize = 10f;
+    float blockSize = 9.8f;
     int xBlocks = 15;
     int zBlocks = 10;
+
+    float xPlayerPos;
+    float zPlayerPos;
 
     public GameMain()
     {
@@ -68,13 +71,13 @@ public class GameMain : Game
 
         //Press Directional Keys to rotate cube
         if (currentKeys.IsKeyDown(Keys.Up))
-            _worldMatrix *= Matrix.CreateRotationX(-0.05f);
+            zPlayerPos -= 1;
         if (currentKeys.IsKeyDown(Keys.Down))
-            _worldMatrix *= Matrix.CreateRotationX(0.05f);
+            zPlayerPos += 1;
         if (currentKeys.IsKeyDown(Keys.Left))
-            _worldMatrix *= Matrix.CreateRotationY(-0.05f);
+            xPlayerPos -= 1;
         if (currentKeys.IsKeyDown(Keys.Right))
-            _worldMatrix *= Matrix.CreateRotationY(0.05f);
+            xPlayerPos += 1;
 
         base.Update(gameTime);
     }
@@ -87,16 +90,17 @@ public class GameMain : Game
         {
             for (int j = 0; j < zBlocks; j++)
             {
-                DrawModel(rubiksCubeModel, i, j);
+                DrawModel(rubiksCubeModel, i * blockSize, 0f, j * blockSize);
             }
         }
+        DrawModel(rubiksCubeModel, xPlayerPos, blockSize, zPlayerPos);
 
         base.Draw(gameTime);
     }
 
-    private void DrawModel(Model model, int i, int j)
+    private void DrawModel(Model model, float x, float y, float z)
     {
-        Matrix translation = Matrix.CreateTranslation(i * blockSize, 0f, j * blockSize);
+        Matrix translation = Matrix.CreateTranslation(x, y, z);
 
         foreach (ModelMesh mesh in rubiksCubeModel.Meshes)
         {
