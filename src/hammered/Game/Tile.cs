@@ -7,10 +7,6 @@ namespace hammered;
 
 public class Tile : DrawableGameComponent
 {
-    private static float maxHealthPoints = 100f;
-
-    private static float damage = 40f;
-
     public Map Map
     {
         get { return _map; }
@@ -37,6 +33,10 @@ public class Tile : DrawableGameComponent
     private Model _model;
 
     private Vector3 _pos;
+
+    private const float maxHealthPoints = 100f;
+
+    private const float damage = 10f;
 
     public Tile(Game game, Map map, Vector3 position) : base(game)
     {
@@ -69,8 +69,6 @@ public class Tile : DrawableGameComponent
 
         _visitors.Add(player.ID);
         _healthPoints = Math.Max(0, _healthPoints - Tile.damage);
-
-        Console.WriteLine("{0}/{1} takes damage. Health: {2}", _pos.X, _pos.Z, _healthPoints);
     }
 
     public void OnExit(Player player)

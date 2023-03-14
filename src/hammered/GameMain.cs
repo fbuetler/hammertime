@@ -76,7 +76,7 @@ public class GameMain : Game
         _keyboardState = Keyboard.GetState();
         _gamePadState = GamePad.GetState(PlayerIndex.One); // TODO (fbuetler) more players
 
-        if (_keyboardState.IsKeyDown(Keys.Escape))
+        if (_keyboardState.IsKeyDown(Keys.Escape) || _gamePadState.IsButtonDown(Buttons.Back))
             this.Exit();
     }
 

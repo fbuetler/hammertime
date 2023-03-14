@@ -17,8 +17,6 @@ public class Map : DrawableGameComponent
 
     private GameMain _game;
 
-    private BasicEffect _basicEffect;
-
     public Camera Camera
     {
         get { return _camera; }
@@ -56,13 +54,6 @@ public class Map : DrawableGameComponent
             new Vector3(xMapCenter, 0f, zMapCenter),
             (float)_game.GetBackBufferWidth() / _game.GetBackBufferHeight()
         );
-
-        // Setup our basic effect
-        _basicEffect = new BasicEffect(GraphicsDevice);
-        _basicEffect.World = _camera.WorldMatrix;
-        _basicEffect.View = _camera.ViewMatrix;
-        _basicEffect.Projection = _camera.ProjectionMatrix;
-        _basicEffect.VertexColorEnabled = true;
 
         _tiles = new List<Tile>();
         for (int x = 0; x < xBlocks; x++)

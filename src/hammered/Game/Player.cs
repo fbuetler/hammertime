@@ -47,6 +47,9 @@ public class Player : DrawableGameComponent
     private const float GravityAcceleration = 960f;
     private const float MaxFallSpeed = 340f;
 
+    // Input configuration
+    private const float MoveStickScale = 1.0f;
+
     public Player(Game game, Map map, int id, Vector3 position) : base(game)
     {
         if (game == null)
@@ -74,23 +77,50 @@ public class Player : DrawableGameComponent
 
     private void GetInput(KeyboardState keyboardState, GamePadState gamePadState)
     {
-        if (keyboardState.IsKeyDown(Keys.Up))
+        // get analog movement
+        _movement.X = gamePadState.ThumbSticks.Left.X * MoveStickScale;
+        _movement.Y = gamePadState.ThumbSticks.Left.Y * MoveStickScale;
+
+        // flip y: on the thumbsticks, down is -1, but on the screen, down is bigger numbers
+        _movement.Y *= -1;
+
+        // ignore small movements to prevent running in place
+        if (_movement.LengthSquared() < 0.5f)
+            _movement = Vector2.Zero;
+
+        // if any digital horizontal movement input is found, override the analog movement
+        if (gamePadState.IsButtonDown(Buttons.DPadUp) ||
+            keyboardState.IsKeyDown(Keys.Up) ||
+            keyboardState.IsKeyDown(Keys.W))
         {
             _movement.Y -= 1.0f;
         }
-        else if (keyboardState.IsKeyDown(Keys.Down))
+        else if (gamePadState.IsButtonDown(Buttons.DPadDown) ||
+                 keyboardState.IsKeyDown(Keys.Down) ||
+                 keyboardState.IsKeyDown(Keys.S))
         {
             _movement.Y += 1.0f;
         }
 
-        if (keyboardState.IsKeyDown(Keys.Left))
+        if (gamePadState.IsButtonDown(Buttons.DPadLeft) ||
+            keyboardState.IsKeyDown(Keys.Left) ||
+            keyboardState.IsKeyDown(Keys.A))
         {
             _movement.X -= 1.0f;
         }
-        else if (keyboardState.IsKeyDown(Keys.Right))
+        else if (gamePadState.IsButtonDown(Buttons.DPadRight) ||
+                 keyboardState.IsKeyDown(Keys.Right) ||
+                 keyboardState.IsKeyDown(Keys.D))
         {
             _movement.X += 1.0f;
         }
+
+        // prevent the player from running faster than his top speed
+        if (_movement != Vector2.Zero)
+        {
+            _movement.Normalize();
+        }
+
     }
 
     private void ApplyPhysics(GameTime gameTime)
@@ -116,12 +146,6 @@ public class Player : DrawableGameComponent
             _velocity *= AirDragFactor;
         }
 
-        // prevent the player from running faster than his top speed
-        if (Math.Abs(_movement.X) > MaxMoveSpeed / 2 && Math.Abs(_movement.Y) > MaxMoveSpeed / 2)
-        {
-            _movement.Normalize();
-        }
-
         // apply velocity
         _pos += _velocity * elapsed;
 
@@ -142,7 +166,6 @@ public class Player : DrawableGameComponent
 
     private float WalkOffMap(GameTime gameTime, float velocityY)
     {
-        // TODO (fbuetler) check if off map
         if (_isFalling)
         {
             return velocityY;
