@@ -1,5 +1,4 @@
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
 
@@ -13,7 +12,7 @@ public class Hammer : DrawableGameComponent
             throw new ArgumentNullException("game");
     }
 
-    public override void Update(GameTime gameTime)
+    public void Update(GameTime gameTime, KeyboardState keyboardState, GamePadState gamePadState)
     {
     }
 

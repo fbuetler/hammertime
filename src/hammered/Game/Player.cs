@@ -7,15 +7,29 @@ namespace hammered;
 
 public class Player : DrawableGameComponent
 {
-    Map _map;
+    public int ID
+    {
+        get { return _id; }
+    }
+    int _id;
 
-    Model _model;
+    public Circle BoundingTopDownCircle
+    {
+        get
+        {
+            return new Circle(new Vector2(_pos.X + 0.5f, _pos.Z + 0.5f), 0.5f);
+        }
+    }
 
-    Vector3 _pos;
+    private Map _map;
 
-    float _speed;
+    private Model _model;
 
-    public Player(Game game, Map map, Vector3 position) : base(game)
+    private Vector3 _pos;
+
+    private float _speed;
+
+    public Player(Game game, Map map, int id, Vector3 position) : base(game)
     {
         if (game == null)
             throw new ArgumentNullException("game");
@@ -25,14 +39,14 @@ public class Player : DrawableGameComponent
 
         _map = map;
         _pos = new Vector3(position.X, position.Y, position.Z);
-        _speed = 1f;
         _model = _map.Content.Load<Model>("RubiksCube");
+        _id = id;
+        _speed = 0.02f;
     }
 
-    public override void Update(GameTime gameTime)
+    public void Update(GameTime gameTime, KeyboardState keyboardState, GamePadState gamePadState)
     {
         Vector3 move = new Vector3(0, 0, 0);
-        KeyboardState keyboardState = Keyboard.GetState();
         if (keyboardState.IsKeyDown(Keys.Up))
         {
             move.Z -= _speed;

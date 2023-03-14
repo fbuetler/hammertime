@@ -12,6 +12,11 @@ public class GameMain : Game
 
     private Map _map;
 
+    // We store our input states so that we only poll once per frame, 
+    // then we use the same input state wherever needed
+    private GamePadState _gamePadState;
+    private KeyboardState _keyboardState;
+
     public GameMain()
     {
         _graphics = new GraphicsDeviceManager(this);
@@ -59,12 +64,20 @@ public class GameMain : Game
     {
         KeyboardState keyboardState = Keyboard.GetState();
 
-        if (keyboardState.IsKeyDown(Keys.Escape))
-            this.Exit();
+        HandleInput(gameTime);
 
-        _map.Update(gameTime);
+        _map.Update(gameTime, _keyboardState, _gamePadState);
 
         base.Update(gameTime);
+    }
+
+    private void HandleInput(GameTime gameTime)
+    {
+        _keyboardState = Keyboard.GetState();
+        _gamePadState = GamePad.GetState(PlayerIndex.One); // TODO more players
+
+        if (_keyboardState.IsKeyDown(Keys.Escape))
+            this.Exit();
     }
 
     protected override void Draw(GameTime gameTime)

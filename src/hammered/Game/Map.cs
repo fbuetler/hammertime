@@ -2,7 +2,6 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using System.IO;
 using System;
 using System.Collections.Generic;
 
@@ -26,12 +25,14 @@ public class Map : DrawableGameComponent
     }
     private Camera _camera;
 
-    private Tile[,] _tiles;
+    private List<Tile> _tiles;
 
     private Player _player;
 
-    int xBlocks = 15;
-    int zBlocks = 10;
+    private int xBlocks = 15;
+    private int zBlocks = 10;
+
+    private int nextPlayerID = 0;
 
     public Map(Game game, IServiceProvider serviceProvider) : base(game)
     {
@@ -47,11 +48,11 @@ public class Map : DrawableGameComponent
         _content = new ContentManager(serviceProvider, "Content"); // TODO how exactly does this work?
 
         // setup our graphics scene matrices
-        float xMapCenter = xBlocks / 2 * Tile.Size;
-        float zMapCenter = zBlocks / 2 * Tile.Size;
+        float xMapCenter = xBlocks / 2;
+        float zMapCenter = zBlocks / 2;
 
         _camera = new Camera(
-            new Vector3(xMapCenter, 100f, zMapCenter + 75f),
+            new Vector3(xMapCenter, 10f, zMapCenter + 7f),
             new Vector3(xMapCenter, 0f, zMapCenter),
             (float)_game.GetBackBufferWidth() / _game.GetBackBufferHeight()
         );
@@ -63,26 +64,26 @@ public class Map : DrawableGameComponent
         _basicEffect.Projection = _camera.ProjectionMatrix;
         _basicEffect.VertexColorEnabled = true;
 
-        _tiles = new Tile[xBlocks, zBlocks];
+        _tiles = new List<Tile>();
         for (int x = 0; x < xBlocks; x++)
         {
             for (int z = 0; z < zBlocks; z++)
             {
-                _tiles[x, z] = LoadTile(x, 0, z);
+                _tiles.Add(LoadTile(x, 0, z));
             }
         }
 
-        _player = LoadPlayer(0, Tile.Size, 0);
+        _player = LoadPlayer(0, 1, 0);
     }
 
-    private Tile LoadTile(float x, float y, float z)
+    private Tile LoadTile(int x, int y, int z)
     {
         return new Tile(_game, this, new Vector3(x, y, z));
     }
 
     private Player LoadPlayer(float x, float y, float z)
     {
-        return new Player(_game, this, new Vector3(x, y, z));
+        return new Player(_game, this, nextPlayerID++, new Vector3(x, y, z));
     }
 
     protected override void UnloadContent()
@@ -90,21 +91,55 @@ public class Map : DrawableGameComponent
         _content.Unload();
     }
 
-    public override void Update(GameTime gameTime)
+    public void Update(GameTime gameTime, KeyboardState keyboardState, GamePadState gamePadState)
     {
-        foreach (Tile t in _tiles)
+        _player.Update(gameTime, keyboardState, gamePadState);
+        UpdateTiles(gameTime);
+
+        // TODO check if player is off map
+    }
+
+    private void UpdateTiles(GameTime gameTime)
+    {
+        for (int i = 0; i < _tiles.Count; i++)
         {
+            Tile t = _tiles[i];
+
             t.Update(gameTime);
+
+            // is player standing on tile
+            if (_player.BoundingTopDownCircle.Intersects(t.BoundingTopDownRectangle))
+            {
+                OnTileEnter(t, _player);
+            }
+            else
+            {
+                OnTileExit(t, _player); // TODO can we optimize this?
+            }
+
+            if (t.IsBroken)
+            {
+                _tiles.RemoveAt(i--);
+            }
         }
-        _player.Update(gameTime);
+    }
+
+    private void OnTileEnter(Tile tile, Player player)
+    {
+        tile.OnEnter(player);
+    }
+
+    private void OnTileExit(Tile tile, Player player)
+    {
+        tile.OnExit(player);
     }
 
     public override void Draw(GameTime gameTime)
     {
+        _player.Draw(gameTime);
         foreach (Tile t in _tiles)
         {
             t.Draw(gameTime);
         }
-        _player.Draw(gameTime);
     }
 }

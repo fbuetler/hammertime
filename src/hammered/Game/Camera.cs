@@ -1,7 +1,4 @@
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
-using System;
 
 namespace hammered;
 
@@ -25,7 +22,7 @@ public class Camera
     {
         float fovAngle = MathHelper.ToRadians(45);
         float near = 0.01f;
-        float far = 1000f;
+        float far = 100f;
 
         _worldMatrix = Matrix.Identity;
         _viewMatrix = Matrix.CreateLookAt(pos, target, Vector3.Up);
