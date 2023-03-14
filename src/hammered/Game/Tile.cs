@@ -1,7 +1,7 @@
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace hammered;
 
@@ -49,6 +49,7 @@ public class Tile : DrawableGameComponent
         _map = map;
         _pos = new Vector3(position.X, position.Y, position.Z);
         _model = _map.Content.Load<Model>("RubiksCube");
+        // TODO (fbuetler) scale model to 1
 
         _healthPoints = maxHealthPoints;
         _visitors = new HashSet<int>();
@@ -56,7 +57,7 @@ public class Tile : DrawableGameComponent
 
     public override void Update(GameTime gameTime)
     {
-        // TODO update breaking animation based on health points
+        // TODO (fbuetler) update breaking animation based on health points
     }
 
     public void OnEnter(Player player)

@@ -1,9 +1,9 @@
+using System;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using System;
-using System.Collections.Generic;
 
 namespace hammered;
 
@@ -27,7 +27,7 @@ public class Map : DrawableGameComponent
 
     private List<Tile> _tiles;
 
-    private Player _player;
+    private List<Player> _players;
 
     private int xBlocks = 15;
     private int zBlocks = 10;
@@ -44,8 +44,8 @@ public class Map : DrawableGameComponent
 
         _game = (GameMain)game;
 
-        // Create a new content manager to load content used just by this level.
-        _content = new ContentManager(serviceProvider, "Content"); // TODO how exactly does this work?
+        // create a new content manager to load content used just by this map 
+        _content = new ContentManager(serviceProvider, "Content"); // TODO (fbuetler) how exactly does this work?
 
         // setup our graphics scene matrices
         float xMapCenter = xBlocks / 2;
@@ -73,7 +73,8 @@ public class Map : DrawableGameComponent
             }
         }
 
-        _player = LoadPlayer(0, 1, 0);
+        _players = new List<Player>();
+        _players.Add(LoadPlayer(0, 1, 0)); // TODO (fbuetler) more players (with respective input)
     }
 
     private Tile LoadTile(int x, int y, int z)
@@ -93,34 +94,62 @@ public class Map : DrawableGameComponent
 
     public void Update(GameTime gameTime, KeyboardState keyboardState, GamePadState gamePadState)
     {
-        _player.Update(gameTime, keyboardState, gamePadState);
+        // IMPORTANT! UpdatePlayers has to be AFTER UpdateTiles because of isPlayerStandingOnAnyTile
         UpdateTiles(gameTime);
+        UpdatePlayers(gameTime, keyboardState, gamePadState);
+    }
 
-        // TODO check if player is off map
+    private void UpdatePlayers(GameTime gameTime, KeyboardState keyboardState, GamePadState gamePadState)
+    {
+        for (int i = 0; i < _players.Count; i++)
+        {
+            Player p = _players[i];
+            p.Update(gameTime, keyboardState, gamePadState);
+        }
     }
 
     private void UpdateTiles(GameTime gameTime)
     {
+        Boolean[] isPlayerStandingOnAnyTile = new Boolean[_players.Count];
+
         for (int i = 0; i < _tiles.Count; i++)
         {
             Tile t = _tiles[i];
 
             t.Update(gameTime);
 
-            // is player standing on tile
-            if (_player.BoundingTopDownCircle.Intersects(t.BoundingTopDownRectangle))
+            for (int j = 0; j < _players.Count; j++)
             {
-                OnTileEnter(t, _player);
-            }
-            else
-            {
-                OnTileExit(t, _player); // TODO can we optimize this?
+                Player p = _players[j];
+
+                // is player standing on tile
+                if (p.BoundingTopDownCircle.Intersects(t.BoundingTopDownRectangle))
+                {
+                    OnTileEnter(t, p);
+                }
+                else
+                {
+                    OnTileExit(t, p); // TODO (fbuetler) can we optimize this?
+                }
+
+                // is most part of the player standing on the tile
+                float depth = p.BoundingTopDownCircle.GetIntersectionDepth(t.BoundingTopDownRectangle);
+                if (0 <= depth && depth <= p.BoundingTopDownCircle.Radius)
+                {
+                    isPlayerStandingOnAnyTile[j] |= true;
+                }
             }
 
             if (t.IsBroken)
             {
                 _tiles.RemoveAt(i--);
             }
+        }
+
+        // TODO (fbuetler) a bit ugly but is there another efficient way?
+        for (int i = 0; i < isPlayerStandingOnAnyTile.Length; i++)
+        {
+            _players[i].IsStandingOnTile = isPlayerStandingOnAnyTile[i];
         }
     }
 
@@ -136,7 +165,10 @@ public class Map : DrawableGameComponent
 
     public override void Draw(GameTime gameTime)
     {
-        _player.Draw(gameTime);
+        foreach (Player p in _players)
+        {
+            p.Draw(gameTime);
+        }
         foreach (Tile t in _tiles)
         {
             t.Draw(gameTime);

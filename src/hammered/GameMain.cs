@@ -74,7 +74,7 @@ public class GameMain : Game
     private void HandleInput(GameTime gameTime)
     {
         _keyboardState = Keyboard.GetState();
-        _gamePadState = GamePad.GetState(PlayerIndex.One); // TODO more players
+        _gamePadState = GamePad.GetState(PlayerIndex.One); // TODO (fbuetler) more players
 
         if (_keyboardState.IsKeyDown(Keys.Escape))
             this.Exit();

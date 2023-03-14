@@ -1,7 +1,7 @@
+using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using System;
 
 namespace hammered;
 
@@ -27,7 +27,25 @@ public class Player : DrawableGameComponent
 
     private Vector3 _pos;
 
-    private float _speed;
+    private Vector2 _movement;
+
+    private Vector3 _velocity;
+
+    public Boolean IsStandingOnTile
+    {
+        set { _isFalling = _isFalling || !value; }
+    }
+    private Boolean _isFalling;
+
+    // Constants for controlling horizontal movement
+    private const float MoveAcceleration = 1300f;
+    private const float MaxMoveSpeed = 175f;
+    private const float GroundDragFactor = 0.48f;
+    private const float AirDragFactor = 0.58f;
+
+    // Constants for controlling vertical movement
+    private const float GravityAcceleration = 960f;
+    private const float MaxFallSpeed = 340f;
 
     public Player(Game game, Map map, int id, Vector3 position) : base(game)
     {
@@ -41,38 +59,101 @@ public class Player : DrawableGameComponent
         _pos = new Vector3(position.X, position.Y, position.Z);
         _model = _map.Content.Load<Model>("RubiksCube");
         _id = id;
-        _speed = 0.02f;
+        _isFalling = false;
     }
 
     public void Update(GameTime gameTime, KeyboardState keyboardState, GamePadState gamePadState)
     {
-        Vector3 move = new Vector3(0, 0, 0);
+        GetInput(keyboardState, gamePadState);
+
+        ApplyPhysics(gameTime);
+
+        // clear input
+        _movement = new Vector2(0, 0);
+    }
+
+    private void GetInput(KeyboardState keyboardState, GamePadState gamePadState)
+    {
         if (keyboardState.IsKeyDown(Keys.Up))
         {
-            move.Z -= _speed;
+            _movement.Y -= 1.0f;
         }
         else if (keyboardState.IsKeyDown(Keys.Down))
         {
-            move.Z += _speed;
+            _movement.Y += 1.0f;
         }
 
         if (keyboardState.IsKeyDown(Keys.Left))
         {
-            move.X -= _speed;
+            _movement.X -= 1.0f;
         }
         else if (keyboardState.IsKeyDown(Keys.Right))
         {
-            move.X += _speed;
+            _movement.X += 1.0f;
         }
+    }
 
-        // diagonal moves should not be faster
-        if (Math.Abs(move.X) > 0.5 && Math.Abs(move.Z) > 0.5)
+    private void ApplyPhysics(GameTime gameTime)
+    {
+        float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+        Vector3 previousPos = _pos;
+
+        // base velocity is a combination of horizontal movement control and
+        // acceleration downward due to gravity
+        _velocity.X += _movement.X * MoveAcceleration * elapsed;
+        _velocity.Z += _movement.Y * MoveAcceleration * elapsed;
+        _velocity.Y = MathHelper.Clamp(_velocity.Y - GravityAcceleration * elapsed, -MaxFallSpeed, MaxFallSpeed);
+
+        _velocity.Y = WalkOffMap(gameTime, _velocity.Y);
+
+        if (!_isFalling)
         {
-            move.Normalize();
+            _velocity *= GroundDragFactor;
+        }
+        else
+        {
+            _velocity *= AirDragFactor;
         }
 
-        float timepassed = (float)gameTime.ElapsedGameTime.Milliseconds;
-        _pos += move;
+        // prevent the player from running faster than his top speed
+        if (Math.Abs(_movement.X) > MaxMoveSpeed / 2 && Math.Abs(_movement.Y) > MaxMoveSpeed / 2)
+        {
+            _movement.Normalize();
+        }
+
+        // apply velocity
+        _pos += _velocity * elapsed;
+
+        // if the player is now colliding with the map, separate them.
+        HandleCollisions();
+
+        // if the collision stopped us from moving, reset the velocity to zero
+        if (_pos.X == previousPos.X)
+            _velocity.X = 0;
+
+        if (_pos.Y == previousPos.Y)
+            _velocity.Y = 0;
+
+        if (_pos.Z == previousPos.Z)
+            _velocity.Z = 0;
+
+    }
+
+    private float WalkOffMap(GameTime gameTime, float velocityY)
+    {
+        // TODO (fbuetler) check if off map
+        if (_isFalling)
+        {
+            return velocityY;
+        }
+
+        return 0;
+    }
+
+    private void HandleCollisions()
+    {
+        // TODO (fbuetler) seperate player from map elements
     }
 
     public override void Draw(GameTime gameTime)
