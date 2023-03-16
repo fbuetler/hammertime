@@ -17,7 +17,13 @@ public class Player : DrawableGameComponent
     {
         get
         {
-            return new Circle(new Vector2(_pos.X + 0.5f, _pos.Z + 0.5f), 0.5f);
+            return new Circle(
+                new Vector2(
+                    _pos.X + Tile.Width / 2,
+                    _pos.Z + Tile.Height / 2
+                ),
+                Tile.Width / 2
+            );
         }
     }
 
@@ -72,7 +78,7 @@ public class Player : DrawableGameComponent
         ApplyPhysics(gameTime);
 
         // clear input
-        _movement = new Vector2(0, 0);
+        _movement = Vector2.Zero;
     }
 
     private void GetInput(KeyboardState keyboardState, GamePadState gamePadState)
@@ -168,6 +174,7 @@ public class Player : DrawableGameComponent
     {
         if (_isFalling)
         {
+            // TODO (fbuetler) introduce a isAlive variable
             return velocityY;
         }
 
@@ -176,7 +183,56 @@ public class Player : DrawableGameComponent
 
     private void HandleCollisions()
     {
-        // TODO (fbuetler) seperate player from map elements
+        Circle bounds = BoundingTopDownCircle;
+        int leftTile = (int)Math.Floor((float)bounds.Center.X / Tile.Width);
+        int rightTile = (int)Math.Ceiling(((float)bounds.Center.X / Tile.Width)) - 1;
+        int topTile = (int)Math.Floor((float)bounds.Center.Y / Tile.Height);
+        int bottomTile = (int)Math.Ceiling(((float)bounds.Center.Y / Tile.Height)) - 1;
+
+        for (int z = topTile; z <= bottomTile; ++z)
+        {
+            for (int x = leftTile; x <= rightTile; ++x)
+            {
+                TileCollision collision = _map.GetTileCollision(x, z);
+                if (collision == TileCollision.Passable)
+                {
+                    continue;
+                }
+
+                // determine collision depth (with direction) and magnitude
+                Rectangle tileBounds = _map.GetTileBounds(x, z);
+                (Vector2 depth, bool intersect) = bounds.GetIntersectionDepth(tileBounds);
+                if (!intersect)
+                {
+                    continue;
+                }
+
+                float absDepthX = Math.Abs(depth.X);
+                float absDepthY = Math.Abs(depth.Y);
+
+                // resolve the collision along the shallow axis
+                if (absDepthX < absDepthY)
+                {
+                    // resolve the collision along the X axis
+                    _pos = new Vector3(
+                        _pos.X + depth.X,
+                        _pos.Y,
+                        _pos.Z
+                    );
+                    bounds = BoundingTopDownCircle;
+                }
+                else
+                {
+                    // resolve the collision along the Z axis
+                    _pos = new Vector3(
+                        _pos.X,
+                        _pos.Y,
+                        _pos.Z + depth.Y
+                    );
+                    bounds = BoundingTopDownCircle;
+                }
+            }
+        }
     }
 
     public override void Draw(GameTime gameTime)

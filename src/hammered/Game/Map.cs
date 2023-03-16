@@ -70,7 +70,7 @@ public class Map : DrawableGameComponent
 
     private Tile LoadTile(int x, int y, int z)
     {
-        return new Tile(_game, this, new Vector3(x, y, z));
+        return new Tile(_game, this, new Vector3(x, y, z), TileCollision.Impassable);
     }
 
     private Player LoadPlayer(float x, float y, float z)
@@ -81,6 +81,21 @@ public class Map : DrawableGameComponent
     protected override void UnloadContent()
     {
         _content.Unload();
+    }
+
+    public TileCollision GetTileCollision(int x, int z)
+    {
+        // TODO (fbuetler) what if there is whole in the map by design?
+        if (0 <= x && x < xBlocks && 0 <= z && z < zBlocks)
+        {
+            return TileCollision.Impassable;
+        }
+        return TileCollision.Passable;
+    }
+
+    public Rectangle GetTileBounds(int x, int z)
+    {
+        return new Rectangle(x * Tile.Width, z * Tile.Height, Tile.Width, Tile.Height);
     }
 
     public void Update(GameTime gameTime, KeyboardState keyboardState, GamePadState gamePadState)
@@ -114,20 +129,15 @@ public class Map : DrawableGameComponent
                 Player p = _players[j];
 
                 // is player standing on tile
-                if (p.BoundingTopDownCircle.Intersects(t.BoundingTopDownRectangle))
+                (Vector2 _, bool intersect) = p.BoundingTopDownCircle.GetIntersectionDepth(t.BoundingTopDownRectangle);
+                if (intersect)
                 {
                     OnTileEnter(t, p);
+                    isPlayerStandingOnAnyTile[j] |= true;
                 }
                 else
                 {
-                    OnTileExit(t, p); // TODO (fbuetler) can we optimize this?
-                }
-
-                // is most part of the player standing on the tile
-                float depth = p.BoundingTopDownCircle.GetIntersectionDepth(t.BoundingTopDownRectangle);
-                if (0 <= depth && depth <= p.BoundingTopDownCircle.Radius)
-                {
-                    isPlayerStandingOnAnyTile[j] |= true;
+                    OnTileExit(t, p);
                 }
             }
 

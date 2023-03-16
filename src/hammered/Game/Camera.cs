@@ -22,7 +22,7 @@ public class Camera
     {
         float fovAngle = MathHelper.ToRadians(45);
         float near = 0.01f;
-        float far = 100f;
+        float far = 30f;
 
         _worldMatrix = Matrix.Identity;
         _viewMatrix = Matrix.CreateLookAt(pos, target, Vector3.Up);
