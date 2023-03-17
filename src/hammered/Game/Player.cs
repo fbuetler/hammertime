@@ -73,7 +73,7 @@ public class Player : GameObject
 
     public void LoadContent()
     {
-        _model = _map.Content.Load<Model>("RubiksCube");
+        _model = _map.Content.Load<Model>("cube");
     }
 
     public void Reset(Vector3 position)
