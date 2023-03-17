@@ -5,13 +5,13 @@ using Microsoft.Xna.Framework.Input;
 
 namespace hammered;
 
-public class Player : DrawableGameComponent
+public class Player
 {
     public int ID
     {
         get { return _id; }
     }
-    int _id;
+    private int _id;
 
     public BoundingBox BoundingBox
     {
@@ -58,18 +58,28 @@ public class Player : DrawableGameComponent
     // Input configuration
     private const float MoveStickScale = 1.0f;
 
-    public Player(Game game, Map map, int id, Vector3 position) : base(game)
+    public Player(Map map, int id, Vector3 position)
     {
-        if (game == null)
-            throw new ArgumentNullException("game");
-
         if (map == null)
             throw new ArgumentNullException("map");
 
         _map = map;
-        _pos = new Vector3(position.X, position.Y, position.Z);
-        _model = _map.Content.Load<Model>("RubiksCube");
         _id = id;
+
+        LoadContent();
+
+        Reset(position);
+    }
+
+    public void LoadContent()
+    {
+        _model = _map.Content.Load<Model>("RubiksCube");
+    }
+
+    public void Reset(Vector3 position)
+    {
+        _pos = position;
+        _velocity = Vector3.Zero;
         _isFalling = false;
     }
 
@@ -276,7 +286,7 @@ public class Player : DrawableGameComponent
         return new Vector3(depthX, depthY, depthZ);
     }
 
-    public override void Draw(GameTime gameTime)
+    public void Draw(GameTime gameTime)
     {
         // translate tiles
         Matrix translation = Matrix.CreateTranslation(_pos);

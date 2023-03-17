@@ -7,7 +7,7 @@ using Microsoft.Xna.Framework.Input;
 
 namespace hammered;
 
-public class Map : DrawableGameComponent
+public class Map
 {
     public ContentManager Content
     {
@@ -47,7 +47,7 @@ public class Map : DrawableGameComponent
 
     private int playersLoaded = 0;
 
-    public Map(Game game, IServiceProvider serviceProvider, Stream fileStream) : base(game)
+    public Map(Game game, IServiceProvider serviceProvider, Stream fileStream)
     {
         if (game == null)
             throw new ArgumentNullException("game");
@@ -135,12 +135,12 @@ public class Map : DrawableGameComponent
 
     private Tile LoadAbyssTile(int x, int z)
     {
-        return new Tile(_game, this, new Vector3(x, 0, z), TileCollision.Passable);
+        return new Tile(this, new Vector3(x, 0, z), TileCollision.Passable);
     }
 
     private Tile LoadFloorTile(int x, int z)
     {
-        return new Tile(_game, this, new Vector3(x, 0, z), TileCollision.Impassable);
+        return new Tile(this, new Vector3(x, 0, z), TileCollision.Impassable);
     }
 
     private Tile LoadPlayerStartTile(int x, int z)
@@ -150,15 +150,15 @@ public class Map : DrawableGameComponent
         {
             _players.Add(LoadPlayer(x, 1, z));
         }
-        return new Tile(_game, this, new Vector3(x, 0, z), TileCollision.Impassable);
+        return new Tile(this, new Vector3(x, 0, z), TileCollision.Impassable);
     }
 
     private Player LoadPlayer(float x, float y, float z)
     {
-        return new Player(_game, this, playersLoaded++, new Vector3(x, y, z));
+        return new Player(this, playersLoaded++, new Vector3(x, y, z));
     }
 
-    protected override void UnloadContent()
+    public void Dispose()
     {
         _content.Unload();
     }
@@ -264,7 +264,7 @@ public class Map : DrawableGameComponent
         tile.OnExit(player);
     }
 
-    public override void Draw(GameTime gameTime)
+    public void Draw(GameTime gameTime)
     {
         foreach (Player p in _players)
         {

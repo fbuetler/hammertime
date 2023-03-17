@@ -12,7 +12,7 @@ public enum TileCollision
     Impassable = 1,
 }
 
-public class Tile : DrawableGameComponent // TODO can we omit this inheritance?
+public class Tile
 {
     public Map Map
     {
@@ -61,16 +61,27 @@ public class Tile : DrawableGameComponent // TODO can we omit this inheritance?
 
     private const float damage = 30f;
 
-    public Tile(Game game, Map map, Vector3 position, TileCollision collision) : base(game)
+    public Tile(Map map, Vector3 position, TileCollision collision)
     {
-        if (game == null)
-            throw new ArgumentNullException("game");
-
         if (map == null)
             throw new ArgumentNullException("map");
 
         _map = map;
         _pos = new Vector3(position.X, position.Y, position.Z);
+
+        LoadContent();
+
+        Reset(collision);
+    }
+
+    public void LoadContent()
+    {
+        // TODO (fbuetler) scale model to 1
+        _model = _map.Content.Load<Model>("RubiksCube");
+    }
+
+    public void Reset(TileCollision collision)
+    {
         _collision = collision;
         if (_collision == TileCollision.Impassable)
         {
@@ -81,13 +92,11 @@ public class Tile : DrawableGameComponent // TODO can we omit this inheritance?
             _healthPoints = 0;
         }
 
-        // TODO (fbuetler) scale model to 1
-        _model = _map.Content.Load<Model>("RubiksCube");
 
         _visitors = new HashSet<int>();
     }
 
-    public override void Update(GameTime gameTime)
+    public void Update(GameTime gameTime)
     {
         // TODO (fbuetler) update breaking animation based on health points
     }
@@ -119,7 +128,7 @@ public class Tile : DrawableGameComponent // TODO can we omit this inheritance?
         // TODO (fbuetler) make invisible i.e. change/remove texture
     }
 
-    public override void Draw(GameTime gameTime)
+    public void Draw(GameTime gameTime)
     {
         // translate tiles
         Matrix translation = Matrix.CreateTranslation(_pos);

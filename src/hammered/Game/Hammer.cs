@@ -4,19 +4,21 @@ using Microsoft.Xna.Framework.Input;
 
 namespace hammered;
 
-public class Hammer : DrawableGameComponent
+public class Hammer
 {
-    public Hammer(Game game) : base(game)
+    public Hammer()
     {
-        if (game == null)
-            throw new ArgumentNullException("game");
+    }
+
+    public void LoadContent()
+    {
     }
 
     public void Update(GameTime gameTime, KeyboardState keyboardState, GamePadState gamePadState)
     {
     }
 
-    public override void Draw(GameTime gameTime)
+    public void Draw(GameTime gameTime)
     {
     }
 }
