@@ -77,7 +77,6 @@ public class Tile : GameObject
 
     public void LoadContent()
     {
-        // TODO (fbuetler) scale model to 1
         _model = _map.Content.Load<Model>("cube");
     }
 

@@ -10,11 +10,15 @@ public class GameMain : Game
 {
     // drawing
     private GraphicsDeviceManager _graphics;
+    private SpriteBatch _spriteBatch;
+
     public DebugDraw DebugDraw
     {
         get { return _debugDraw; }
     }
     private DebugDraw _debugDraw;
+
+    SpriteFont font;
 
     // game state
     private int _mapIndex = -1;
@@ -67,6 +71,10 @@ public class GameMain : Game
 
     protected override void LoadContent()
     {
+        _spriteBatch = new SpriteBatch(GraphicsDevice);
+
+        font = Content.Load<SpriteFont>("Fonts/font");
+
         LoadNextMap();
     }
 
@@ -132,9 +140,13 @@ public class GameMain : Game
     {
         GraphicsDevice.Clear(Color.CornflowerBlue);
 
-        // TODO (fbuetler) draw map index on the screen
-
         _map.Draw(gameTime);
+
+        // SpriteBatch.Begin alters the state of the graphics pipeline
+        // therefore we have to reenable the depth buffer here
+        _spriteBatch.Begin(depthStencilState: DepthStencilState.Default);
+        _spriteBatch.DrawString(font, "Map: " + _mapIndex, new Vector2(10, 10), Color.White);
+        _spriteBatch.End();
 
         base.Draw(gameTime);
     }
