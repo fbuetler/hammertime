@@ -186,6 +186,7 @@ public class Player
     {
         if (_isFalling)
         {
+            GamePad.SetVibration(_id, 0.5f, 0.5f, 0.5f, 0.5f);
             return velocityY;
         }
 

@@ -85,10 +85,14 @@ public class GameMain : Game
     {
         _keyboardState = Keyboard.GetState();
 
-        _gamePadStates = new GamePadState[4];
+        _gamePadStates = new GamePadState[NumberOfPlayers];
         for (int i = 0; i < NumberOfPlayers; i++)
         {
-            _gamePadStates[i] = GamePad.GetState(i);
+            GamePadCapabilities gamePadCapabilities = GamePad.GetCapabilities(i);
+            if (gamePadCapabilities.IsConnected)
+            {
+                _gamePadStates[i] = GamePad.GetState(i);
+            }
         }
 
         if (_keyboardState.IsKeyDown(Keys.Escape) || _gamePadStates[0].IsButtonDown(Buttons.Back))
