@@ -69,8 +69,20 @@ public class Map : DrawableGameComponent
             }
         }
 
+        // TODO (fbuetler) random locations
+        Vector3[] startLocations = {
+            new Vector3(0, 1, 0),
+            new Vector3(xBlocks-1, 1, 0),
+            new Vector3(0, 1, zBlocks-1),
+            new Vector3(xBlocks-1, 1, zBlocks-1),
+        };
+
         _players = new List<Player>();
-        _players.Add(LoadPlayer(0, 1, 0)); // TODO (fbuetler) more players (with respective input)
+        for (int i = 0; i < GameMain.NumberOfPlayers; i++)
+        {
+            (float x, float y, float z) = startLocations[i];
+            _players.Add(LoadPlayer(x, y, z));
+        }
     }
 
     private Tile LoadTile(int x, int y, int z)
@@ -115,19 +127,19 @@ public class Map : DrawableGameComponent
             );
     }
 
-    public void Update(GameTime gameTime, KeyboardState keyboardState, GamePadState gamePadState)
+    public void Update(GameTime gameTime, KeyboardState keyboardState, GamePadState[] gamePadStates)
     {
         // IMPORTANT! UpdatePlayers has to be AFTER UpdateTiles because of isPlayerStandingOnAnyTile
         UpdateTiles(gameTime);
-        UpdatePlayers(gameTime, keyboardState, gamePadState);
+        UpdatePlayers(gameTime, keyboardState, gamePadStates);
     }
 
-    private void UpdatePlayers(GameTime gameTime, KeyboardState keyboardState, GamePadState gamePadState)
+    private void UpdatePlayers(GameTime gameTime, KeyboardState keyboardState, GamePadState[] gamePadStates)
     {
         for (int i = 0; i < _players.Count; i++)
         {
             Player p = _players[i];
-            p.Update(gameTime, keyboardState, gamePadState);
+            p.Update(gameTime, keyboardState, gamePadStates[i]);
         }
     }
 

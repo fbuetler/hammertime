@@ -1,4 +1,4 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
@@ -23,9 +23,10 @@ public class GameMain : Game
 
     // store input states so that they are only polled once per frame, 
     // then the same input state is used wherever needed
-    private GamePadState _gamePadState;
+    private GamePadState[] _gamePadStates;
     private KeyboardState _keyboardState;
 
+    public const int NumberOfPlayers = 2;
     // The number of levels in the Levels directory of our content. We assume that
     // levels in our content are 0-based and that all numbers under this constant
     // have a level file present. This allows us to not need to check for the file
@@ -74,7 +75,7 @@ public class GameMain : Game
 
         HandleInput(gameTime);
 
-        _map.Update(gameTime, _keyboardState, _gamePadState);
+        _map.Update(gameTime, _keyboardState, _gamePadStates);
 
         base.Update(gameTime);
     }
@@ -82,12 +83,17 @@ public class GameMain : Game
     private void HandleInput(GameTime gameTime)
     {
         _keyboardState = Keyboard.GetState();
-        _gamePadState = GamePad.GetState(PlayerIndex.One); // TODO (fbuetler) more players
 
-        if (_keyboardState.IsKeyDown(Keys.Escape) || _gamePadState.IsButtonDown(Buttons.Back))
+        _gamePadStates = new GamePadState[4];
+        for (int i = 0; i < NumberOfPlayers; i++)
+        {
+            _gamePadStates[i] = GamePad.GetState(i);
+        }
+
+        if (_keyboardState.IsKeyDown(Keys.Escape) || _gamePadStates[0].IsButtonDown(Buttons.Back))
             this.Exit();
 
-        bool continuePressed = _keyboardState.IsKeyDown(Keys.Space) || _gamePadState.IsButtonDown(Buttons.Start);
+        bool continuePressed = _keyboardState.IsKeyDown(Keys.Space) || _gamePadStates[0].IsButtonDown(Buttons.Start);
 
         // Perform the appropriate action to advance the game and
         // to get the player back to playing.
