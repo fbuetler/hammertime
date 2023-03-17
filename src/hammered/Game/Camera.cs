@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Xna.Framework;
 
 namespace hammered;
@@ -18,14 +19,24 @@ public class Camera
     }
     private Matrix _worldMatrix, _viewMatrix, _projectionMatrix;
 
-    public Camera(Vector3 pos, Vector3 target, float aspectRatio)
+    public Camera(Vector3 target, float aspectRatio, float mapWidth)
     {
-        float fovAngle = MathHelper.ToRadians(45);
+        float fovAngle = 45;
         float near = 0.01f;
         float far = 30f;
 
+        // assume only width matters as maps are usually designed to be wider than deeper
+        float height = mapWidth / (float)Math.Sin(fovAngle) * 0.8f;
+        float setBackDistance = 10f;
+        Vector3 pos = new Vector3(
+            target.X,
+            target.Y + height,
+            target.Z + setBackDistance
+        );
+
+        // setup our graphics scene matrices 
         _worldMatrix = Matrix.Identity;
         _viewMatrix = Matrix.CreateLookAt(pos, target, Vector3.Up);
-        _projectionMatrix = Matrix.CreatePerspectiveFieldOfView(fovAngle, aspectRatio, near, far);
+        _projectionMatrix = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45), aspectRatio, near, far);
     }
 }

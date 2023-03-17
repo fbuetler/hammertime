@@ -63,15 +63,11 @@ public class Map : DrawableGameComponent
         // load tiles and players
         LoadTiles(fileStream);
 
-        // setup our graphics scene matrices 
-        float xMapCenter = Width / 2;
-        float zMapCenter = Depth / 2;
-
-        // TODO (fbuetler) we could calculate the height of the camera instead of hardcoding it
+        // setup camera
         _camera = new Camera(
-            new Vector3(xMapCenter, 10f, zMapCenter + 7f),
-            new Vector3(xMapCenter, 0f, zMapCenter),
-            (float)_game.GetBackBufferWidth() / _game.GetBackBufferHeight()
+            new Vector3(Width / 2, 0f, Depth / 2),
+            (float)_game.GetBackBufferWidth() / _game.GetBackBufferHeight(),
+            Width
         );
     }
 
