@@ -13,16 +13,13 @@ public class Player : DrawableGameComponent
     }
     int _id;
 
-    public Circle BoundingTopDownCircle
+    public BoundingBox BoundingBox
     {
         get
         {
-            return new Circle(
-                new Vector2(
-                    _pos.X + Tile.Width / 2,
-                    _pos.Z + Tile.Height / 2
-                ),
-                Tile.Width / 2
+            return new BoundingBox(
+                new Vector3(_pos.X, _pos.Y, _pos.Z),
+                new Vector3(_pos.X + Player.Width, _pos.Y + Player.Height, _pos.Z + Player.Width)
             );
         }
     }
@@ -40,8 +37,12 @@ public class Player : DrawableGameComponent
     public Boolean IsStandingOnTile
     {
         set { _isFalling = _isFalling || !value; }
+        get { return !_isFalling; }
     }
     private Boolean _isFalling;
+
+    public const int Height = 1;
+    public const int Width = 1;
 
     // Constants for controlling horizontal movement
     private const float MoveAcceleration = 1300f;
@@ -133,7 +134,7 @@ public class Player : DrawableGameComponent
     {
         float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
-        Vector3 previousPos = _pos;
+        Vector3 prevPos = _pos;
 
         // base velocity is a combination of horizontal movement control and
         // acceleration downward due to gravity
@@ -159,13 +160,13 @@ public class Player : DrawableGameComponent
         HandleCollisions();
 
         // if the collision stopped us from moving, reset the velocity to zero
-        if (_pos.X == previousPos.X)
+        if (_pos.X == prevPos.X)
             _velocity.X = 0;
 
-        if (_pos.Y == previousPos.Y)
+        if (_pos.Y == prevPos.Y)
             _velocity.Y = 0;
 
-        if (_pos.Z == previousPos.Z)
+        if (_pos.Z == prevPos.Z)
             _velocity.Z = 0;
 
     }
@@ -183,56 +184,96 @@ public class Player : DrawableGameComponent
 
     private void HandleCollisions()
     {
-        Circle bounds = BoundingTopDownCircle;
-        int leftTile = (int)Math.Floor((float)bounds.Center.X / Tile.Width);
-        int rightTile = (int)Math.Ceiling(((float)bounds.Center.X / Tile.Width)) - 1;
-        int topTile = (int)Math.Floor((float)bounds.Center.Y / Tile.Height);
-        int bottomTile = (int)Math.Ceiling(((float)bounds.Center.Y / Tile.Height)) - 1;
+        BoundingBox bounds = BoundingBox;
+        int x_low = (int)Math.Floor((float)bounds.Min.X / Tile.Width);
+        int x_high = (int)Math.Ceiling(((float)bounds.Max.X / Tile.Width)) - 1;
+        int z_low = (int)Math.Floor(((float)bounds.Min.Z / Tile.Width));
+        int z_high = (int)Math.Ceiling((float)bounds.Max.Z / Tile.Width) - 1;
 
-        for (int z = topTile; z <= bottomTile; ++z)
+        // TODO (fbuetler) iterate over y as well to respect walls
+        for (int z = z_low; z <= z_high; z++)
         {
-            for (int x = leftTile; x <= rightTile; ++x)
+            for (int x = x_low; x <= x_high; x++)
             {
-                TileCollision collision = _map.GetTileCollision(x, z);
+                TileCollision collision = _map.GetTileCollision(x, 0, z);
                 if (collision == TileCollision.Passable)
                 {
                     continue;
                 }
 
                 // determine collision depth (with direction) and magnitude
-                Rectangle tileBounds = _map.GetTileBounds(x, z);
-                (Vector2 depth, bool intersect) = bounds.GetIntersectionDepth(tileBounds);
-                if (!intersect)
+                BoundingBox neighbour = _map.GetTileBounds(x, 0, z);
+                Vector3 depth = intersectionDepth(bounds, neighbour);
+                if (depth == Vector3.Zero || depth.Y == 1)
                 {
                     continue;
                 }
 
                 float absDepthX = Math.Abs(depth.X);
-                float absDepthY = Math.Abs(depth.Y);
+                float absDepthZ = Math.Abs(depth.Z);
 
                 // resolve the collision along the shallow axis
-                if (absDepthX < absDepthY)
+                if (absDepthX < absDepthZ)
                 {
-                    // resolve the collision along the X axis
+                    if (absDepthX == 0 || absDepthX == 1)
+                    {
+                        continue;
+                    }
                     _pos = new Vector3(
                         _pos.X + depth.X,
                         _pos.Y,
                         _pos.Z
                     );
-                    bounds = BoundingTopDownCircle;
+                    bounds = BoundingBox;
                 }
                 else
                 {
-                    // resolve the collision along the Z axis
+                    if (absDepthZ == 0 || absDepthZ == 1)
+                    {
+                        continue;
+                    }
                     _pos = new Vector3(
                         _pos.X,
                         _pos.Y,
-                        _pos.Z + depth.Y
+                        _pos.Z + depth.Z
                     );
-                    bounds = BoundingTopDownCircle;
+                    bounds = BoundingBox;
                 }
             }
         }
+    }
+
+    private Vector3 intersectionDepth(BoundingBox a, BoundingBox b)
+    {
+        // calculate half sizes
+        float halfWidthA = a.Max.X - a.Min.X;
+        float halfHeightA = a.Max.Y - a.Min.Y;
+        float halfDepthA = a.Max.Z - a.Min.Z;
+        float halfWidthB = b.Max.X - b.Min.X;
+        float halfHeightB = b.Max.Y - b.Min.Y;
+        float halfDepthB = b.Max.Z - b.Min.Z;
+
+        // calculate centers
+        Vector3 centerA = new Vector3(a.Min.X + halfWidthA, a.Min.Y + halfHeightA, a.Min.Z + halfDepthA);
+        Vector3 centerB = new Vector3(b.Min.X + halfWidthB, b.Min.Y + halfHeightB, b.Min.Z + halfDepthB);
+
+        // Calculate current and minimum-non-intersecting distances between centers.
+        float distanceX = centerA.X - centerB.X;
+        float distanceY = centerA.Y - centerB.Y;
+        float distanceZ = centerA.Z - centerB.Z;
+        float minDistanceX = halfWidthA + halfWidthB;
+        float minDistanceY = halfHeightA + halfHeightB;
+        float minDistanceZ = halfDepthA + halfDepthB;
+
+        // If we are not intersecting at all, return (0, 0).
+        if (Math.Abs(distanceX) >= minDistanceX || Math.Abs(distanceY) >= minDistanceY || Math.Abs(distanceZ) >= minDistanceZ)
+            return Vector3.Zero;
+
+        // Calculate and return intersection depths.
+        float depthX = distanceX > 0 ? minDistanceX - distanceX : -minDistanceX - distanceX;
+        float depthY = distanceY > 0 ? minDistanceY - distanceY : -minDistanceY - distanceY;
+        float depthZ = distanceZ > 0 ? minDistanceZ - distanceZ : -minDistanceZ - distanceZ;
+        return new Vector3(depthX, depthY, depthZ);
     }
 
     public override void Draw(GameTime gameTime)

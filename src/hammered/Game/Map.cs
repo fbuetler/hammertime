@@ -83,19 +83,31 @@ public class Map : DrawableGameComponent
         _content.Unload();
     }
 
-    public TileCollision GetTileCollision(int x, int z)
+    public TileCollision GetTileCollision(int x, int y, int z)
     {
-        // TODO (fbuetler) what if there is whole in the map by design?
+        // TODO (fbuetler) what if there is hole in the map by design?
+        // TODO (fbuetler) make more efficient (maybe use 2D array for tiles and not remove broken ones)
+        // BUG (fbuetler) might be that we check one level (tile) too low
         if (0 <= x && x < xBlocks && 0 <= z && z < zBlocks)
         {
-            return TileCollision.Impassable;
+            foreach (Tile t in _tiles)
+            {
+                if (t.Pos.X == x && t.Pos.Z == z)
+                {
+
+                    return TileCollision.Impassable;
+                }
+            }
         }
         return TileCollision.Passable;
     }
 
-    public Rectangle GetTileBounds(int x, int z)
+    public BoundingBox GetTileBounds(int x, int y, int z)
     {
-        return new Rectangle(x * Tile.Width, z * Tile.Height, Tile.Width, Tile.Height);
+        return new BoundingBox(
+                new Vector3(x, y, z),
+                new Vector3(x + Tile.Width, y + Tile.Height, z + Tile.Width)
+            );
     }
 
     public void Update(GameTime gameTime, KeyboardState keyboardState, GamePadState gamePadState)
@@ -128,9 +140,14 @@ public class Map : DrawableGameComponent
             {
                 Player p = _players[j];
 
+                if (!p.IsStandingOnTile)
+                {
+                    // HACK (fbuetler) a falling player should not interact with tiles
+                    continue;
+                }
+
                 // is player standing on tile
-                (Vector2 _, bool intersect) = p.BoundingTopDownCircle.GetIntersectionDepth(t.BoundingTopDownRectangle);
-                if (intersect)
+                if (p.BoundingBox.Intersects(t.BoundingBox))
                 {
                     OnTileEnter(t, p);
                     isPlayerStandingOnAnyTile[j] |= true;

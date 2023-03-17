@@ -20,11 +20,14 @@ public class Tile : DrawableGameComponent
     }
     Map _map;
 
-    public Rectangle BoundingTopDownRectangle
+    public BoundingBox BoundingBox
     {
         get
         {
-            return new Rectangle((int)_pos.X, (int)_pos.Z, Tile.Width, Tile.Height);
+            return new BoundingBox(
+                new Vector3(_pos.X, _pos.Y, _pos.Z),
+                new Vector3(_pos.X + Tile.Width, _pos.Y + Tile.Height, _pos.Z + Tile.Width)
+            );
         }
     }
 
@@ -44,6 +47,10 @@ public class Tile : DrawableGameComponent
 
     private Model _model;
 
+    public Vector3 Pos
+    {
+        get { return _pos; }
+    }
     private Vector3 _pos;
 
     public const int Width = 1;
