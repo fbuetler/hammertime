@@ -97,7 +97,9 @@ public class Tile : GameObject
         _visitors = new HashSet<int>();
     }
 
-    public override void Update(GameTime gameTime, KeyboardState keyboardState, GamePadState gamePadState)
+    public override void Update(GameTime gameTime, KeyboardState keyboardState, GamePadState gamePadState) { /* THIS IS JUST HERE FOR OVERRIDING */ }
+
+    public void Update(GameTime gameTime)
     {
         // TODO (fbuetler) update breaking animation based on health points
     }

@@ -85,16 +85,13 @@ public class GameMain : Game
     {
         _keyboardState = Keyboard.GetState();
 
-        _gamePadStates = new GamePadState[NumberOfPlayers];
+        _gamePadStates = new GamePadState[4];
         for (int i = 0; i < NumberOfPlayers; i++)
         {
-            GamePadCapabilities gamePadCapabilities = GamePad.GetCapabilities(i);
-            if (gamePadCapabilities.IsConnected)
-            {
-                _gamePadStates[i] = GamePad.GetState(i);
-            }
+            _gamePadStates[i] = GamePad.GetState(i);
         }
 
+        // TODO (fbuetler) proper input handling instead of just taking the input of the first player
         if (_keyboardState.IsKeyDown(Keys.Escape) || _gamePadStates[0].IsButtonDown(Buttons.Back))
             this.Exit();
 

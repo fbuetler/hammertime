@@ -188,7 +188,7 @@ public class Map
     public void Update(GameTime gameTime, KeyboardState keyboardState, GamePadState[] gamePadStates)
     {
         // IMPORTANT! UpdatePlayers has to be AFTER UpdateTiles because of isPlayerStandingOnAnyTile
-        UpdateTiles(gameTime, keyboardState, gamePadStates);
+        UpdateTiles(gameTime);
         UpdatePlayers(gameTime, keyboardState, gamePadStates);
     }
 
@@ -201,13 +201,13 @@ public class Map
         }
     }
 
-    private void UpdateTiles(GameTime gameTime, KeyboardState keyboardState, GamePadState[] gamePadStates)
+    private void UpdateTiles(GameTime gameTime)
     {
         Boolean[] isPlayerStandingOnAnyTile = new Boolean[_players.Count];
 
         foreach (Tile t in _tiles)
         {
-            t.Update(gameTime, keyboardState, gamePadStates[0]);
+            t.Update(gameTime);
 
             if (t.IsBroken)
             {
@@ -274,5 +274,12 @@ public class Map
         {
             t.Draw(view, projection);
         }
+
+        // draw coordinate system
+        DebugDraw.Begin(Matrix.Identity, view, projection);
+        DebugDraw.DrawLine(Vector3.Zero, 30 * Vector3.UnitX, Color.Black);
+        DebugDraw.DrawLine(Vector3.Zero, 30 * Vector3.UnitY, Color.Black);
+        DebugDraw.DrawLine(Vector3.Zero, 30 * Vector3.UnitZ, Color.Black);
+        DebugDraw.End();
     }
 }
