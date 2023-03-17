@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
@@ -10,6 +10,11 @@ public class GameMain : Game
 {
     // drawing
     private GraphicsDeviceManager _graphics;
+    public DebugDraw DebugDraw
+    {
+        get { return _debugDraw; }
+    }
+    private DebugDraw _debugDraw;
 
     // game state
     private int _mapIndex = -1;
@@ -54,6 +59,8 @@ public class GameMain : Game
         _graphics.PreferredBackBufferWidth = 1280;
         _graphics.PreferredBackBufferHeight = 720;
         _graphics.ApplyChanges();
+
+        _debugDraw = new DebugDraw(GraphicsDevice);
     }
 
     protected override void LoadContent()

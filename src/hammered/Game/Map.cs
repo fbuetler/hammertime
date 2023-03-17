@@ -15,6 +15,11 @@ public class Map : DrawableGameComponent
     }
     ContentManager _content;
 
+    public DebugDraw DebugDraw
+    {
+        get { return _game.DebugDraw; }
+    }
+
     private GameMain _game;
 
     public Camera Camera

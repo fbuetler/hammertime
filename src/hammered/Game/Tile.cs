@@ -107,7 +107,11 @@ public class Tile : DrawableGameComponent
 
     public override void Draw(GameTime gameTime)
     {
-        Matrix translation = Matrix.CreateTranslation(_pos * 1);
+        // translate tiles
+        Matrix translation = Matrix.CreateTranslation(_pos);
+        Matrix translatedView = new Matrix();
+        Matrix viewMatrix = _map.Camera.ViewMatrix;
+        Matrix.Multiply(ref translation, ref viewMatrix, out translatedView);
 
         foreach (ModelMesh mesh in _model.Meshes)
         {
@@ -115,17 +119,15 @@ public class Tile : DrawableGameComponent
             {
                 effect.AmbientLightColor = new Vector3(1f, 0, 0);
                 effect.World = _map.Camera.WorldMatrix;
-
-                // translate tiles
-                Matrix translatedView = new Matrix();
-                Matrix viewMatrix = _map.Camera.ViewMatrix;
-                Matrix.Multiply(ref translation, ref viewMatrix, out translatedView);
                 effect.View = translatedView;
-
                 effect.Projection = _map.Camera.ProjectionMatrix;
             }
             mesh.Draw();
         }
+
+        _map.DebugDraw.Begin(_map.Camera.WorldMatrix, _map.Camera.ViewMatrix, _map.Camera.ProjectionMatrix);
+        _map.DebugDraw.DrawWireBox(BoundingBox, Color.Black);
+        _map.DebugDraw.End();
     }
 
     public bool Equals(int x, int z)
