@@ -22,10 +22,6 @@ public class Map
 
     private GameMain _game;
 
-    public Camera Camera
-    {
-        get { return _camera; }
-    }
     private Camera _camera;
 
     public int Width
@@ -192,7 +188,7 @@ public class Map
     public void Update(GameTime gameTime, KeyboardState keyboardState, GamePadState[] gamePadStates)
     {
         // IMPORTANT! UpdatePlayers has to be AFTER UpdateTiles because of isPlayerStandingOnAnyTile
-        UpdateTiles(gameTime);
+        UpdateTiles(gameTime, keyboardState, gamePadStates);
         UpdatePlayers(gameTime, keyboardState, gamePadStates);
     }
 
@@ -205,13 +201,13 @@ public class Map
         }
     }
 
-    private void UpdateTiles(GameTime gameTime)
+    private void UpdateTiles(GameTime gameTime, KeyboardState keyboardState, GamePadState[] gamePadStates)
     {
         Boolean[] isPlayerStandingOnAnyTile = new Boolean[_players.Count];
 
         foreach (Tile t in _tiles)
         {
-            t.Update(gameTime);
+            t.Update(gameTime, keyboardState, gamePadStates[0]);
 
             if (t.IsBroken)
             {
@@ -266,13 +262,17 @@ public class Map
 
     public void Draw(GameTime gameTime)
     {
+
+        Matrix view = _camera.View;
+        Matrix projection = _camera.Projection;
+
         foreach (Player p in _players)
         {
-            p.Draw(gameTime);
+            p.Draw(view, projection);
         }
         foreach (Tile t in _tiles)
         {
-            t.Draw(gameTime);
+            t.Draw(view, projection);
         }
     }
 }

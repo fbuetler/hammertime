@@ -5,7 +5,7 @@ using Microsoft.Xna.Framework.Input;
 
 namespace hammered;
 
-public class Player
+public class Player : GameObject
 {
     public int ID
     {
@@ -83,7 +83,7 @@ public class Player
         _isFalling = false;
     }
 
-    public void Update(GameTime gameTime, KeyboardState keyboardState, GamePadState gamePadState)
+    public override void Update(GameTime gameTime, KeyboardState keyboardState, GamePadState gamePadState)
     {
         GetInput(keyboardState, gamePadState);
 
@@ -134,7 +134,7 @@ public class Player
         }
 
         // prevent the player from running faster than his top speed
-        if (_movement != Vector2.Zero)
+        if (_movement.LengthSquared() > 1)
         {
             _movement.Normalize();
         }
@@ -287,27 +287,14 @@ public class Player
         return new Vector3(depthX, depthY, depthZ);
     }
 
-    public void Draw(GameTime gameTime)
+    public override void Draw(Matrix view, Matrix projection)
     {
-        // translate tiles
         Matrix translation = Matrix.CreateTranslation(_pos);
-        Matrix translatedView = new Matrix();
-        Matrix viewMatrix = _map.Camera.ViewMatrix;
-        Matrix.Multiply(ref translation, ref viewMatrix, out translatedView);
 
-        foreach (ModelMesh mesh in _model.Meshes)
-        {
-            foreach (BasicEffect effect in mesh.Effects)
-            {
-                effect.AmbientLightColor = new Vector3(1f, 0, 0);
-                effect.World = _map.Camera.WorldMatrix;
-                effect.View = translatedView;
-                effect.Projection = _map.Camera.ProjectionMatrix;
-            }
-            mesh.Draw();
-        }
+        Matrix world = translation;
+        DrawModel(_model, world, view, projection);
 
-        _map.DebugDraw.Begin(_map.Camera.WorldMatrix, _map.Camera.ViewMatrix, _map.Camera.ProjectionMatrix);
+        _map.DebugDraw.Begin(Matrix.Identity, view, projection);
         _map.DebugDraw.DrawWireBox(BoundingBox, Color.White);
         _map.DebugDraw.End();
     }

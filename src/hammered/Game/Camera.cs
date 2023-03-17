@@ -5,19 +5,15 @@ namespace hammered;
 
 public class Camera
 {
-    public Matrix WorldMatrix
+    public Matrix View
     {
-        get { return _worldMatrix; }
+        get { return _view; }
     }
-    public Matrix ViewMatrix
+    public Matrix Projection
     {
-        get { return _viewMatrix; }
+        get { return _projection; }
     }
-    public Matrix ProjectionMatrix
-    {
-        get { return _projectionMatrix; }
-    }
-    private Matrix _worldMatrix, _viewMatrix, _projectionMatrix;
+    private Matrix _view, _projection;
 
     public Camera(Vector3 target, float aspectRatio, float mapWidth)
     {
@@ -35,8 +31,7 @@ public class Camera
         );
 
         // setup our graphics scene matrices 
-        _worldMatrix = Matrix.Identity;
-        _viewMatrix = Matrix.CreateLookAt(pos, target, Vector3.Up);
-        _projectionMatrix = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45), aspectRatio, near, far);
+        _view = Matrix.CreateLookAt(pos, target, Vector3.Up);
+        _projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45), aspectRatio, near, far);
     }
 }

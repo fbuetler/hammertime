@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 
 namespace hammered;
 
@@ -12,7 +13,7 @@ public enum TileCollision
     Impassable = 1,
 }
 
-public class Tile
+public class Tile : GameObject
 {
     public Map Map
     {
@@ -96,7 +97,7 @@ public class Tile
         _visitors = new HashSet<int>();
     }
 
-    public void Update(GameTime gameTime)
+    public override void Update(GameTime gameTime, KeyboardState keyboardState, GamePadState gamePadState)
     {
         // TODO (fbuetler) update breaking animation based on health points
     }
@@ -128,38 +129,20 @@ public class Tile
         // TODO (fbuetler) make invisible i.e. change/remove texture
     }
 
-    public void Draw(GameTime gameTime)
+    public override void Draw(Matrix view, Matrix projection)
     {
-        // translate tiles
-        Matrix translation = Matrix.CreateTranslation(_pos);
-        Matrix translatedView = new Matrix();
-        Matrix viewMatrix = _map.Camera.ViewMatrix;
-        Matrix.Multiply(ref translation, ref viewMatrix, out translatedView);
-
         if (IsBroken)
         {
             return;
         }
 
-        foreach (ModelMesh mesh in _model.Meshes)
-        {
-            foreach (BasicEffect effect in mesh.Effects)
-            {
-                effect.AmbientLightColor = new Vector3(1f, 0, 0);
-                effect.World = _map.Camera.WorldMatrix;
-                effect.View = translatedView;
-                effect.Projection = _map.Camera.ProjectionMatrix;
-            }
-            mesh.Draw();
-        }
+        Matrix translation = Matrix.CreateTranslation(_pos);
 
-        _map.DebugDraw.Begin(_map.Camera.WorldMatrix, _map.Camera.ViewMatrix, _map.Camera.ProjectionMatrix);
+        Matrix world = translation;
+        DrawModel(_model, world, view, projection);
+
+        _map.DebugDraw.Begin(Matrix.Identity, view, projection);
         _map.DebugDraw.DrawWireBox(BoundingBox, Color.Black);
         _map.DebugDraw.End();
-    }
-
-    public bool Equals(int x, int z)
-    {
-        return _pos.X == x && _pos.Z == z;
     }
 }

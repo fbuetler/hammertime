@@ -4,7 +4,7 @@ using Microsoft.Xna.Framework.Input;
 
 namespace hammered;
 
-public class Hammer
+public class Hammer : GameObject
 {
     public Hammer()
     {
@@ -14,11 +14,11 @@ public class Hammer
     {
     }
 
-    public void Update(GameTime gameTime, KeyboardState keyboardState, GamePadState gamePadState)
+    public override void Update(GameTime gameTime, KeyboardState keyboardState, GamePadState gamePadState)
     {
     }
 
-    public void Draw(GameTime gameTime)
+    public override void Draw(Matrix view, Matrix projection)
     {
     }
 }
