@@ -19,6 +19,7 @@ public class GameMain : Game
     // game state
     private int _mapIndex = -1;
     private Map _map;
+    private bool _wasReloadPressed;
     private bool _wasContinuePressed;
 
     // store input states so that they are only polled once per frame, 
@@ -31,7 +32,7 @@ public class GameMain : Game
     // levels in our content are 0-based and that all numbers under this constant
     // have a level file present. This allows us to not need to check for the file
     // or handle exceptions, both of which can add unnecessary time to level loading.
-    private const int numberOfMaps = 1;
+    private const int numberOfMaps = 2;
 
     public GameMain()
     {
@@ -93,15 +94,18 @@ public class GameMain : Game
         if (_keyboardState.IsKeyDown(Keys.Escape) || _gamePadStates[0].IsButtonDown(Buttons.Back))
             this.Exit();
 
-        bool continuePressed = _keyboardState.IsKeyDown(Keys.Space) || _gamePadStates[0].IsButtonDown(Buttons.Start);
-
-        // Perform the appropriate action to advance the game and
-        // to get the player back to playing.
-        if (!_wasContinuePressed && continuePressed)
+        bool reloadPressed = _keyboardState.IsKeyDown(Keys.Space) || _gamePadStates[0].IsButtonDown(Buttons.Start);
+        if (!_wasReloadPressed && reloadPressed)
         {
             ReloadCurrentMap();
         }
+        _wasReloadPressed = reloadPressed;
 
+        bool continuePressed = _keyboardState.IsKeyDown(Keys.Enter) || _gamePadStates[0].IsButtonDown(Buttons.Y);
+        if (!_wasContinuePressed && continuePressed)
+        {
+            LoadNextMap();
+        }
         _wasContinuePressed = continuePressed;
     }
 
@@ -111,13 +115,10 @@ public class GameMain : Game
         if (_map != null)
             _map.Dispose();
 
-        // TODO (fbuetler) allow multiple maps
         _mapIndex = (_mapIndex + 1) % numberOfMaps;
-        // string mapPath = string.Format("Content/Levels/{0}.txt", _mapIndex);
-        // using (Stream fileStream = TitleContainer.OpenStream(mapPath))
-        //     _map = new Map(this, fileStream, Services);
-
-        _map = new Map(this, Services);
+        string mapPath = string.Format("Content/Maps/{0}.txt", _mapIndex);
+        using (Stream fileStream = TitleContainer.OpenStream(mapPath))
+            _map = new Map(this, Services, fileStream);
     }
 
     private void ReloadCurrentMap()
@@ -129,6 +130,8 @@ public class GameMain : Game
     protected override void Draw(GameTime gameTime)
     {
         GraphicsDevice.Clear(Color.CornflowerBlue);
+
+        // TODO (fbuetler) draw map index on the screen
 
         _map.Draw(gameTime);
 

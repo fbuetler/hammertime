@@ -19,7 +19,7 @@ public class Player : DrawableGameComponent
         {
             return new BoundingBox(
                 new Vector3(_pos.X, _pos.Y, _pos.Z),
-                new Vector3(_pos.X + Player.Width, _pos.Y + Player.Height, _pos.Z + Player.Width)
+                new Vector3(_pos.X + Player.Width, _pos.Y + Player.Height, _pos.Z + Player.Depth)
             );
         }
     }
@@ -43,6 +43,7 @@ public class Player : DrawableGameComponent
 
     public const int Height = 1;
     public const int Width = 1;
+    public const int Depth = 1;
 
     // Constants for controlling horizontal movement
     private const float MoveAcceleration = 1300f;
@@ -175,7 +176,6 @@ public class Player : DrawableGameComponent
     {
         if (_isFalling)
         {
-            // TODO (fbuetler) introduce a isAlive variable
             return velocityY;
         }
 
@@ -187,10 +187,10 @@ public class Player : DrawableGameComponent
         BoundingBox bounds = BoundingBox;
         int x_low = (int)Math.Floor((float)bounds.Min.X / Tile.Width);
         int x_high = (int)Math.Ceiling(((float)bounds.Max.X / Tile.Width)) - 1;
-        int z_low = (int)Math.Floor(((float)bounds.Min.Z / Tile.Width));
-        int z_high = (int)Math.Ceiling((float)bounds.Max.Z / Tile.Width) - 1;
+        int z_low = (int)Math.Floor(((float)bounds.Min.Z / Tile.Depth));
+        int z_high = (int)Math.Ceiling((float)bounds.Max.Z / Tile.Depth) - 1;
 
-        // TODO (fbuetler) iterate over y as well to respect walls
+        // TODO (fbuetler) iterate over y as well to respect walls (only positive)
         for (int z = z_low; z <= z_high; z++)
         {
             for (int x = x_low; x <= x_high; x++)

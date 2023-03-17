@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
-using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
 namespace hammered;
@@ -28,16 +28,26 @@ public class Map : DrawableGameComponent
     }
     private Camera _camera;
 
-    private List<Tile> _tiles;
+    public int Width
+    {
+        get { return _tiles.GetLength(0); }
+    }
+    public int Height
+    {
+        get { return _tiles.GetLength(1); }
+    }
+    public int Depth
+    {
+        get { return _tiles.GetLength(2); }
+    }
+    private Tile[,,] _tiles;
 
-    private List<Player> _players;
 
-    private int xBlocks = 15;
-    private int zBlocks = 10;
+    private List<Player> _players = new List<Player>();
 
-    private int nextPlayerID = 0;
+    private int playersLoaded = 0;
 
-    public Map(Game game, IServiceProvider serviceProvider) : base(game)
+    public Map(Game game, IServiceProvider serviceProvider, Stream fileStream) : base(game)
     {
         if (game == null)
             throw new ArgumentNullException("game");
@@ -48,51 +58,108 @@ public class Map : DrawableGameComponent
         _game = (GameMain)game;
 
         // create a new content manager to load content used just by this map 
-        _content = new ContentManager(serviceProvider, "Content"); // TODO (fbuetler) how exactly does this work?
+        _content = new ContentManager(serviceProvider, "Content");
 
-        // setup our graphics scene matrices
-        float xMapCenter = xBlocks / 2;
-        float zMapCenter = zBlocks / 2;
+        // load tiles and players
+        LoadTiles(fileStream);
 
+        // setup our graphics scene matrices 
+        float xMapCenter = Width / 2;
+        float zMapCenter = Depth / 2;
+
+        // TODO (fbuetler) we could calculate the height of the camera instead of hardcoding it
         _camera = new Camera(
             new Vector3(xMapCenter, 10f, zMapCenter + 7f),
             new Vector3(xMapCenter, 0f, zMapCenter),
             (float)_game.GetBackBufferWidth() / _game.GetBackBufferHeight()
         );
+    }
 
-        _tiles = new List<Tile>();
-        for (int x = 0; x < xBlocks; x++)
+    private void LoadTiles(Stream fileStream)
+    {
+        int width;
+        List<string> lines = new List<string>();
+        using (StreamReader reader = new StreamReader(fileStream))
         {
-            for (int z = 0; z < zBlocks; z++)
+            string line = reader.ReadLine();
+            width = line.Length;
+            while (line != null)
             {
-                _tiles.Add(LoadTile(x, 0, z));
+                lines.Add(line);
+                if (line.Length != width)
+                {
+                    throw new Exception(String.Format("The length of line {0} is different from all preceeding lines.", lines.Count));
+                }
+                line = reader.ReadLine();
+            }
+        }
+        int depth = lines.Count;
+        int height = 1; // floor TODO (fbuetler) and walls 
+        _tiles = new Tile[width, height, lines.Count];
+
+        for (int z = 0; z < depth; z++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                char tileType = lines[z][x];
+                _tiles[x, 0, z] = LoadTile(tileType, x, z); // for now we only load floor tiles
             }
         }
 
-        // TODO (fbuetler) random locations
-        Vector3[] startLocations = {
-            new Vector3(0, 1, 0),
-            new Vector3(xBlocks-1, 1, 0),
-            new Vector3(0, 1, zBlocks-1),
-            new Vector3(xBlocks-1, 1, zBlocks-1),
-        };
-
-        _players = new List<Player>();
-        for (int i = 0; i < GameMain.NumberOfPlayers; i++)
+        if (playersLoaded < GameMain.NumberOfPlayers)
         {
-            (float x, float y, float z) = startLocations[i];
-            _players.Add(LoadPlayer(x, y, z));
+            throw new NotSupportedException("A map must have starting points for all players");
         }
     }
 
-    private Tile LoadTile(int x, int y, int z)
+    private Tile LoadTile(char tileType, int x, int z)
     {
-        return new Tile(_game, this, new Vector3(x, y, z), TileCollision.Impassable);
+        // TODO (fbuetler) introduce different tile types
+        switch (tileType)
+        {
+            // abyss
+            case '.':
+                return LoadAbyssTile(x, z);
+            // breakable floor
+            case '-':
+                return LoadFloorTile(x, z);
+            // non-breakable floor
+            case '#':
+                throw new NotSupportedException(String.Format("Tile type '{0}' is not yet supported", tileType));
+            // wall
+            case 'X':
+                throw new NotSupportedException(String.Format("Tile type '{0}' is not yet supported", tileType));
+            // player
+            case 'P':
+                return LoadPlayerStartTile(x, z);
+            default:
+                throw new NotSupportedException(String.Format("Unsupported tile type character '{0}' at position {1}, {2}.", tileType, x, z));
+        }
+    }
+
+    private Tile LoadAbyssTile(int x, int z)
+    {
+        return new Tile(_game, this, new Vector3(x, 0, z), TileCollision.Passable);
+    }
+
+    private Tile LoadFloorTile(int x, int z)
+    {
+        return new Tile(_game, this, new Vector3(x, 0, z), TileCollision.Impassable);
+    }
+
+    private Tile LoadPlayerStartTile(int x, int z)
+    {
+        // ignore starting tiles if already all players are loaded
+        if (playersLoaded < GameMain.NumberOfPlayers)
+        {
+            _players.Add(LoadPlayer(x, 1, z));
+        }
+        return new Tile(_game, this, new Vector3(x, 0, z), TileCollision.Impassable);
     }
 
     private Player LoadPlayer(float x, float y, float z)
     {
-        return new Player(_game, this, nextPlayerID++, new Vector3(x, y, z));
+        return new Player(_game, this, playersLoaded++, new Vector3(x, y, z));
     }
 
     protected override void UnloadContent()
@@ -102,28 +169,27 @@ public class Map : DrawableGameComponent
 
     public TileCollision GetTileCollision(int x, int y, int z)
     {
-        // TODO (fbuetler) what if there is hole in the map by design?
-        // TODO (fbuetler) make more efficient (maybe use 2D array for tiles and not remove broken ones)
-        // BUG (fbuetler) might be that we check one level (tile) too low
-        if (0 <= x && x < xBlocks && 0 <= z && z < zBlocks)
+        if (x < 0 || x >= Width)
         {
-            foreach (Tile t in _tiles)
-            {
-                if (t.Pos.X == x && t.Pos.Z == z)
-                {
-
-                    return TileCollision.Impassable;
-                }
-            }
+            return TileCollision.Passable;
         }
-        return TileCollision.Passable;
+        if (y < 0 || y >= Height)
+        {
+            return TileCollision.Passable;
+        }
+        if (z < 0 || z >= Depth)
+        {
+            return TileCollision.Passable;
+        }
+
+        return _tiles[x, y, z].Collision;
     }
 
     public BoundingBox GetTileBounds(int x, int y, int z)
     {
         return new BoundingBox(
                 new Vector3(x, y, z),
-                new Vector3(x + Tile.Width, y + Tile.Height, z + Tile.Width)
+                new Vector3(x + Tile.Width, y + Tile.Height, z + Tile.Depth)
             );
     }
 
@@ -147,11 +213,14 @@ public class Map : DrawableGameComponent
     {
         Boolean[] isPlayerStandingOnAnyTile = new Boolean[_players.Count];
 
-        for (int i = 0; i < _tiles.Count; i++)
+        foreach (Tile t in _tiles)
         {
-            Tile t = _tiles[i];
-
             t.Update(gameTime);
+
+            if (t.IsBroken)
+            {
+                continue;
+            }
 
             for (int j = 0; j < _players.Count; j++)
             {
@@ -177,7 +246,8 @@ public class Map : DrawableGameComponent
 
             if (t.IsBroken)
             {
-                _tiles.RemoveAt(i--);
+                // only called when the tile breaks time
+                t.OnBreak();
             }
         }
 

@@ -12,7 +12,7 @@ public enum TileCollision
     Impassable = 1,
 }
 
-public class Tile : DrawableGameComponent
+public class Tile : DrawableGameComponent // TODO can we omit this inheritance?
 {
     public Map Map
     {
@@ -26,7 +26,7 @@ public class Tile : DrawableGameComponent
         {
             return new BoundingBox(
                 new Vector3(_pos.X, _pos.Y, _pos.Z),
-                new Vector3(_pos.X + Tile.Width, _pos.Y + Tile.Height, _pos.Z + Tile.Width)
+                new Vector3(_pos.X + Tile.Width, _pos.Y + Tile.Height, _pos.Z + Tile.Depth)
             );
         }
     }
@@ -55,10 +55,11 @@ public class Tile : DrawableGameComponent
 
     public const int Width = 1;
     public const int Height = 1;
+    public const int Depth = 1;
 
-    private const float maxHealthPoints = 100f;
+    private const float maxHealthPoints = 90f;
 
-    private const float damage = 10f;
+    private const float damage = 30f;
 
     public Tile(Game game, Map map, Vector3 position, TileCollision collision) : base(game)
     {
@@ -71,11 +72,18 @@ public class Tile : DrawableGameComponent
         _map = map;
         _pos = new Vector3(position.X, position.Y, position.Z);
         _collision = collision;
+        if (_collision == TileCollision.Impassable)
+        {
+            _healthPoints = maxHealthPoints;
+        }
+        else
+        {
+            _healthPoints = 0;
+        }
 
         // TODO (fbuetler) scale model to 1
         _model = _map.Content.Load<Model>("RubiksCube");
 
-        _healthPoints = maxHealthPoints;
         _visitors = new HashSet<int>();
     }
 
@@ -105,6 +113,12 @@ public class Tile : DrawableGameComponent
         _healthPoints = Math.Max(0, _healthPoints - Tile.damage);
     }
 
+    public void OnBreak()
+    {
+        _collision = TileCollision.Passable;
+        // TODO (fbuetler) make invisible i.e. change/remove texture
+    }
+
     public override void Draw(GameTime gameTime)
     {
         // translate tiles
@@ -112,6 +126,11 @@ public class Tile : DrawableGameComponent
         Matrix translatedView = new Matrix();
         Matrix viewMatrix = _map.Camera.ViewMatrix;
         Matrix.Multiply(ref translation, ref viewMatrix, out translatedView);
+
+        if (IsBroken)
+        {
+            return;
+        }
 
         foreach (ModelMesh mesh in _model.Meshes)
         {
