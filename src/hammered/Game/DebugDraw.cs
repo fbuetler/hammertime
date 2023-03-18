@@ -137,7 +137,7 @@ public class DebugDraw : IDisposable
             foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
             {
                 pass.Apply();
-                device.DrawIndexedPrimitives(PrimitiveType.LineList, 0, 0, VertexCount, 0, IndexCount / 2);
+                device.DrawIndexedPrimitives(PrimitiveType.LineList, 0, 0, IndexCount / 2);
             }
 
             device.SetVertexBuffer(null);

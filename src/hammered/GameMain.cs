@@ -24,7 +24,7 @@ public class GameMain : Game
     private int _mapIndex = -1;
     private Map _map;
     private bool _wasReloadPressed;
-    private bool _wasContinuePressed;
+    private bool _wasNextPressed;
 
     // store input states so that they are only polled once per frame, 
     // then the same input state is used wherever needed
@@ -103,19 +103,19 @@ public class GameMain : Game
         if (_keyboardState.IsKeyDown(Keys.Escape) || _gamePadStates[0].IsButtonDown(Buttons.Back))
             this.Exit();
 
-        bool reloadPressed = _keyboardState.IsKeyDown(Keys.Space) || _gamePadStates[0].IsButtonDown(Buttons.Start);
+        bool reloadPressed = _keyboardState.IsKeyDown(Keys.R) || _gamePadStates[0].IsButtonDown(Buttons.Start);
         if (!_wasReloadPressed && reloadPressed)
         {
             ReloadCurrentMap();
         }
         _wasReloadPressed = reloadPressed;
 
-        bool continuePressed = _keyboardState.IsKeyDown(Keys.Enter) || _gamePadStates[0].IsButtonDown(Buttons.Y);
-        if (!_wasContinuePressed && continuePressed)
+        bool nextPressed = _keyboardState.IsKeyDown(Keys.N) || _gamePadStates[0].IsButtonDown(Buttons.Y);
+        if (!_wasNextPressed && nextPressed)
         {
             LoadNextMap();
         }
-        _wasContinuePressed = continuePressed;
+        _wasNextPressed = nextPressed;
     }
 
     private void LoadNextMap()

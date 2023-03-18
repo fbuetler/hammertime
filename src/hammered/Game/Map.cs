@@ -205,6 +205,7 @@ public class Map
     {
         Boolean[] isPlayerStandingOnAnyTile = new Boolean[_players.Count];
 
+        // TODO (fbuetler) investigate why sometimes the wrong tiles are breaking
         foreach (Tile t in _tiles)
         {
             t.Update(gameTime);

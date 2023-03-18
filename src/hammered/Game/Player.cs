@@ -7,12 +7,28 @@ namespace hammered;
 
 public class Player : GameObject
 {
-    public int ID
-    {
-        get { return _id; }
-    }
+    private Map _map;
+
+    private Model _model;
+
+    public int ID { get { return _id; } }
     private int _id;
 
+    // player state
+    public Vector3 Position { get { return _pos; } }
+    private Vector3 _pos;
+    private Vector2 _movement;
+    private Vector3 _velocity;
+    private Hammer _hammer;
+    private Vector2 _aiming;
+    private bool _isThrowing;
+
+    public Boolean IsStandingOnTile
+    {
+        set { _isFalling = _isFalling || !value; }
+        get { return !_isFalling; }
+    }
+    private Boolean _isFalling;
     public BoundingBox BoundingBox
     {
         get
@@ -24,39 +40,25 @@ public class Player : GameObject
         }
     }
 
-    private Map _map;
-
-    private Model _model;
-
-    private Vector3 _pos;
-
-    private Vector2 _movement;
-
-    private Vector3 _velocity;
-
-    public Boolean IsStandingOnTile
-    {
-        set { _isFalling = _isFalling || !value; }
-        get { return !_isFalling; }
-    }
-    private Boolean _isFalling;
-
+    // dimensions
     public const int Height = 1;
     public const int Width = 1;
     public const int Depth = 1;
 
-    // Constants for controlling horizontal movement
+    // constants for controlling horizontal movement
     private const float MoveAcceleration = 1300f;
     private const float MaxMoveSpeed = 175f;
     private const float GroundDragFactor = 0.48f;
     private const float AirDragFactor = 0.58f;
 
-    // Constants for controlling vertical movement
+    // constants for controlling vertical movement
     private const float GravityAcceleration = 960f;
     private const float MaxFallSpeed = 340f;
 
-    // Input configuration
+    // input configuration
     private const float MoveStickScale = 1.0f;
+    private const float AimStickScale = 1.0f;
+    private const Buttons ThrowButton = Buttons.RightShoulder;
 
     public Player(Map map, int id, Vector3 position)
     {
@@ -81,6 +83,7 @@ public class Player : GameObject
         _pos = position;
         _velocity = Vector3.Zero;
         _isFalling = false;
+        _hammer = new Hammer(_map, this);
     }
 
     public override void Update(GameTime gameTime, KeyboardState keyboardState, GamePadState gamePadState)
@@ -89,8 +92,14 @@ public class Player : GameObject
 
         ApplyPhysics(gameTime);
 
+        DoThrowHammer();
+
+        _hammer.Update(gameTime, keyboardState, gamePadState);
+
         // clear input
         _movement = Vector2.Zero;
+        _aiming = Vector2.Zero;
+        _isThrowing = false;
     }
 
     private void GetInput(KeyboardState keyboardState, GamePadState gamePadState)
@@ -139,6 +148,22 @@ public class Player : GameObject
             _movement.Normalize();
         }
 
+        // get analog aim
+        _aiming.X = gamePadState.ThumbSticks.Right.X * AimStickScale;
+        _aiming.Y = gamePadState.ThumbSticks.Right.Y * AimStickScale;
+
+        // flip y: on the thumbsticks, down is -1, but on the screen, down is bigger numbers
+        _aiming.Y *= -1;
+
+        // in case there is no input use the direction the player is facing
+        // (allow playing with keyboard as well)
+        if (_aiming.X == 0 && _aiming.Y == 0)
+        {
+            _aiming.X = _movement.X;
+            _aiming.Y = _movement.Y;
+        }
+
+        _isThrowing = keyboardState.IsKeyDown(Keys.Space) || gamePadState.IsButtonDown(ThrowButton);
     }
 
     private void ApplyPhysics(GameTime gameTime)
@@ -252,6 +277,8 @@ public class Player : GameObject
                 }
             }
         }
+
+        // TODO (fbuetler) handle collosions with hammers
     }
 
     private Vector3 intersectionDepth(BoundingBox a, BoundingBox b)
@@ -287,12 +314,34 @@ public class Player : GameObject
         return new Vector3(depthX, depthY, depthZ);
     }
 
+    private void DoThrowHammer()
+    {
+        if (_isThrowing)
+        {
+            _hammer.Throw(_aiming);
+
+            OnHammerThrow();
+        }
+    }
+
+    private void OnHammerThrow()
+    {
+        // TODO (fbuetler) update texture
+    }
+
+    public void OnHammerReturn()
+    {
+        // TODO (fbuetler) update texture
+    }
+
     public override void Draw(Matrix view, Matrix projection)
     {
         Matrix translation = Matrix.CreateTranslation(_pos);
 
         Matrix world = translation;
         DrawModel(_model, world, view, projection);
+
+        _hammer.Draw(view, projection);
 
         _map.DebugDraw.Begin(Matrix.Identity, view, projection);
         _map.DebugDraw.DrawWireBox(BoundingBox, Color.White);
