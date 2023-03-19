@@ -35,6 +35,8 @@ public class Hammer : GameObject
     private const float ThrowSpeed = 10f;
     private const float MaxThrowDistance = 5f;
 
+    // TODO (fbuetler) deacclerate when close to player on return/before hit
+
     public Hammer(Map map, Player owner)
     {
         if (map == null)
@@ -73,7 +75,7 @@ public class Hammer : GameObject
 
         if ((_pos - _origin).LengthSquared() > MaxThrowDistance * MaxThrowDistance)
         {
-            // TODO (fbuetler) fix buddy return path
+            // TODO (fbuetler) fix buggy return path (should follow player even if falling)
             _dir.X = _owner.Position.X - _pos.X;
             _dir.Y = _owner.Position.Z - _pos.Z;
             _dir.Normalize();
@@ -115,7 +117,7 @@ public class Hammer : GameObject
         DrawModel(_model, world, view, projection);
 
         // TODO (fbuetler) fix hitbox
-        // world = rotationMatrix * Matrix.Identity;
+        world = rotationMatrix * Matrix.Identity;
         // _map.DebugDraw.Begin(world, view, projection);
         // _map.DebugDraw.DrawWireBox(BoundingBox, Color.Red);
         // _map.DebugDraw.End();

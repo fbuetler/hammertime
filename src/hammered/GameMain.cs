@@ -80,8 +80,6 @@ public class GameMain : Game
 
     protected override void Update(GameTime gameTime)
     {
-        KeyboardState keyboardState = Keyboard.GetState();
-
         HandleInput(gameTime);
 
         _map.Update(gameTime, _keyboardState, _gamePadStates);

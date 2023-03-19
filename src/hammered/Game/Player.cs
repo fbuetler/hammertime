@@ -220,6 +220,12 @@ public class Player : GameObject
 
     private void HandleCollisions()
     {
+        HandleTileCollisions();
+        HandleHammerCollisions();
+    }
+
+    private void HandleTileCollisions()
+    {
         BoundingBox bounds = BoundingBox;
         int x_low = (int)Math.Floor((float)bounds.Min.X / Tile.Width);
         int x_high = (int)Math.Ceiling(((float)bounds.Max.X / Tile.Width)) - 1;
@@ -277,7 +283,10 @@ public class Player : GameObject
                 }
             }
         }
+    }
 
+    private void HandleHammerCollisions()
+    {
         // TODO (fbuetler) handle collosions with hammers
     }
 
@@ -322,6 +331,7 @@ public class Player : GameObject
 
             OnHammerThrow();
         }
+        // TODO (fbuetler) update texture
     }
 
     private void OnHammerThrow()
@@ -334,9 +344,16 @@ public class Player : GameObject
         // TODO (fbuetler) update texture
     }
 
+    public void OnHit()
+    {
+        // TODO (fbuetler) push back
+    }
+
     public override void Draw(Matrix view, Matrix projection)
     {
         Matrix translation = Matrix.CreateTranslation(_pos);
+
+        // TODO (fbuetler) rotate player into walking direction
 
         Matrix world = translation;
         DrawModel(_model, world, view, projection);

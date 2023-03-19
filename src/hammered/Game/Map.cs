@@ -261,6 +261,11 @@ public class Map
         tile.OnExit(player);
     }
 
+    private void OnPlayerHit(Player player)
+    {
+        player.OnHit();
+    }
+
     public void Draw(GameTime gameTime)
     {
 
