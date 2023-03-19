@@ -2,9 +2,17 @@
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace hammered;
+
+public enum ScoreState
+{
+    None = 0,
+    Winner = 1,
+    Draw = 2,
+}
 
 public class GameMain : Game
 {
@@ -25,6 +33,8 @@ public class GameMain : Game
     private Map _map;
     private bool _wasReloadPressed;
     private bool _wasNextPressed;
+    private ScoreState _scoreState;
+    private int _winnerID;
 
     // store input states so that they are only polled once per frame, 
     // then the same input state is used wherever needed
@@ -122,6 +132,9 @@ public class GameMain : Game
         if (_map != null)
             _map.Dispose();
 
+        _scoreState = ScoreState.None;
+        _winnerID = -1;
+
         _mapIndex = (_mapIndex + 1) % numberOfMaps;
         string mapPath = string.Format("Content/Maps/{0}.txt", _mapIndex);
         using (Stream fileStream = TitleContainer.OpenStream(mapPath))
@@ -140,13 +153,60 @@ public class GameMain : Game
 
         _map.Draw(gameTime);
 
-        // SpriteBatch.Begin alters the state of the graphics pipeline
+        // _spriteBatch.Begin alters the state of the graphics pipeline
         // therefore we have to reenable the depth buffer here
         _spriteBatch.Begin(depthStencilState: DepthStencilState.Default);
-        _spriteBatch.DrawString(font, "Map: " + _mapIndex, new Vector2(10, 10), Color.White);
+
+        DrawHud();
+
         _spriteBatch.End();
 
         base.Draw(gameTime);
     }
 
+    private void DrawHud()
+    {
+        DrawShadowedString(font, "Map: " + _mapIndex, new Vector2(10, 10), Color.White);
+
+        List<int> playersAlive = new List<int>();
+        foreach (Player p in _map.Players)
+        {
+            if (p.IsAlive)
+            {
+                playersAlive.Add(p.ID);
+            }
+        }
+
+        DrawShadowedString(font, "Players alive: " + playersAlive.Count, new Vector2(10, 60), Color.White);
+
+        // TODO (fbuetle) draw overlay instead of strings
+        switch (_scoreState)
+        {
+            case ScoreState.None:
+                if (playersAlive.Count == 1)
+                {
+                    _scoreState = ScoreState.Winner;
+                    _winnerID = playersAlive[0];
+                }
+                else if (playersAlive.Count == 0)
+                {
+                    _scoreState = ScoreState.Draw;
+                }
+                break;
+            case ScoreState.Winner:
+                DrawShadowedString(font, "Winner: Player " + (_winnerID + 1), new Vector2(10, 120), Color.White);
+                break;
+            case ScoreState.Draw:
+                DrawShadowedString(font, "Draw", new Vector2(10, 120), Color.White);
+                break;
+            default:
+                throw new NotSupportedException(String.Format("Scorestate type '{0}' is not supported", _scoreState));
+        }
+    }
+
+    private void DrawShadowedString(SpriteFont font, string value, Vector2 position, Color color)
+    {
+        _spriteBatch.DrawString(font, value, position + new Vector2(1.0f, 1.0f), Color.Black);
+        _spriteBatch.DrawString(font, value, position, color);
+    }
 }

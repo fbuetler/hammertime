@@ -39,9 +39,11 @@ public class Map
     private Tile[,,] _tiles;
 
 
+    public List<Player> Players
+    {
+        get { return _players; }
+    }
     private List<Player> _players = new List<Player>();
-
-    private int playersLoaded = 0;
 
     public Map(Game game, IServiceProvider serviceProvider, Stream fileStream)
     {
@@ -98,7 +100,7 @@ public class Map
             }
         }
 
-        if (playersLoaded < GameMain.NumberOfPlayers)
+        if (_players.Count < GameMain.NumberOfPlayers)
         {
             throw new NotSupportedException("A map must have starting points for all players");
         }
@@ -142,7 +144,7 @@ public class Map
     private Tile LoadPlayerStartTile(int x, int z)
     {
         // ignore starting tiles if already all players are loaded
-        if (playersLoaded < GameMain.NumberOfPlayers)
+        if (_players.Count < GameMain.NumberOfPlayers)
         {
             _players.Add(LoadPlayer(x, 1, z));
         }
@@ -151,7 +153,7 @@ public class Map
 
     private Player LoadPlayer(float x, float y, float z)
     {
-        return new Player(this, playersLoaded++, new Vector3(x, y, z));
+        return new Player(this, _players.Count, new Vector3(x, y, z));
     }
 
     public void Dispose()
@@ -203,7 +205,7 @@ public class Map
 
     private void UpdateTiles(GameTime gameTime)
     {
-        Boolean[] isPlayerStandingOnAnyTile = new Boolean[_players.Count];
+        bool[] isPlayerStandingOnAnyTile = new bool[_players.Count];
 
         // TODO (fbuetler) investigate why sometimes the wrong tiles are breaking
         foreach (Tile t in _tiles)
@@ -219,7 +221,7 @@ public class Map
             {
                 Player p = _players[j];
 
-                if (!p.IsStandingOnTile)
+                if (!p.IsAlive)
                 {
                     // HACK (fbuetler) a falling player should not interact with tiles
                     continue;
@@ -247,7 +249,10 @@ public class Map
         // TODO (fbuetler) a bit ugly but is there another efficient way?
         for (int i = 0; i < isPlayerStandingOnAnyTile.Length; i++)
         {
-            _players[i].IsStandingOnTile = isPlayerStandingOnAnyTile[i];
+            if (!isPlayerStandingOnAnyTile[i])
+            {
+                OnPlayerFall(_players[i]);
+            }
         }
     }
 
@@ -260,6 +265,12 @@ public class Map
     {
         tile.OnExit(player);
     }
+
+    private void OnPlayerFall(Player player)
+    {
+        player.OnKilled();
+    }
+
 
     private void OnPlayerHit(Player player)
     {

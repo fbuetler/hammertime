@@ -23,12 +23,13 @@ public class Player : GameObject
     private Vector2 _aiming;
     private bool _isThrowing;
 
-    public Boolean IsStandingOnTile
+    // a player is alive as long as it stands on the platform
+    public bool IsAlive
     {
-        set { _isFalling = _isFalling || !value; }
-        get { return !_isFalling; }
+        get { return _isAlive; }
     }
-    private Boolean _isFalling;
+    private bool _isAlive;
+
     public BoundingBox BoundingBox
     {
         get
@@ -82,7 +83,7 @@ public class Player : GameObject
     {
         _pos = position;
         _velocity = Vector3.Zero;
-        _isFalling = false;
+        _isAlive = true;
         _hammer = new Hammer(_map, this);
     }
 
@@ -180,7 +181,7 @@ public class Player : GameObject
 
         _velocity.Y = WalkOffMap(gameTime, _velocity.Y);
 
-        if (!_isFalling)
+        if (_isAlive) // not falling
         {
             _velocity *= GroundDragFactor;
         }
@@ -209,13 +210,12 @@ public class Player : GameObject
 
     private float WalkOffMap(GameTime gameTime, float velocityY)
     {
-        if (_isFalling)
+        if (_isAlive)
         {
-            GamePad.SetVibration(_id, 0.5f, 0.5f, 0.5f, 0.5f);
-            return velocityY;
+            return 0;
         }
 
-        return 0;
+        return velocityY;
     }
 
     private void HandleCollisions()
@@ -347,6 +347,15 @@ public class Player : GameObject
     public void OnHit()
     {
         // TODO (fbuetler) push back
+    }
+
+    public void OnKilled()
+    {
+        _isAlive = false;
+
+        GamePad.SetVibration(_id, 0.5f, 0.5f, 0.5f, 0.5f);
+
+        // TODO (fbuetler) add fall sound
     }
 
     public override void Draw(Matrix view, Matrix projection)

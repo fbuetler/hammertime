@@ -46,17 +46,21 @@ public class Hammer : GameObject
 
         _map = map;
 
-        _owner = owner;
-        _isThrown = false;
-        _isReturning = false;
-
         LoadContent();
 
+        Reset(owner);
     }
 
     public void LoadContent()
     {
         _model = _map.Content.Load<Model>("cube");
+    }
+
+    public void Reset(Player owner)
+    {
+        _owner = owner;
+        _isThrown = false;
+        _isReturning = false;
     }
 
     public override void Update(GameTime gameTime, KeyboardState keyboardState, GamePadState gamePadState)

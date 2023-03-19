@@ -32,7 +32,7 @@ public class Tile : GameObject
         }
     }
 
-    public Boolean IsBroken
+    public bool IsBroken
     {
         get { return _healthPoints <= 0; }
     }
