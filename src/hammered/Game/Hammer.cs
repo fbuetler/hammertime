@@ -53,8 +53,8 @@ public class Hammer : GameObject
     public const float Depth = 0.5f;
 
     // constants for controlling throwing
-    private const float ThrowSpeed = 10f;
-    private const float MaxThrowDistance = 5f;
+    private const float ThrowSpeed = 20f;
+    private const float MaxThrowDistance = 30f;
 
     // TODO (fbuetler) deacclerate when close to player on return/before hit
 
@@ -97,7 +97,7 @@ public class Hammer : GameObject
             return;
         }
 
-        if (_isReturning && (_pos - _owner.Position).LengthSquared() < 1)
+        if (_isReturning && (_pos - _owner.Position).LengthSquared() < 1f)
         {
             _isFlying = false;
             _isReturning = false;
@@ -112,7 +112,11 @@ public class Hammer : GameObject
             _dir.Normalize();
             _isReturning = true;
         }
-
+        if (_isReturning) {
+            _dir.X = _owner.Position.X - _pos.X;
+            _dir.Y = _owner.Position.Z - _pos.Z;
+            _dir.Normalize();
+        }
         float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
         _pos.X += _dir.X * elapsed * ThrowSpeed;
         _pos.Z += _dir.Y * elapsed * ThrowSpeed;
