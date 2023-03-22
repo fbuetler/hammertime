@@ -11,6 +11,7 @@ public class Hammer : GameObject
     private Map _map;
 
     private Model _model;
+    private Matrix _modelScale;
 
     // hammer state
     private Player _owner;
@@ -30,6 +31,10 @@ public class Hammer : GameObject
             );
         }
     }
+
+    public const float Width = 0.5f;
+    public const float Height = 0.5f;
+    public const float Depth = 0.5f;
 
     // constants for controlling throwing
     private const float ThrowSpeed = 10f;
@@ -54,6 +59,12 @@ public class Hammer : GameObject
     public void LoadContent()
     {
         _model = _map.Content.Load<Model>("cube");
+
+        BoundingBox size = GetModelSize(_model);
+        float xScale = Width / (size.Max.X - size.Min.X);
+        float yScale = Height / (size.Max.Y - size.Min.Y);
+        float zScale = Depth / (size.Max.Z - size.Min.Z);
+        _modelScale = Matrix.CreateScale(xScale, yScale, zScale);
     }
 
     public void Reset(Player owner)
@@ -112,16 +123,16 @@ public class Hammer : GameObject
 
         // TODO (fbuetler) fix angle
         float throwAngle = (float)Math.Atan(_dir.Y / _dir.X);
-        Quaternion rotation = Quaternion.CreateFromAxisAngle(Vector3.UnitY, (float)throwAngle);
+        Quaternion rotationQuaterion = Quaternion.CreateFromAxisAngle(Vector3.UnitY, (float)throwAngle);
 
-        Matrix rotationMatrix = Matrix.CreateFromQuaternion(rotation);
+        Matrix rotation = Matrix.CreateFromQuaternion(rotationQuaterion);
         Matrix translation = Matrix.CreateTranslation(_pos);
 
-        Matrix world = rotationMatrix * translation;
+        Matrix world = _modelScale * rotation * translation;
         DrawModel(_model, world, view, projection);
 
         // TODO (fbuetler) fix hitbox
-        world = rotationMatrix * Matrix.Identity;
+        world = rotation * Matrix.Identity;
         // _map.DebugDraw.Begin(world, view, projection);
         // _map.DebugDraw.DrawWireBox(BoundingBox, Color.Red);
         // _map.DebugDraw.End();

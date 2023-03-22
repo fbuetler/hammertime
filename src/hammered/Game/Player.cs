@@ -10,6 +10,7 @@ public class Player : GameObject
     private Map _map;
 
     private Model _model;
+    private Matrix _modelScale;
 
     public int ID { get { return _id; } }
     private int _id;
@@ -42,9 +43,9 @@ public class Player : GameObject
     }
 
     // dimensions
-    public const int Height = 1;
-    public const int Width = 1;
-    public const int Depth = 1;
+    public const float Height = 1f;
+    public const float Width = 1f;
+    public const float Depth = 1f;
 
     // constants for controlling horizontal movement
     private const float MoveAcceleration = 1300f;
@@ -77,6 +78,12 @@ public class Player : GameObject
     public void LoadContent()
     {
         _model = _map.Content.Load<Model>("cube");
+
+        BoundingBox size = GetModelSize(_model);
+        float xScale = Width / (size.Max.X - size.Min.X);
+        float yScale = Height / (size.Max.Y - size.Min.Y);
+        float zScale = Depth / (size.Max.Z - size.Min.Z);
+        _modelScale = Matrix.CreateScale(xScale, yScale, zScale);
     }
 
     public void Reset(Vector3 position)
@@ -364,7 +371,7 @@ public class Player : GameObject
 
         // TODO (fbuetler) rotate player into walking direction
 
-        Matrix world = translation;
+        Matrix world = _modelScale * translation;
         DrawModel(_model, world, view, projection);
 
         _hammer.Draw(view, projection);
