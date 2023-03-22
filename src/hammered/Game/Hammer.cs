@@ -58,7 +58,7 @@ public class Hammer : GameObject
 
     public void LoadContent()
     {
-        _model = _map.Content.Load<Model>("cube");
+        _model = _map.Content.Load<Model>("Hammer/hammerCube");
 
         BoundingBox size = GetModelSize(_model);
         float xScale = Width / (size.Max.X - size.Min.X);
