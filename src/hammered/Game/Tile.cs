@@ -77,7 +77,7 @@ public class Tile : GameObject
 
     public void LoadContent()
     {
-        _model = _map.Content.Load<Model>("cube");
+        _model = _map.Content.Load<Model>("debug_cube");
     }
 
     public void Reset(TileCollision collision)
