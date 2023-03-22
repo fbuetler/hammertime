@@ -21,6 +21,7 @@ public class Tile : GameObject
     }
     Map _map;
 
+    // TODO (fbuetler) Bounding box should rotate with hammer
     public BoundingBox BoundingBox
     {
         get

@@ -187,6 +187,16 @@ public class Map
             );
     }
 
+    public HammerThrow[] GetHammerThrows()
+    {
+        HammerThrow[] hammers = new HammerThrow[GameMain.NumberOfPlayers];
+        for (int i = 0; i < GameMain.NumberOfPlayers; i++)
+        {
+            hammers[i] = _players[i].Hammer.GetHammerThrow();
+        }
+        return hammers;
+    }
+
     public void Update(GameTime gameTime, KeyboardState keyboardState, GamePadState[] gamePadStates)
     {
         // IMPORTANT! UpdatePlayers has to be AFTER UpdateTiles because of isPlayerStandingOnAnyTile

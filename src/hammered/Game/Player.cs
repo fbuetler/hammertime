@@ -17,9 +17,11 @@ public class Player : GameObject
 
     // player state
     public Vector3 Position { get { return _pos; } }
-    private Vector3 _pos;
+    private Vector3 _pos; // TODO (fbuetler) use center as positions instead of top left corner
     private Vector2 _movement;
     private Vector3 _velocity;
+
+    public Hammer Hammer { get { return _hammer; } }
     private Hammer _hammer;
     private Vector2 _aiming;
     private bool _isThrowing;
@@ -31,6 +33,7 @@ public class Player : GameObject
     }
     private bool _isAlive;
 
+    // TODO (fbuetler) Bounding box should rotate with hammer
     public BoundingBox BoundingBox
     {
         get
@@ -294,7 +297,49 @@ public class Player : GameObject
 
     private void HandleHammerCollisions()
     {
-        // TODO (fbuetler) handle collosions with hammers
+        HammerThrow[] hammers = _map.GetHammerThrows();
+        foreach (HammerThrow hammer in hammers)
+        {
+            if (!hammer.IsFlying || hammer.Owner.ID == _id)
+            {
+                continue;
+            }
+            if (BoundingBox.Intersects(hammer.BoundingBox))
+            {
+                Vector3 depth = intersectionDepth(BoundingBox, hammer.BoundingBox);
+
+                float absDepthX = Math.Abs(depth.X);
+                float absDepthZ = Math.Abs(depth.Z);
+
+                // TODO (fbuetler) do we have to use the hammers velocity or is collision resolution enough
+                // resolve the collision along the shallow axis
+                if (absDepthX < absDepthZ)
+                {
+                    _pos = new Vector3(
+                        _pos.X + depth.X,
+                        _pos.Y,
+                        _pos.Z
+                    );
+                }
+                else
+                {
+                    _pos = new Vector3(
+                        _pos.X,
+                        _pos.Y,
+                        _pos.Z + depth.Z
+                    );
+                }
+
+                // block player from walking, but not from falling
+                _velocity = new Vector3(
+                    0,
+                    _velocity.Y,
+                    0
+                );
+
+                OnHit();
+            }
+        }
     }
 
     private Vector3 intersectionDepth(BoundingBox a, BoundingBox b)
@@ -353,7 +398,7 @@ public class Player : GameObject
 
     public void OnHit()
     {
-        // TODO (fbuetler) push back
+        // TODO (fbuetler) play sound
     }
 
     public void OnKilled()

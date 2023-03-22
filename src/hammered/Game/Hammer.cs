@@ -5,6 +5,22 @@ using Microsoft.Xna.Framework.Input;
 
 namespace hammered;
 
+public struct HammerThrow
+{
+    public Player Owner;
+    public BoundingBox BoundingBox;
+    public Vector2 Direction;
+    public bool IsFlying;
+
+    public HammerThrow(Player o, BoundingBox b, Vector2 d, bool f)
+    {
+        Owner = o;
+        BoundingBox = b;
+        Direction = d;
+        IsFlying = f;
+    }
+}
+
 public class Hammer : GameObject
 {
 
@@ -15,10 +31,10 @@ public class Hammer : GameObject
 
     // hammer state
     private Player _owner;
+    private Vector3 _origin;
     private Vector2 _dir;
     private Vector3 _pos;
-    private Vector3 _origin;
-    private bool _isThrown;
+    private bool _isFlying;
     private bool _isReturning;
 
     public BoundingBox BoundingBox
@@ -27,7 +43,7 @@ public class Hammer : GameObject
         {
             return new BoundingBox(
                 new Vector3(_pos.X, _pos.Y, _pos.Z),
-                new Vector3(_pos.X + Player.Width, _pos.Y + Player.Height, _pos.Z + Player.Depth)
+                new Vector3(_pos.X + Hammer.Width, _pos.Y + Hammer.Height, _pos.Z + Hammer.Depth)
             );
         }
     }
@@ -70,20 +86,20 @@ public class Hammer : GameObject
     public void Reset(Player owner)
     {
         _owner = owner;
-        _isThrown = false;
+        _isFlying = false;
         _isReturning = false;
     }
 
     public override void Update(GameTime gameTime, KeyboardState keyboardState, GamePadState gamePadState)
     {
-        if (!_isThrown)
+        if (!_isFlying)
         {
             return;
         }
 
         if (_isReturning && (_pos - _owner.Position).LengthSquared() < 1)
         {
-            _isThrown = false;
+            _isFlying = false;
             _isReturning = false;
             _owner.OnHammerReturn();
         }
@@ -104,19 +120,24 @@ public class Hammer : GameObject
 
     public void Throw(Vector2 direction)
     {
-        if (!_isThrown && direction != Vector2.Zero)
+        if (!_isFlying && direction != Vector2.Zero)
         {
             _pos = _owner.Position;
             _origin = _pos;
             _dir = direction;
 
-            _isThrown = true;
+            _isFlying = true;
         }
+    }
+
+    public HammerThrow GetHammerThrow()
+    {
+        return new HammerThrow(_owner, BoundingBox, _dir, _isFlying);
     }
 
     public override void Draw(Matrix view, Matrix projection)
     {
-        if (!_isThrown)
+        if (!_isFlying)
         {
             return;
         }
