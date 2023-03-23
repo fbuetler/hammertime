@@ -173,7 +173,8 @@ public class Player : GameObject
             _aiming.X = _movement.X;
             _aiming.Y = _movement.Y;
         }
-        //check if player is alive before throwing hammer.
+
+        // check if player is alive before throwing hammer
         _isThrowing = _isAlive && (keyboardState.IsKeyDown(Keys.Space) || gamePadState.IsButtonDown(ThrowButton));
     }
 
@@ -215,8 +216,6 @@ public class Player : GameObject
 
         if (_pos.Z == prevPos.Z)
             _velocity.Z = 0;
-
-        
     }
 
     private float WalkOffMap(GameTime gameTime, float velocityY)
@@ -314,7 +313,6 @@ public class Player : GameObject
 
                 // TODO (fbuetler) do we have to use the hammers velocity or is collision resolution enough
                 // resolve the collision along the shallow axis
-
                 if (absDepthX < absDepthZ)
                 {
                     _pos = new Vector3(
@@ -378,8 +376,9 @@ public class Player : GameObject
     }
 
     private void DoThrowHammer()
-    {   //if killed your hammer is deleted.
-        if (!_isAlive && _hammer.IsReturning) 
+    {
+        // if player is killed, its hammer is deleted, once it starts returning
+        if (!_isAlive && _hammer.IsReturning)
         {
             _hammer.Reset(this);
         }

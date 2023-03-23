@@ -73,6 +73,7 @@ public class Hammer : GameObject
 
         Reset(owner);
     }
+
     public void LoadContent()
     {
         _model = _map.Content.Load<Model>("Hammer/hammerCube");
@@ -98,6 +99,7 @@ public class Hammer : GameObject
             return;
         }
 
+        // hammer is close to the player, it is returned
         if (_isReturning && (_pos - _owner.Position).LengthSquared() < 1f)
         {
             _isFlying = false;
@@ -105,6 +107,7 @@ public class Hammer : GameObject
             _owner.OnHammerReturn();
         }
 
+        // if max distance is reached, make it return
         if ((_pos - _origin).LengthSquared() > MaxThrowDistance * MaxThrowDistance)
         {
             // TODO (fbuetler) fix buggy return path (should follow player even if falling)
@@ -113,12 +116,15 @@ public class Hammer : GameObject
             _dir.Normalize();
             _isReturning = true;
         }
-        //if hammer is returning it should always go to player.
-        if (_isReturning) {
+
+        // if hammer is returning it should always go to player
+        if (_isReturning)
+        {
             _dir.X = _owner.Position.X - _pos.X;
             _dir.Y = _owner.Position.Z - _pos.Z;
             _dir.Normalize();
         }
+
         float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
         _pos.X += _dir.X * elapsed * ThrowSpeed;
         _pos.Z += _dir.Y * elapsed * ThrowSpeed;
