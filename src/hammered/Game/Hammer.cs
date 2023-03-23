@@ -37,7 +37,6 @@ public class Hammer : GameObject
     private bool _isFlying;
     public bool IsReturning { get { return _isReturning; } }
     private bool _isReturning;
-    private bool _isDeleted;
 
     public BoundingBox BoundingBox
     {
