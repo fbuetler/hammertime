@@ -173,8 +173,8 @@ public class Player : GameObject
             _aiming.X = _movement.X;
             _aiming.Y = _movement.Y;
         }
-
-        _isThrowing = keyboardState.IsKeyDown(Keys.Space) || gamePadState.IsButtonDown(ThrowButton);
+        //check if player is alive before throwing hammer.
+        _isThrowing = _isAlive && (keyboardState.IsKeyDown(Keys.Space) || gamePadState.IsButtonDown(ThrowButton));
     }
 
     private void ApplyPhysics(GameTime gameTime)
@@ -216,6 +216,7 @@ public class Player : GameObject
         if (_pos.Z == prevPos.Z)
             _velocity.Z = 0;
 
+        
     }
 
     private float WalkOffMap(GameTime gameTime, float velocityY)
@@ -313,6 +314,7 @@ public class Player : GameObject
 
                 // TODO (fbuetler) do we have to use the hammers velocity or is collision resolution enough
                 // resolve the collision along the shallow axis
+
                 if (absDepthX < absDepthZ)
                 {
                     _pos = new Vector3(
@@ -376,7 +378,11 @@ public class Player : GameObject
     }
 
     private void DoThrowHammer()
-    {
+    {   //if killed your hammer is deleted.
+        if (!_isAlive && _hammer._isReturning) 
+        {
+            _hammer.Reset(this);
+        }
         if (_isThrowing)
         {
             _hammer.Throw(_aiming);
@@ -405,7 +411,7 @@ public class Player : GameObject
     {
         _isAlive = false;
 
-        GamePad.SetVibration(_id, 0.5f, 0.5f, 0.5f, 0.5f);
+        GamePad.SetVibration(_id, 0.2f, 0.2f, 0.2f, 0.2f);
 
         // TODO (fbuetler) add fall sound
     }

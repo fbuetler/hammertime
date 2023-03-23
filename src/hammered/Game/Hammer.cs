@@ -35,7 +35,8 @@ public class Hammer : GameObject
     private Vector2 _dir;
     private Vector3 _pos;
     private bool _isFlying;
-    private bool _isReturning;
+    public bool _isReturning;
+    private bool _isDeleted;
 
     public BoundingBox BoundingBox
     {
@@ -54,7 +55,7 @@ public class Hammer : GameObject
 
     // constants for controlling throwing
     private const float ThrowSpeed = 20f;
-    private const float MaxThrowDistance = 30f;
+    private const float MaxThrowDistance = 20f;
 
     // TODO (fbuetler) deacclerate when close to player on return/before hit
 
@@ -112,6 +113,7 @@ public class Hammer : GameObject
             _dir.Normalize();
             _isReturning = true;
         }
+        //if hammer is returning it should always go to player.
         if (_isReturning) {
             _dir.X = _owner.Position.X - _pos.X;
             _dir.Y = _owner.Position.Z - _pos.Z;
