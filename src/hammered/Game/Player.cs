@@ -379,7 +379,7 @@ public class Player : GameObject
 
     private void DoThrowHammer()
     {   //if killed your hammer is deleted.
-        if (!_isAlive && _hammer._isReturning) 
+        if (!_isAlive && _hammer.IsReturning) 
         {
             _hammer.Reset(this);
         }

@@ -35,7 +35,8 @@ public class Hammer : GameObject
     private Vector2 _dir;
     private Vector3 _pos;
     private bool _isFlying;
-    public bool _isReturning;
+    public bool IsReturning { get { return _isReturning; } }
+    private bool _isReturning;
     private bool _isDeleted;
 
     public BoundingBox BoundingBox
@@ -72,7 +73,6 @@ public class Hammer : GameObject
 
         Reset(owner);
     }
-
     public void LoadContent()
     {
         _model = _map.Content.Load<Model>("Hammer/hammerCube");
