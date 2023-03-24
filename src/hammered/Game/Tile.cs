@@ -79,7 +79,7 @@ public class Tile : GameObject
 
     public void LoadContent()
     {
-        _model = _map.Content.Load<Model>("Tile/debug_cube");
+        _model = _map.Content.Load<Model>("Tile/tileCube");
 
         BoundingBox size = GetModelSize(_model);
         float xScale = Width / (size.Max.X - size.Min.X);
