@@ -14,3 +14,15 @@ Our game is a 2.5-dimensional, top-down game. The players find themselves on a p
 The result will be a game which feels slightly chaotic and surprising, but contains multiple strategic elements. Ideally, the game will also include items, of both chaotic and strategic nature, and obstacles which could block the travelling path of a hammer.
 
 Members: Frederic Necker, Florian Buetler, Lasse Meinen, Deniz Yildiz, and Shiran Sun 
+
+## Controls:
+
+Every player:
+* Left thumbstick: move player
+* Right thumbstick: aim with hammer
+* Right shoulder button: throw hammer
+
+Only player 1:
+* Triangle button: go to next map (this is only temporary)
+* Start button: restart map 
+* Back button: exit 

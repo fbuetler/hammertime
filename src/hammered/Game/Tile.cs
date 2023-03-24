@@ -21,6 +21,7 @@ public class Tile : GameObject
     }
     Map _map;
 
+    // TODO (fbuetler) Bounding box should rotate with hammer
     public BoundingBox BoundingBox
     {
         get
@@ -47,6 +48,7 @@ public class Tile : GameObject
     private HashSet<int> _visitors;
 
     private Model _model;
+    private Matrix _modelScale;
 
     public Vector3 Pos
     {
@@ -54,9 +56,9 @@ public class Tile : GameObject
     }
     private Vector3 _pos;
 
-    public const int Width = 1;
-    public const int Height = 1;
-    public const int Depth = 1;
+    public const float Width = 1f;
+    public const float Height = 1f;
+    public const float Depth = 1f;
 
     private const float maxHealthPoints = 90f;
 
@@ -77,7 +79,13 @@ public class Tile : GameObject
 
     public void LoadContent()
     {
-        _model = _map.Content.Load<Model>("debug_cube");
+        _model = _map.Content.Load<Model>("Tile/tileCube");
+
+        BoundingBox size = GetModelSize(_model);
+        float xScale = Width / (size.Max.X - size.Min.X);
+        float yScale = Height / (size.Max.Y - size.Min.Y);
+        float zScale = Depth / (size.Max.Z - size.Min.Z);
+        _modelScale = Matrix.CreateScale(xScale, yScale, zScale);
     }
 
     public void Reset(TileCollision collision)
@@ -139,7 +147,7 @@ public class Tile : GameObject
 
         Matrix translation = Matrix.CreateTranslation(_pos);
 
-        Matrix world = translation;
+        Matrix world = _modelScale * translation;
         DrawModel(_model, world, view, projection);
 
         _map.DebugDraw.Begin(Matrix.Identity, view, projection);

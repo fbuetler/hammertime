@@ -10,15 +10,18 @@ public class Player : GameObject
     private Map _map;
 
     private Model _model;
+    private Matrix _modelScale;
 
     public int ID { get { return _id; } }
     private int _id;
 
     // player state
     public Vector3 Position { get { return _pos; } }
-    private Vector3 _pos;
+    private Vector3 _pos; // TODO (fbuetler) use center as positions instead of top left corner
     private Vector2 _movement;
     private Vector3 _velocity;
+
+    public Hammer Hammer { get { return _hammer; } }
     private Hammer _hammer;
     private Vector2 _aiming;
     private bool _isThrowing;
@@ -30,6 +33,7 @@ public class Player : GameObject
     }
     private bool _isAlive;
 
+    // TODO (fbuetler) Bounding box should rotate with hammer
     public BoundingBox BoundingBox
     {
         get
@@ -42,9 +46,9 @@ public class Player : GameObject
     }
 
     // dimensions
-    public const int Height = 1;
-    public const int Width = 1;
-    public const int Depth = 1;
+    public const float Height = 1f;
+    public const float Width = 1f;
+    public const float Depth = 1f;
 
     // constants for controlling horizontal movement
     private const float MoveAcceleration = 1300f;
@@ -76,7 +80,13 @@ public class Player : GameObject
 
     public void LoadContent()
     {
-        _model = _map.Content.Load<Model>("cube");
+        _model = _map.Content.Load<Model>("Player/playerCube");
+
+        BoundingBox size = GetModelSize(_model);
+        float xScale = Width / (size.Max.X - size.Min.X);
+        float yScale = Height / (size.Max.Y - size.Min.Y);
+        float zScale = Depth / (size.Max.Z - size.Min.Z);
+        _modelScale = Matrix.CreateScale(xScale, yScale, zScale);
     }
 
     public void Reset(Vector3 position)
@@ -164,7 +174,8 @@ public class Player : GameObject
             _aiming.Y = _movement.Y;
         }
 
-        _isThrowing = keyboardState.IsKeyDown(Keys.Space) || gamePadState.IsButtonDown(ThrowButton);
+        // check if player is alive before throwing hammer
+        _isThrowing = _isAlive && (keyboardState.IsKeyDown(Keys.Space) || gamePadState.IsButtonDown(ThrowButton));
     }
 
     private void ApplyPhysics(GameTime gameTime)
@@ -205,7 +216,6 @@ public class Player : GameObject
 
         if (_pos.Z == prevPos.Z)
             _velocity.Z = 0;
-
     }
 
     private float WalkOffMap(GameTime gameTime, float velocityY)
@@ -287,7 +297,49 @@ public class Player : GameObject
 
     private void HandleHammerCollisions()
     {
-        // TODO (fbuetler) handle collosions with hammers
+        HammerThrow[] hammers = _map.GetHammerThrows();
+        foreach (HammerThrow hammer in hammers)
+        {
+            if (!hammer.IsFlying || hammer.Owner.ID == _id)
+            {
+                continue;
+            }
+            if (BoundingBox.Intersects(hammer.BoundingBox))
+            {
+                Vector3 depth = intersectionDepth(BoundingBox, hammer.BoundingBox);
+
+                float absDepthX = Math.Abs(depth.X);
+                float absDepthZ = Math.Abs(depth.Z);
+
+                // TODO (fbuetler) do we have to use the hammers velocity or is collision resolution enough
+                // resolve the collision along the shallow axis
+                if (absDepthX < absDepthZ)
+                {
+                    _pos = new Vector3(
+                        _pos.X + depth.X,
+                        _pos.Y,
+                        _pos.Z
+                    );
+                }
+                else
+                {
+                    _pos = new Vector3(
+                        _pos.X,
+                        _pos.Y,
+                        _pos.Z + depth.Z
+                    );
+                }
+
+                // block player from walking, but not from falling
+                _velocity = new Vector3(
+                    0,
+                    _velocity.Y,
+                    0
+                );
+
+                OnHit();
+            }
+        }
     }
 
     private Vector3 intersectionDepth(BoundingBox a, BoundingBox b)
@@ -325,6 +377,11 @@ public class Player : GameObject
 
     private void DoThrowHammer()
     {
+        // if player is killed, its hammer is deleted, once it starts returning
+        if (!_isAlive && _hammer.IsReturning)
+        {
+            _hammer.Reset(this);
+        }
         if (_isThrowing)
         {
             _hammer.Throw(_aiming);
@@ -346,14 +403,14 @@ public class Player : GameObject
 
     public void OnHit()
     {
-        // TODO (fbuetler) push back
+        // TODO (fbuetler) play sound
     }
 
     public void OnKilled()
     {
         _isAlive = false;
 
-        GamePad.SetVibration(_id, 0.5f, 0.5f, 0.5f, 0.5f);
+        GamePad.SetVibration(_id, 0.2f, 0.2f, 0.2f, 0.2f);
 
         // TODO (fbuetler) add fall sound
     }
@@ -364,7 +421,7 @@ public class Player : GameObject
 
         // TODO (fbuetler) rotate player into walking direction
 
-        Matrix world = translation;
+        Matrix world = _modelScale * translation;
         DrawModel(_model, world, view, projection);
 
         _hammer.Draw(view, projection);

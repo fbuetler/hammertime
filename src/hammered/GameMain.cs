@@ -157,6 +157,7 @@ public class GameMain : Game
         // therefore we have to reenable the depth buffer here
         _spriteBatch.Begin(depthStencilState: DepthStencilState.Default);
 
+        // TODO (fbuetler) create start screen
         DrawHud();
 
         _spriteBatch.End();
@@ -194,7 +195,7 @@ public class GameMain : Game
                 }
                 break;
             case ScoreState.Winner:
-                DrawShadowedString(font, "Winner: Player " + (_winnerID + 1), new Vector2(10, 120), Color.White);
+                DrawShadowedString(font, "Winner: Player " + (_winnerID + 1), new Vector2(10, 110), Color.White);
                 break;
             case ScoreState.Draw:
                 DrawShadowedString(font, "Draw", new Vector2(10, 120), Color.White);
