@@ -47,7 +47,7 @@ public class Tile : GameObject
 
     private HashSet<int> _visitors;
 
-    private Model _model;
+    private Model[] _model;
     private Matrix _modelScale;
 
     public Vector3 Pos
@@ -79,9 +79,16 @@ public class Tile : GameObject
 
     public void LoadContent()
     {
-        _model = _map.Content.Load<Model>("Tile/tileCube");
+        _model = new Model[] {
+            _map.Content.Load<Model>("Tile/tileCube0"),
+            _map.Content.Load<Model>("Tile/tileCube1"),
+            _map.Content.Load<Model>("Tile/tileCube2"),
+            _map.Content.Load<Model>("Tile/tileCube3"),
+            _map.Content.Load<Model>("Tile/tileCube4"),
+        };
 
-        BoundingBox size = GetModelSize(_model);
+        // all models should have the same size
+        BoundingBox size = GetModelSize(_model[0]);
         float xScale = Width / (size.Max.X - size.Min.X);
         float yScale = Height / (size.Max.Y - size.Min.Y);
         float zScale = Depth / (size.Max.Z - size.Min.Z);
@@ -148,7 +155,9 @@ public class Tile : GameObject
         Matrix translation = Matrix.CreateTranslation(_pos);
 
         Matrix world = _modelScale * translation;
-        DrawModel(_model, world, view, projection);
+
+        // change tile model based on current health
+        DrawModel(_model[(int)(_healthPoints / 20)], world, view, projection);
 
         _map.DebugDraw.Begin(Matrix.Identity, view, projection);
         _map.DebugDraw.DrawWireBox(BoundingBox, Color.Black);
