@@ -201,11 +201,13 @@ public class Player : GameObject
             _velocity *= AirDragFactor;
         }
 
+        HandleHammerCollisions(gameTime);
+
         // apply velocity
         _pos += _velocity * elapsed;
 
         // if the player is now colliding with the map, separate them.
-        HandleCollisions();
+        HandleTileCollisions();
 
         // if the collision stopped us from moving, reset the velocity to zero
         if (_pos.X == prevPos.X)
@@ -228,11 +230,7 @@ public class Player : GameObject
         return velocityY;
     }
 
-    private void HandleCollisions()
-    {
-        HandleTileCollisions();
-        HandleHammerCollisions();
-    }
+    
 
     private void HandleTileCollisions()
     {
@@ -295,7 +293,7 @@ public class Player : GameObject
         }
     }
 
-    private void HandleHammerCollisions()
+    private void HandleHammerCollisions(GameTime gameTimes)
     {
         HammerThrow[] hammers = _map.GetHammerThrows();
         foreach (HammerThrow hammer in hammers)
@@ -306,38 +304,22 @@ public class Player : GameObject
             }
             if (BoundingBox.Intersects(hammer.BoundingBox))
             {
-                Vector3 depth = intersectionDepth(BoundingBox, hammer.BoundingBox);
-
-                float absDepthX = Math.Abs(depth.X);
-                float absDepthZ = Math.Abs(depth.Z);
-
-                // TODO (fbuetler) do we have to use the hammers velocity or is collision resolution enough
-                // resolve the collision along the shallow axis
-                if (absDepthX < absDepthZ)
+                Player hamplayer = hammer.Owner;
+                Hammer ham = hamplayer.Hammer;
+                if (!ham.CheckHit(_id)) 
                 {
-                    _pos = new Vector3(
-                        _pos.X + depth.X,
-                        _pos.Y,
-                        _pos.Z
-                    );
+                    ham.HitPlayer(this._id, (float)gameTimes.TotalGameTime.TotalSeconds, _pos.X, _pos.Z);
+                    OnHit();
                 }
-                else
+                if (!ham.CheckDist(_id, _pos.X, _pos.Z, 3f)) 
                 {
-                    _pos = new Vector3(
-                        _pos.X,
-                        _pos.Y,
-                        _pos.Z + depth.Z
-                    );
+                    float elapsed = (float)gameTimes.ElapsedGameTime.TotalSeconds;
+                    _pos.X += ham.Dir.X * elapsed * ham.Speed;
+                    _pos.Z += ham.Dir.Y * elapsed * ham.Speed;
+                    _velocity.X = 0;
+                    _velocity.Z = 0;
                 }
-
-                // block player from walking, but not from falling
-                _velocity = new Vector3(
-                    0,
-                    _velocity.Y,
-                    0
-                );
-
-                OnHit();
+                
             }
         }
     }
