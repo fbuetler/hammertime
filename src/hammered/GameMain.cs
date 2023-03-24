@@ -72,8 +72,9 @@ public class GameMain : Game
         base.Initialize();
 
         // set window size to 720p
-        _graphics.PreferredBackBufferWidth = 1280;
-        _graphics.PreferredBackBufferHeight = 720;
+        _graphics.PreferredBackBufferWidth = 1920;
+        _graphics.PreferredBackBufferHeight = 1080;
+        _graphics.IsFullScreen = false;
         _graphics.ApplyChanges();
 
         _debugDraw = new DebugDraw(GraphicsDevice);

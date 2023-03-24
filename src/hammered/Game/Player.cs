@@ -315,6 +315,7 @@ public class Player : GameObject
                 }
 
                 // TODO (fbuetler) can we remove this func and _hitX, _hitZ
+                // TODO (fbuetler) give this constant a reasonable name
                 if (hammer.CheckDist(_id, _pos.X, _pos.Z, 3f))
                 {
                     _pos.X += hammer.Dir.X * elapsed * hammer.Speed;
