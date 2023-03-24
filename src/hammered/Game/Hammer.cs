@@ -1,27 +1,9 @@
+using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using System;
-using System.Reflection.Metadata.Ecma335;
-using System.Security.Cryptography.X509Certificates;
 
 namespace hammered;
-
-public struct HammerThrow
-{
-    public Player Owner;
-    public BoundingBox BoundingBox;
-    public Vector2 Direction;
-    public bool IsFlying;
-
-    public HammerThrow(Player o, BoundingBox b, Vector2 d, bool f)
-    {
-        Owner = o;
-        BoundingBox = b;
-        Direction = d;
-        IsFlying = f;
-    }
-}
 
 public class Hammer : GameObject
 {
@@ -31,23 +13,29 @@ public class Hammer : GameObject
     private Model _model;
     private Matrix _modelScale;
 
-    // hammer state
+    public int OwnerID { get { return _owner.ID; } }
     private Player _owner;
+
+    // hammer position
     private Vector3 _origin;
-    private Vector2 _dir;
     public Vector2 Dir { get { return _dir; } }
+    private Vector2 _dir;
     private Vector3 _pos;
+    public float Speed { get { return _speed; } }
+    private float _speed;
+
+    // hammer state
+    public bool IsFlying { get { return _isFlying; } }
     private bool _isFlying;
     public bool IsReturning { get { return _isReturning; } }
     private bool _isReturning;
-    private bool _isDeleted;
-    private bool[] _playerHit = new bool[] {false,false,false,false};
-    private float[] _hitTimes = new float[] { 0f, 0f, 0f, 0f };
+
+    // hamer hit
+    private bool[] _playerHit = new bool[] { false, false, false, false };
+    private float[] _hitTime = new float[] { 0f, 0f, 0f, 0f };
     private float[] _hitX = new float[] { 0f, 0f, 0f, 0f };
     private float[] _hitZ = new float[] { 0f, 0f, 0f, 0f };
-    public void HitPlayer(int id, float time, float x, float z) { _playerHit[id] = true; _hitTimes[id] = time; _hitX[id] = x; _hitZ[id] = z; }
-    public bool CheckHit(int i) { return _playerHit[i];  }
-    public bool CheckDist(int id, float x, float z, float maxdist) { return (float)Math.Sqrt(((_hitX[id] - x) * (_hitX[id] - x)) + ((_hitZ[id] - z) * (_hitZ[id] - z))) > maxdist; }
+
     public BoundingBox BoundingBox
     {
         get
@@ -64,11 +52,9 @@ public class Hammer : GameObject
     public const float Depth = 0.5f;
 
     // constants for controlling throwing
-    private const float _throwSpeed = 20f;
-    public float ThrowSpeed { get { return _throwSpeed; } }
+    private const float ThrowSpeed = 20f;
     private const float MaxThrowDistance = 20f;
-    private float _speed = 0f;
-    public float Speed { get { return _speed; } }
+
     // TODO (fbuetler) deacclerate when close to player on return/before hit
 
     public Hammer(Map map, Player owner)
@@ -95,14 +81,14 @@ public class Hammer : GameObject
         float zScale = Depth / (size.Max.Z - size.Min.Z);
         _modelScale = Matrix.CreateScale(xScale, yScale, zScale);
     }
-   
+
     public void Reset(Player owner)
     {
         _owner = owner;
         _isFlying = false;
         _isReturning = false;
-        //TODO(fred) replace the speed with some actual speed. not just a fixed number
-        _speed = _throwSpeed;
+        // TODO (fred) replace the speed with some actual speed. not just a fixed number
+        _speed = ThrowSpeed;
         _playerHit = new bool[] { false, false, false, false };
     }
 
@@ -142,8 +128,8 @@ public class Hammer : GameObject
         }
 
         float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
-        _pos.X += _dir.X * elapsed * _throwSpeed;
-        _pos.Z += _dir.Y * elapsed * _throwSpeed;
+        _pos.X += _dir.X * elapsed * ThrowSpeed;
+        _pos.Z += _dir.Y * elapsed * ThrowSpeed;
     }
 
     public void Throw(Vector2 direction)
@@ -158,9 +144,22 @@ public class Hammer : GameObject
         }
     }
 
-    public HammerThrow GetHammerThrow()
+    public void HitPlayer(int id, float time, float x, float z)
     {
-        return new HammerThrow(_owner, BoundingBox, _dir, _isFlying);
+        _playerHit[id] = true;
+        _hitTime[id] = time;
+        _hitX[id] = x;
+        _hitZ[id] = z;
+    }
+
+    public bool IsPlayerHit(int i)
+    {
+        return _playerHit[i];
+    }
+
+    public bool CheckDist(int id, float x, float z, float maxdist)
+    {
+        return (float)Math.Sqrt(((_hitX[id] - x) * (_hitX[id] - x)) + ((_hitZ[id] - z) * (_hitZ[id] - z))) <= maxdist;
     }
 
     public override void Draw(Matrix view, Matrix projection)

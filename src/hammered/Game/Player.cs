@@ -230,8 +230,6 @@ public class Player : GameObject
         return velocityY;
     }
 
-    
-
     private void HandleTileCollisions()
     {
         BoundingBox bounds = BoundingBox;
@@ -295,31 +293,36 @@ public class Player : GameObject
 
     private void HandleHammerCollisions(GameTime gameTimes)
     {
-        HammerThrow[] hammers = _map.GetHammerThrows();
-        foreach (HammerThrow hammer in hammers)
+        float totalSeconds = (float)gameTimes.TotalGameTime.TotalSeconds;
+        float elapsed = (float)gameTimes.ElapsedGameTime.TotalSeconds;
+
+        Hammer[] hammers = _map.GetHammers();
+        foreach (Hammer hammer in hammers)
         {
-            if (!hammer.IsFlying || hammer.Owner.ID == _id)
+            // dont do collision detection if the hammer is not flying or this player is its owner
+            if (!hammer.IsFlying || hammer.OwnerID == _id)
             {
                 continue;
             }
+
+            // detect collision
             if (BoundingBox.Intersects(hammer.BoundingBox))
             {
-                Player hamplayer = hammer.Owner;
-                Hammer ham = hamplayer.Hammer;
-                if (!ham.CheckHit(_id)) 
+                // only hit player, if it is not hit already
+                if (!hammer.IsPlayerHit(_id))
                 {
-                    ham.HitPlayer(this._id, (float)gameTimes.TotalGameTime.TotalSeconds, _pos.X, _pos.Z);
+                    hammer.HitPlayer(this._id, totalSeconds, _pos.X, _pos.Z);
                     OnHit();
                 }
-                if (!ham.CheckDist(_id, _pos.X, _pos.Z, 3f)) 
+
+                if (hammer.CheckDist(_id, _pos.X, _pos.Z, 3f))
                 {
-                    float elapsed = (float)gameTimes.ElapsedGameTime.TotalSeconds;
-                    _pos.X += ham.Dir.X * elapsed * ham.Speed;
-                    _pos.Z += ham.Dir.Y * elapsed * ham.Speed;
+                    _pos.X += hammer.Dir.X * elapsed * hammer.Speed;
+                    _pos.Z += hammer.Dir.Y * elapsed * hammer.Speed;
                     _velocity.X = 0;
                     _velocity.Z = 0;
                 }
-                
+
             }
         }
     }
