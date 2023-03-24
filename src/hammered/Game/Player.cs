@@ -201,11 +201,13 @@ public class Player : GameObject
             _velocity *= AirDragFactor;
         }
 
+        HandleHammerCollisions(gameTime);
+
         // apply velocity
         _pos += _velocity * elapsed;
 
         // if the player is now colliding with the map, separate them.
-        HandleCollisions();
+        HandleTileCollisions();
 
         // if the collision stopped us from moving, reset the velocity to zero
         if (_pos.X == prevPos.X)
@@ -226,12 +228,6 @@ public class Player : GameObject
         }
 
         return velocityY;
-    }
-
-    private void HandleCollisions()
-    {
-        HandleTileCollisions();
-        HandleHammerCollisions();
     }
 
     private void HandleTileCollisions()
@@ -295,49 +291,38 @@ public class Player : GameObject
         }
     }
 
-    private void HandleHammerCollisions()
+    private void HandleHammerCollisions(GameTime gameTimes)
     {
-        HammerThrow[] hammers = _map.GetHammerThrows();
-        foreach (HammerThrow hammer in hammers)
+        float elapsed = (float)gameTimes.ElapsedGameTime.TotalSeconds;
+
+        Hammer[] hammers = _map.GetHammers();
+        foreach (Hammer hammer in hammers)
         {
-            if (!hammer.IsFlying || hammer.Owner.ID == _id)
+            // dont do collision detection if the hammer is not flying or this player is its owner
+            if (!hammer.IsFlying || hammer.OwnerID == _id)
             {
                 continue;
             }
+
+            // detect collision
             if (BoundingBox.Intersects(hammer.BoundingBox))
             {
-                Vector3 depth = intersectionDepth(BoundingBox, hammer.BoundingBox);
-
-                float absDepthX = Math.Abs(depth.X);
-                float absDepthZ = Math.Abs(depth.Z);
-
-                // TODO (fbuetler) do we have to use the hammers velocity or is collision resolution enough
-                // resolve the collision along the shallow axis
-                if (absDepthX < absDepthZ)
+                // only hit player, if it is not hit already
+                if (!hammer.IsPlayerHit(_id))
                 {
-                    _pos = new Vector3(
-                        _pos.X + depth.X,
-                        _pos.Y,
-                        _pos.Z
-                    );
-                }
-                else
-                {
-                    _pos = new Vector3(
-                        _pos.X,
-                        _pos.Y,
-                        _pos.Z + depth.Z
-                    );
+                    hammer.HitPlayer(this._id, _pos.X, _pos.Z);
+                    OnHit();
                 }
 
-                // block player from walking, but not from falling
-                _velocity = new Vector3(
-                    0,
-                    _velocity.Y,
-                    0
-                );
+                // TODO (fbuetler) can we remove this func and _hitX, _hitZ
+                if (hammer.CheckDist(_id, _pos.X, _pos.Z, 3f))
+                {
+                    _pos.X += hammer.Dir.X * elapsed * hammer.Speed;
+                    _pos.Z += hammer.Dir.Y * elapsed * hammer.Speed;
+                    _velocity.X = 0;
+                    _velocity.Z = 0;
+                }
 
-                OnHit();
             }
         }
     }

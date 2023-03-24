@@ -5,22 +5,6 @@ using Microsoft.Xna.Framework.Input;
 
 namespace hammered;
 
-public struct HammerThrow
-{
-    public Player Owner;
-    public BoundingBox BoundingBox;
-    public Vector2 Direction;
-    public bool IsFlying;
-
-    public HammerThrow(Player o, BoundingBox b, Vector2 d, bool f)
-    {
-        Owner = o;
-        BoundingBox = b;
-        Direction = d;
-        IsFlying = f;
-    }
-}
-
 public class Hammer : GameObject
 {
 
@@ -29,14 +13,27 @@ public class Hammer : GameObject
     private Model _model;
     private Matrix _modelScale;
 
-    // hammer state
+    public int OwnerID { get { return _owner.ID; } }
     private Player _owner;
+
+    // hammer position
     private Vector3 _origin;
+    public Vector2 Dir { get { return _dir; } }
     private Vector2 _dir;
     private Vector3 _pos;
+    public float Speed { get { return _speed; } }
+    private float _speed;
+
+    // hammer state
+    public bool IsFlying { get { return _isFlying; } }
     private bool _isFlying;
     public bool IsReturning { get { return _isReturning; } }
     private bool _isReturning;
+
+    // hamer hit
+    private bool[] _playerHit = new bool[] { false, false, false, false };
+    private float[] _hitX = new float[] { 0f, 0f, 0f, 0f };
+    private float[] _hitZ = new float[] { 0f, 0f, 0f, 0f };
 
     public BoundingBox BoundingBox
     {
@@ -89,6 +86,9 @@ public class Hammer : GameObject
         _owner = owner;
         _isFlying = false;
         _isReturning = false;
+        // TODO (fred) replace the speed with some actual speed. not just a fixed number
+        _speed = ThrowSpeed;
+        _playerHit = new bool[] { false, false, false, false };
     }
 
     public override void Update(GameTime gameTime, KeyboardState keyboardState, GamePadState gamePadState)
@@ -103,6 +103,7 @@ public class Hammer : GameObject
         {
             _isFlying = false;
             _isReturning = false;
+            _playerHit = new bool[] { false, false, false, false };
             _owner.OnHammerReturn();
         }
 
@@ -114,6 +115,7 @@ public class Hammer : GameObject
             _dir.Y = _owner.Position.Z - _pos.Z;
             _dir.Normalize();
             _isReturning = true;
+            _playerHit = new bool[] { false, false, false, false };
         }
 
         // if hammer is returning it should always go to player
@@ -141,9 +143,21 @@ public class Hammer : GameObject
         }
     }
 
-    public HammerThrow GetHammerThrow()
+    public void HitPlayer(int id, float x, float z)
     {
-        return new HammerThrow(_owner, BoundingBox, _dir, _isFlying);
+        _playerHit[id] = true;
+        _hitX[id] = x;
+        _hitZ[id] = z;
+    }
+
+    public bool IsPlayerHit(int i)
+    {
+        return _playerHit[i];
+    }
+
+    public bool CheckDist(int id, float x, float z, float maxdist)
+    {
+        return (float)Math.Sqrt(((_hitX[id] - x) * (_hitX[id] - x)) + ((_hitZ[id] - z) * (_hitZ[id] - z))) <= maxdist;
     }
 
     public override void Draw(Matrix view, Matrix projection)

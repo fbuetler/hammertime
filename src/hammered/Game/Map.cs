@@ -187,12 +187,12 @@ public class Map
             );
     }
 
-    public HammerThrow[] GetHammerThrows()
+    public Hammer[] GetHammers()
     {
-        HammerThrow[] hammers = new HammerThrow[GameMain.NumberOfPlayers];
+        Hammer[] hammers = new Hammer[GameMain.NumberOfPlayers];
         for (int i = 0; i < GameMain.NumberOfPlayers; i++)
         {
-            hammers[i] = _players[i].Hammer.GetHammerThrow();
+            hammers[i] = _players[i].Hammer;
         }
         return hammers;
     }
