@@ -426,8 +426,10 @@ public class Player : GameObject
 
         _hammer.Draw(view, projection);
 
+#if DEBUG
         _map.DebugDraw.Begin(Matrix.Identity, view, projection);
         _map.DebugDraw.DrawWireBox(BoundingBox, Color.White);
         _map.DebugDraw.End();
+#endif
     }
 }

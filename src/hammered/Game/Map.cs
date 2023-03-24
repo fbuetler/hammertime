@@ -303,10 +303,12 @@ public class Map
         }
 
         // draw coordinate system
+#if DEBUG
         DebugDraw.Begin(Matrix.Identity, view, projection);
         DebugDraw.DrawLine(Vector3.Zero, 30 * Vector3.UnitX, Color.Black);
         DebugDraw.DrawLine(Vector3.Zero, 30 * Vector3.UnitY, Color.Black);
         DebugDraw.DrawLine(Vector3.Zero, 30 * Vector3.UnitZ, Color.Black);
         DebugDraw.End();
+#endif
     }
 }

@@ -159,8 +159,10 @@ public class Tile : GameObject
         // change tile model based on current health
         DrawModel(_model[(int)(_healthPoints / 20)], world, view, projection);
 
+#if DEBUG
         _map.DebugDraw.Begin(Matrix.Identity, view, projection);
         _map.DebugDraw.DrawWireBox(BoundingBox, Color.Black);
         _map.DebugDraw.End();
+#endif
     }
 }
