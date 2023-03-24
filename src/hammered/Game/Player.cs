@@ -293,7 +293,6 @@ public class Player : GameObject
 
     private void HandleHammerCollisions(GameTime gameTimes)
     {
-        float totalSeconds = (float)gameTimes.TotalGameTime.TotalSeconds;
         float elapsed = (float)gameTimes.ElapsedGameTime.TotalSeconds;
 
         Hammer[] hammers = _map.GetHammers();
@@ -311,10 +310,11 @@ public class Player : GameObject
                 // only hit player, if it is not hit already
                 if (!hammer.IsPlayerHit(_id))
                 {
-                    hammer.HitPlayer(this._id, totalSeconds, _pos.X, _pos.Z);
+                    hammer.HitPlayer(this._id, _pos.X, _pos.Z);
                     OnHit();
                 }
 
+                // TODO (fbuetler) can we remove this func and _hitX, _hitZ
                 if (hammer.CheckDist(_id, _pos.X, _pos.Z, 3f))
                 {
                     _pos.X += hammer.Dir.X * elapsed * hammer.Speed;

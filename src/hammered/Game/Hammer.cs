@@ -32,7 +32,6 @@ public class Hammer : GameObject
 
     // hamer hit
     private bool[] _playerHit = new bool[] { false, false, false, false };
-    private float[] _hitTime = new float[] { 0f, 0f, 0f, 0f };
     private float[] _hitX = new float[] { 0f, 0f, 0f, 0f };
     private float[] _hitZ = new float[] { 0f, 0f, 0f, 0f };
 
@@ -144,10 +143,9 @@ public class Hammer : GameObject
         }
     }
 
-    public void HitPlayer(int id, float time, float x, float z)
+    public void HitPlayer(int id, float x, float z)
     {
         _playerHit[id] = true;
-        _hitTime[id] = time;
         _hitX[id] = x;
         _hitZ[id] = z;
     }
