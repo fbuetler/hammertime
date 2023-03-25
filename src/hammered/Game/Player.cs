@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -208,6 +209,7 @@ public class Player : GameObject
 
         // if the player is now colliding with the map, separate them.
         HandleTileCollisions();
+        HandlePlayerCollisions();
 
         // if the collision stopped us from moving, reset the velocity to zero
         if (_pos.X == prevPos.X)
@@ -251,49 +253,59 @@ public class Player : GameObject
 
                 // determine collision depth (with direction) and magnitude
                 BoundingBox neighbour = _map.GetTileBounds(x, 0, z);
-                Vector3 depth = intersectionDepth(bounds, neighbour);
-                if (depth == Vector3.Zero || depth.Y == 1)
-                {
-                    continue;
-                }
-
-                float absDepthX = Math.Abs(depth.X);
-                float absDepthZ = Math.Abs(depth.Z);
-
-                // resolve the collision along the shallow axis
-                if (absDepthX < absDepthZ)
-                {
-                    if (absDepthX == 0 || absDepthX == 1)
-                    {
-                        continue;
-                    }
-                    _pos = new Vector3(
-                        _pos.X + depth.X,
-                        _pos.Y,
-                        _pos.Z
-                    );
-                    bounds = BoundingBox;
-                }
-                else
-                {
-                    if (absDepthZ == 0 || absDepthZ == 1)
-                    {
-                        continue;
-                    }
-                    _pos = new Vector3(
-                        _pos.X,
-                        _pos.Y,
-                        _pos.Z + depth.Z
-                    );
-                    bounds = BoundingBox;
-                }
+                ResolveCollision(BoundingBox, neighbour);
             }
         }
     }
 
-    private void HandleHammerCollisions(GameTime gameTimes)
+    private void HandlePlayerCollisions()
     {
-        float elapsed = (float)gameTimes.ElapsedGameTime.TotalSeconds;
+        List<Player> opponents = _map.Players;
+        foreach (Player opponent in opponents)
+        {
+            // dont do collision detection with itself
+            if (opponent.ID == _id)
+            {
+                continue;
+            }
+            ResolveCollision(BoundingBox, opponent.BoundingBox);
+        }
+    }
+
+    private void ResolveCollision(BoundingBox a, BoundingBox b)
+    {
+        Vector3 depth = IntersectionDepth(a, b);
+        if (depth == Vector3.Zero)
+        {
+            return;
+        }
+
+        float absDepthX = Math.Abs(depth.X);
+        float absDepthZ = Math.Abs(depth.Z);
+
+        // resolve the collision along the shallow axis
+        if (absDepthX < absDepthZ)
+        {
+            _pos = new Vector3(
+                _pos.X + depth.X,
+                _pos.Y,
+                _pos.Z
+            );
+        }
+        else
+        {
+            _pos = new Vector3(
+                _pos.X,
+                _pos.Y,
+                _pos.Z + depth.Z
+            );
+        }
+    }
+
+
+    private void HandleHammerCollisions(GameTime gameTime)
+    {
+        float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
         Hammer[] hammers = _map.GetHammers();
         foreach (Hammer hammer in hammers)
@@ -328,15 +340,15 @@ public class Player : GameObject
         }
     }
 
-    private Vector3 intersectionDepth(BoundingBox a, BoundingBox b)
+    private Vector3 IntersectionDepth(BoundingBox a, BoundingBox b)
     {
         // calculate half sizes
-        float halfWidthA = a.Max.X - a.Min.X;
-        float halfHeightA = a.Max.Y - a.Min.Y;
-        float halfDepthA = a.Max.Z - a.Min.Z;
-        float halfWidthB = b.Max.X - b.Min.X;
-        float halfHeightB = b.Max.Y - b.Min.Y;
-        float halfDepthB = b.Max.Z - b.Min.Z;
+        float halfWidthA = (a.Max.X - a.Min.X) * 0.5f;
+        float halfHeightA = (a.Max.Y - a.Min.Y) * 0.5f;
+        float halfDepthA = (a.Max.Z - a.Min.Z) * 0.5f;
+        float halfWidthB = (b.Max.X - b.Min.X) * 0.5f;
+        float halfHeightB = (b.Max.Y - b.Min.Y) * 0.5f;
+        float halfDepthB = (b.Max.Z - b.Min.Z) * 0.5f;
 
         // calculate centers
         Vector3 centerA = new Vector3(a.Min.X + halfWidthA, a.Min.Y + halfHeightA, a.Min.Z + halfDepthA);

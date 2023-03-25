@@ -61,8 +61,8 @@ public class Tile : GameObject
     public const float Depth = 1f;
 
     private const float maxHealthPoints = 90f;
-
     private const float damage = 30f;
+    private const float healthLevel = 20f;
 
     public Tile(Map map, Vector3 position, TileCollision collision)
     {
@@ -157,7 +157,7 @@ public class Tile : GameObject
         Matrix world = _modelScale * translation;
 
         // change tile model based on current health
-        DrawModel(_model[(int)(_healthPoints / 20)], world, view, projection);
+        DrawModel(_model[(int)Math.Floor(_healthPoints / healthLevel)], world, view, projection);
 
 #if DEBUG
         _map.DebugDraw.Begin(Matrix.Identity, view, projection);
