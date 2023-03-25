@@ -66,6 +66,9 @@ public class Player : GameObject
     private const float AimStickScale = 1.0f;
     private const Buttons ThrowButton = Buttons.RightShoulder;
 
+
+    //sound variables
+
     public Player(Map map, int id, Vector3 position)
     {
         if (map == null)
