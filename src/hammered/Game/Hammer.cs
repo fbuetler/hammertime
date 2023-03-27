@@ -155,7 +155,7 @@ public class Hammer : GameObject
         return _playerHit[i];
     }
 
-    public bool CheckDist(int id, float x, float z, float maxdist)
+    public bool CheckDistFromHit(int id, float x, float z, float maxdist)
     {
         return (float)Math.Sqrt(((_hitX[id] - x) * (_hitX[id] - x)) + ((_hitZ[id] - z) * (_hitZ[id] - z))) <= maxdist;
     }
