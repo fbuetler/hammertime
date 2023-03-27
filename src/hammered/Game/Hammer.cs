@@ -24,6 +24,9 @@ public class Hammer : GameObject
     public float Speed { get { return _speed; } }
     private float _speed;
 
+    // charging speed
+    private float _throwDistance;
+
     // hammer state
     public bool IsFlying { get { return _isFlying; } }
     private bool _isFlying;
@@ -103,12 +106,13 @@ public class Hammer : GameObject
         {
             _isFlying = false;
             _isReturning = false;
+            _throwDistance = 0f;
             _playerHit = new bool[] { false, false, false, false };
             _owner.OnHammerReturn();
         }
 
         // if max distance is reached, make it return
-        if ((_pos - _origin).LengthSquared() > MaxThrowDistance * MaxThrowDistance)
+        if ((_pos - _origin).LengthSquared() > _throwDistance * _throwDistance)
         {
             // TODO (fbuetler) fix buggy return path (should follow player even if falling)
             _dir.X = _owner.Position.X - _pos.X;
@@ -131,13 +135,14 @@ public class Hammer : GameObject
         _pos.Z += _dir.Y * elapsed * ThrowSpeed;
     }
 
-    public void Throw(Vector2 direction)
+    public void Throw(Vector2 direction, float throwDistance)
     {
         if (!_isFlying && direction != Vector2.Zero)
         {
             _pos = _owner.Position;
             _origin = _pos;
             _dir = direction;
+            _throwDistance = throwDistance;
 
             _isFlying = true;
         }

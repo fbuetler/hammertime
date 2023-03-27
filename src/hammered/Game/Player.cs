@@ -27,6 +27,10 @@ public class Player : GameObject
     private Vector2 _aiming;
     private bool _isThrowing;
 
+    private bool _wasChargePressed;
+    private float _chargeDuration;
+    private bool _isCharging;
+
     // a player is alive as long as it stands on the platform
     public bool IsAlive
     {
@@ -50,6 +54,10 @@ public class Player : GameObject
     public const float Height = 1f;
     public const float Width = 1f;
     public const float Depth = 1f;
+
+    // charge/throw
+    // TODO (fbuetler) tweak unit
+    private const float ChargeUnit = 0.1f;
 
     // constants for controlling horizontal movement
     private const float MoveAcceleration = 1300f;
@@ -100,7 +108,7 @@ public class Player : GameObject
 
     public override void Update(GameTime gameTime, KeyboardState keyboardState, GamePadState gamePadState)
     {
-        GetInput(keyboardState, gamePadState);
+        GetInput(gameTime, keyboardState, gamePadState);
 
         ApplyPhysics(gameTime);
 
@@ -114,7 +122,7 @@ public class Player : GameObject
         _isThrowing = false;
     }
 
-    private void GetInput(KeyboardState keyboardState, GamePadState gamePadState)
+    private void GetInput(GameTime gameTime, KeyboardState keyboardState, GamePadState gamePadState)
     {
         // get analog movement
         _movement.X = gamePadState.ThumbSticks.Left.X * MoveStickScale;
@@ -175,8 +183,22 @@ public class Player : GameObject
             _aiming.Y = _movement.Y;
         }
 
+        bool isChargePressed = (keyboardState.IsKeyDown(Keys.Space) || gamePadState.IsButtonDown(ThrowButton));
+
+        if (!_wasChargePressed && isChargePressed)
+        {
+            _isCharging = true;
+        }
+        if (_isCharging)
+        {
+            _chargeDuration += (float)gameTime.ElapsedGameTime.TotalMilliseconds;
+        }
+
         // check if player is alive before throwing hammer
-        _isThrowing = _isAlive && (keyboardState.IsKeyDown(Keys.Space) || gamePadState.IsButtonDown(ThrowButton));
+        if (_wasChargePressed && !isChargePressed && _isAlive)
+        {
+            _isThrowing = true;
+        }
     }
 
     private void ApplyPhysics(GameTime gameTime)
@@ -381,7 +403,8 @@ public class Player : GameObject
         }
         if (_isThrowing)
         {
-            _hammer.Throw(_aiming);
+            _hammer.Throw(_aiming, _chargeDuration * ChargeUnit);
+            _chargeDuration = 0f;
 
             OnHammerThrow();
         }
@@ -419,6 +442,18 @@ public class Player : GameObject
         // TODO (fbuetler) rotate player into walking direction
 
         Matrix world = _modelScale * translation;
+        DrawModel(_model, world, view, projection);
+
+        // TODO (fbuetler) calculate arrow positions/direction
+
+        // translate arrow (one end is on the player P-->)
+        // rotate into aiming direction
+        // scale 
+
+        // _pos
+        // _dir
+        // _chargeDuration * ChargeUnit
+
         DrawModel(_model, world, view, projection);
 
         _hammer.Draw(view, projection);
