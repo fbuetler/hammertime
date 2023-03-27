@@ -30,11 +30,14 @@ public class Hammer : GameObject
     public bool IsReturning { get { return _isReturning; } }
     private bool _isReturning;
 
-    // hamer hit
+    // hammer hit
     private bool[] _playerHit = new bool[] { false, false, false, false };
-    private float[] _hitX = new float[] { 0f, 0f, 0f, 0f };
-    private float[] _hitZ = new float[] { 0f, 0f, 0f, 0f };
-    private Vector3[] _hitPos = new Vector3[] { new Vector3(0f, 0f, 0f), new Vector3(0f, 0f, 0f), new Vector3(0f, 0f, 0f), new Vector3(0f, 0f, 0f) };
+    private Vector3[] _hitPos = new Vector3[] {
+        new Vector3(0f, 0f, 0f),
+        new Vector3(0f, 0f, 0f),
+        new Vector3(0f, 0f, 0f),
+        new Vector3(0f, 0f, 0f)
+    };
 
     public BoundingBox BoundingBox
     {
