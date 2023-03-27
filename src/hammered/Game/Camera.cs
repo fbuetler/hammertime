@@ -19,10 +19,10 @@ public class Camera
     {
         float fovAngle = 45;
         float near = 0.01f;
-        float far = 30f;
+        float far = 100f;
 
         // assume only width matters as maps are usually designed to be wider than deeper
-        float height = mapWidth / (float)Math.Sin(fovAngle) * 0.8f;
+        float height = mapWidth / (float)Math.Sin(fovAngle);
         float setBackDistance = 10f;
         Vector3 pos = new Vector3(
             target.X,
