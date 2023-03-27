@@ -34,6 +34,7 @@ public class Hammer : GameObject
     private bool[] _playerHit = new bool[] { false, false, false, false };
     private float[] _hitX = new float[] { 0f, 0f, 0f, 0f };
     private float[] _hitZ = new float[] { 0f, 0f, 0f, 0f };
+    private Vector3[] _hitPos = new Vector3[] { new Vector3(0f, 0f, 0f), new Vector3(0f, 0f, 0f), new Vector3(0f, 0f, 0f), new Vector3(0f, 0f, 0f) };
 
     public BoundingBox BoundingBox
     {
@@ -143,11 +144,10 @@ public class Hammer : GameObject
         }
     }
 
-    public void HitPlayer(int id, float x, float z)
+    public void HitPlayer(int id, Vector3 pos)
     {
         _playerHit[id] = true;
-        _hitX[id] = x;
-        _hitZ[id] = z;
+        _hitPos[id] = pos;
     }
 
     public bool IsPlayerHit(int i)
@@ -155,9 +155,9 @@ public class Hammer : GameObject
         return _playerHit[i];
     }
 
-    public bool CheckDistFromHit(int id, float x, float z, float maxdist)
+    public bool CheckDistFromHit(int id, Vector3 pos, float maxdist)
     {
-        return (float)Math.Sqrt(((_hitX[id] - x) * (_hitX[id] - x)) + ((_hitZ[id] - z) * (_hitZ[id] - z))) <= maxdist;
+        return (float)Math.Sqrt(((_hitPos[id].X - pos.X) * (_hitPos[id].X - pos.X)) + ((_hitPos[id].Y - pos.Y) * (_hitPos[id].Y - pos.Y))) <= maxdist;
     }
 
     public override void Draw(Matrix view, Matrix projection)

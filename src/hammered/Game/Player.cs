@@ -28,6 +28,8 @@ public class Player : GameObject
     private Vector2 _aiming;
     private bool _isThrowing;
 
+    //how far one gets thrown by a hammer
+    private float _throwDistance = 3f;
     // a player is alive as long as it stands on the platform
     public bool IsAlive
     {
@@ -331,13 +333,13 @@ public class Player : GameObject
                 // only hit player, if it is not hit already
                 if (!hammer.IsPlayerHit(_id))
                 {
-                    hammer.HitPlayer(this._id, _pos.X, _pos.Z);
+                    hammer.HitPlayer(this._id, _pos);
                     OnHit();
                 }
 
                 // TODO (fbuetler) can we remove this func and _hitX, _hitZ
                 // TODO (fbuetler) give this constant a reasonable name
-                if (hammer.CheckDistFromHit(_id, _pos.X, _pos.Z, 3f))
+                if (hammer.CheckDistFromHit(_id, _pos, _throwDistance))
                 {
                     _pos.X += hammer.Dir.X * elapsed * hammer.Speed;
                     _pos.Z += hammer.Dir.Y * elapsed * hammer.Speed;
