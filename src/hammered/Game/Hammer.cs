@@ -52,7 +52,7 @@ public class Hammer : GameObject
 
     // constants for controlling throwing
     private const float ThrowSpeed = 20f;
-    private const float MaxThrowDistance = 20f;
+    private const float MaxThrowDistance = 10f;
 
     // TODO (fbuetler) deacclerate when close to player on return/before hit
 
