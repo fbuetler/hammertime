@@ -302,7 +302,6 @@ public class Player : GameObject
         }
     }
 
-
     private void HandleHammerCollisions(GameTime gameTime)
     {
         float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;

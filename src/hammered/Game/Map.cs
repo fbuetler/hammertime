@@ -281,7 +281,6 @@ public class Map
         player.OnKilled();
     }
 
-
     private void OnPlayerHit(Player player)
     {
         player.OnHit();

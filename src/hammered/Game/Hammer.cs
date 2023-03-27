@@ -177,10 +177,12 @@ public class Hammer : GameObject
         Matrix world = _modelScale * rotation * translation;
         DrawModel(_model, world, view, projection);
 
+#if DEBUG
         // TODO (fbuetler) fix hitbox
         world = rotation * Matrix.Identity;
         // _map.DebugDraw.Begin(world, view, projection);
         // _map.DebugDraw.DrawWireBox(BoundingBox, Color.Red);
         // _map.DebugDraw.End();
+#endif
     }
 }
