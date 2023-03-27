@@ -49,7 +49,6 @@ TestResults/
 *.jar
 *.rar
 *.tar
-*.zip
 ######################
 # Logs and databases #
 ######################
@@ -73,8 +72,8 @@ Thumbs.db
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
-[Rr]elease/
-[Rr]eleases/
+src/**/[Rr]elease/
+src/**/[Rr]eleases/
 x64/
 x86/
 build/

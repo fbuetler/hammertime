@@ -41,12 +41,12 @@ public class GameMain : Game
     private GamePadState[] _gamePadStates;
     private KeyboardState _keyboardState;
 
-    public const int NumberOfPlayers = 2;
+    public const int NumberOfPlayers = 4;
     // The number of levels in the Levels directory of our content. We assume that
     // levels in our content are 0-based and that all numbers under this constant
     // have a level file present. This allows us to not need to check for the file
     // or handle exceptions, both of which can add unnecessary time to level loading.
-    private const int numberOfMaps = 2;
+    private const int numberOfMaps = 3;
 
     public GameMain()
     {
