@@ -57,6 +57,7 @@ public class Hammer : GameObject
     // constants for controlling throwing
     private const float ThrowSpeed = 20f;
     private const float MaxThrowDistance = 10f;
+    private const float PickupDistance = 1f;
 
     // TODO (fbuetler) deacclerate when close to player on return/before hit
 
@@ -137,6 +138,15 @@ public class Hammer : GameObject
         }
     }
 
+    private void Return()
+    {
+        // TODO (fbuetler) fix buggy return path (should follow player even if falling)
+        _dir.X = _owner.Position.X - _pos.X;
+        _dir.Y = _owner.Position.Z - _pos.Z;
+        _dir.Normalize();
+        _isReturning = true;
+        _playerHit = new bool[] { false, false, false, false };
+    }
 
     private void FollowOwner()
     {
@@ -157,16 +167,12 @@ public class Hammer : GameObject
     {
         _playerHit[id] = true;
         _hitPos[id] = pos;
+        Return();
     }
 
     public bool IsPlayerHit(int i)
     {
         return _playerHit[i];
-    }
-
-    public bool CheckDistFromHit(int id, Vector3 pos, float maxdist)
-    {
-        return Vector3.Distance(_hitPos[id], pos) <= maxdist;
     }
 
     public override void Draw(Matrix view, Matrix projection)

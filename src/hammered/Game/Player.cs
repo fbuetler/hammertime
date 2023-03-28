@@ -35,6 +35,11 @@ public class Player : GameObject
     private Vector2 _aiming;
     private bool _isThrowing;
 
+    // push back
+    private bool _isPushedback;
+    private Vector2 _pushbackDir;
+    private float _pushbackDistanceLeft;
+
     // a player is alive as long as it stands on the platform
     public bool IsAlive
     {
@@ -54,6 +59,9 @@ public class Player : GameObject
         }
     }
 
+    // how far one gets pushed back by a hammer
+    private const float PushbackDistance = 3f;
+    private const float PushbackSpeed = 2000f;
 
     // if a player is below the kill plane, it disappears
     private const float KillPlaneLevel = -10f;
@@ -111,6 +119,8 @@ public class Player : GameObject
         _velocity = Vector3.Zero;
         _isAlive = true;
         _hammer = new Hammer(_map, this);
+        _isPushedback = false;
+        _pushbackDistanceLeft = 0f;
     }
 
     public override void Update(GameTime gameTime, KeyboardState keyboardState, GamePadState gamePadState)
@@ -220,7 +230,9 @@ public class Player : GameObject
             _velocity *= AirDragFactor;
         }
 
-        HandleHammerCollisions(gameTime);
+        HandleHammerCollisions();
+
+        HandlePushback(gameTime);
 
         // apply velocity
         _pos += _velocity * elapsed;
@@ -228,6 +240,12 @@ public class Player : GameObject
         // if the player is now colliding with the map, separate them.
         HandleTileCollisions();
         HandlePlayerCollisions();
+
+        // decrease push back distance by moved distance
+        if (_isPushedback)
+        {
+            _pushbackDistanceLeft = Math.Max(0, _pushbackDistanceLeft - (prevPos - _pos).Length());
+        }
 
         // if the collision stopped us from moving, reset the velocity to zero
         if (_pos.X == prevPos.X)
@@ -248,7 +266,15 @@ public class Player : GameObject
         }
     }
 
-        return velocityY;
+    private void HandlePushback(GameTime gameTime)
+    {
+        float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+        if (_isPushedback && _pushbackDistanceLeft > 0)
+        {
+            _velocity.X = _pushbackDir.X * PushbackSpeed * elapsed;
+            _velocity.Z = _pushbackDir.Y * PushbackSpeed * elapsed;
+        }
     }
 
     private void HandleTileCollisions()
@@ -321,10 +347,8 @@ public class Player : GameObject
         }
     }
 
-    private void HandleHammerCollisions(GameTime gameTime)
+    private void HandleHammerCollisions()
     {
-        float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
-
         Hammer[] hammers = _map.GetHammers();
         foreach (Hammer hammer in hammers)
         {
@@ -337,22 +361,13 @@ public class Player : GameObject
             // detect collision
             if (BoundingBox.Intersects(hammer.BoundingBox))
             {
-                // only hit player, if it is not hit already
+                // TODO (fbuetler) can we remove this func and _hit?
+                // only hit player, if it is not hit already by this hammer
                 if (!hammer.IsPlayerHit(_id))
                 {
-                    hammer.HitPlayer(this._id, _pos);
-                    OnHit();
+                    OnHit(hammer.Dir);
+                    hammer.OnHit(this._id, _pos);
                 }
-
-                // TODO (fbuetler) can we remove this func and _hit?
-                if (hammer.CheckDistFromHit(_id, _pos, ThrowDistance))
-                {
-                    _pos.X += hammer.Dir.X * elapsed * hammer.Speed;
-                    _pos.Z += hammer.Dir.Y * elapsed * hammer.Speed;
-                    _velocity.X = 0;
-                    _velocity.Z = 0;
-                }
-
             }
         }
     }
@@ -416,9 +431,12 @@ public class Player : GameObject
         // TODO (fbuetler) update texture
     }
 
-    public void OnHit()
+    public void OnHit(Vector2 pushbackDir)
     {
         _hammerHitSound.Play();
+        _isPushedback = true;
+        _pushbackDir = pushbackDir;
+        _pushbackDistanceLeft = PushbackDistance;
     }
 
     public void OnKilled()
