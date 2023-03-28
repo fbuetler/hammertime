@@ -32,12 +32,6 @@ public class Hammer : GameObject
 
     // hammer hit
     private bool[] _playerHit = new bool[] { false, false, false, false };
-    private Vector3[] _hitPos = new Vector3[] {
-        Vector3.Zero,
-        Vector3.Zero,
-        Vector3.Zero,
-        Vector3.Zero
-    };
 
     public BoundingBox BoundingBox
     {
@@ -46,6 +40,18 @@ public class Hammer : GameObject
             return new BoundingBox(
                 new Vector3(_pos.X, _pos.Y, _pos.Z),
                 new Vector3(_pos.X + Hammer.Width, _pos.Y + Hammer.Height, _pos.Z + Hammer.Depth)
+            );
+        }
+    }
+
+    public Vector3 Center
+    {
+        get
+        {
+            return new Vector3(
+                _pos.X + Width / 2,
+                _pos.Y + Height / 2,
+                _pos.Z + Depth / 2
             );
         }
     }
@@ -103,13 +109,13 @@ public class Hammer : GameObject
         }
 
         // if hammer is close to the player, it is picked up
-        if (_isReturning && (_pos - _owner.Position).LengthSquared() < PickupDistance)
+        if (_isReturning && (Center - _owner.Center).LengthSquared() < PickupDistance)
         {
             PickUp();
         }
 
         // if max distance is reached, make it return
-        if ((_pos - _origin).Length() > MaxThrowDistance)
+        if ((Center - _origin).Length() > MaxThrowDistance)
         {
             Return();
         }
@@ -130,8 +136,12 @@ public class Hammer : GameObject
     {
         if (!_isFlying && direction != Vector2.Zero)
         {
-            _pos = _owner.Position;
-            _origin = _pos;
+            _pos = new Vector3(
+                _owner.Center.X - Width / 2,
+                _owner.Center.Y - Height / 2,
+                _owner.Center.Z - Depth / 2
+            );
+            _origin = _owner.Center;
             _dir = direction;
 
             _isFlying = true;
@@ -141,8 +151,8 @@ public class Hammer : GameObject
     private void Return()
     {
         // TODO (fbuetler) fix buggy return path (should follow player even if falling)
-        _dir.X = _owner.Position.X - _pos.X;
-        _dir.Y = _owner.Position.Z - _pos.Z;
+        _dir.X = _owner.Center.X - Center.X;
+        _dir.Y = _owner.Center.Z - Center.Z;
         _dir.Normalize();
         _isReturning = true;
         _playerHit = new bool[] { false, false, false, false };
@@ -150,8 +160,8 @@ public class Hammer : GameObject
 
     private void FollowOwner()
     {
-        _dir.X = _owner.Position.X - _pos.X;
-        _dir.Y = _owner.Position.Z - _pos.Z;
+        _dir.X = _owner.Center.X - Center.X;
+        _dir.Y = _owner.Center.Z - Center.Z;
         _dir.Normalize();
     }
 
@@ -163,10 +173,9 @@ public class Hammer : GameObject
         _owner.OnHammerReturn();
     }
 
-    public void OnHit(int id, Vector3 pos)
+    public void OnHit(int id)
     {
         _playerHit[id] = true;
-        _hitPos[id] = pos;
         Return();
     }
 
@@ -177,24 +186,38 @@ public class Hammer : GameObject
 
     public override void Draw(Matrix view, Matrix projection)
     {
-        if (!_isFlying)
+        if (!_isFlying || BoundingBox.Intersects(_owner.BoundingBox))
         {
             return;
         }
 
         // TODO (fbuetler) fix angle
+
+        // as the model is rotate we have to
+        // * move it into the origin
+        // * rotate
+        // * move it into it designated positions and also compensate for the move into the origin
+        Matrix translateIntoOrigin = Matrix.CreateTranslation(
+            -Width / 2,
+            -Height / 2,
+            -Depth / 2
+        );
+
         float throwAngle = MathF.Atan(_dir.Y / _dir.X);
-        Quaternion rotationQuaterion = Quaternion.CreateFromAxisAngle(Vector3.UnitY, throwAngle);
+        Matrix rotate = Matrix.CreateFromAxisAngle(Vector3.UnitY, throwAngle);
 
-        Matrix rotation = Matrix.CreateFromQuaternion(rotationQuaterion);
-        Matrix translation = Matrix.CreateTranslation(_pos);
+        Matrix translateIntoPosition = Matrix.CreateTranslation(
+            _pos.X + Width / 2,
+            _pos.Y + Height / 2,
+            _pos.Z + Depth / 2
+        );
 
-        Matrix world = _modelScale * rotation * translation;
+        Matrix world = _modelScale * translateIntoOrigin * rotate * translateIntoPosition;
         DrawModel(_model, world, view, projection);
 
 #if DEBUG
         // TODO (fbuetler) fix hitbox
-        world = rotation * Matrix.Identity;
+        // world = rotate * Matrix.Identity;
         // _map.DebugDraw.Begin(world, view, projection);
         // _map.DebugDraw.DrawWireBox(BoundingBox, Color.Red);
         // _map.DebugDraw.End();

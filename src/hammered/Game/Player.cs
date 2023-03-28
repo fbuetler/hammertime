@@ -59,6 +59,18 @@ public class Player : GameObject
         }
     }
 
+    public Vector3 Center
+    {
+        get
+        {
+            return new Vector3(
+                _pos.X + Width / 2,
+                _pos.Y + Height / 2,
+                _pos.Z + Depth / 2
+            );
+        }
+    }
+
     // how far one gets pushed back by a hammer
     private const float PushbackDistance = 3f;
     private const float PushbackSpeed = 2000f;
@@ -407,7 +419,7 @@ public class Player : GameObject
                 if (!hammer.IsPlayerHit(_id))
                 {
                     OnHit(hammer.Dir);
-                    hammer.OnHit(this._id, _pos);
+                    hammer.OnHit(this._id);
                 }
             }
         }
