@@ -33,10 +33,10 @@ public class Hammer : GameObject
     // hammer hit
     private bool[] _playerHit = new bool[] { false, false, false, false };
     private Vector3[] _hitPos = new Vector3[] {
-        new Vector3(0f, 0f, 0f),
-        new Vector3(0f, 0f, 0f),
-        new Vector3(0f, 0f, 0f),
-        new Vector3(0f, 0f, 0f)
+        Vector3.Zero,
+        Vector3.Zero,
+        Vector3.Zero,
+        Vector3.Zero
     };
 
     public BoundingBox BoundingBox
@@ -90,7 +90,6 @@ public class Hammer : GameObject
         _owner = owner;
         _isFlying = false;
         _isReturning = false;
-        // TODO (fred) replace the speed with some actual speed. not just a fixed number
         _speed = ThrowSpeed;
         _playerHit = new bool[] { false, false, false, false };
     }
@@ -102,37 +101,28 @@ public class Hammer : GameObject
             return;
         }
 
-        // hammer is close to the player, it is returned
-        if (_isReturning && (_pos - _owner.Position).LengthSquared() < 1f)
+        // if hammer is close to the player, it is picked up
+        if (_isReturning && (_pos - _owner.Position).LengthSquared() < PickupDistance)
         {
-            _isFlying = false;
-            _isReturning = false;
-            _playerHit = new bool[] { false, false, false, false };
-            _owner.OnHammerReturn();
+            PickUp();
         }
 
         // if max distance is reached, make it return
-        if ((_pos - _origin).LengthSquared() > MaxThrowDistance * MaxThrowDistance)
+        if ((_pos - _origin).Length() > MaxThrowDistance)
         {
-            // TODO (fbuetler) fix buggy return path (should follow player even if falling)
-            _dir.X = _owner.Position.X - _pos.X;
-            _dir.Y = _owner.Position.Z - _pos.Z;
-            _dir.Normalize();
-            _isReturning = true;
-            _playerHit = new bool[] { false, false, false, false };
+            Return();
         }
 
-        // if hammer is returning it should always go to player
+        // if hammer is returning it should always follow its owner
         if (_isReturning)
         {
-            _dir.X = _owner.Position.X - _pos.X;
-            _dir.Y = _owner.Position.Z - _pos.Z;
-            _dir.Normalize();
+            FollowOwner();
         }
 
+        // update position
         float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
-        _pos.X += _dir.X * elapsed * ThrowSpeed;
-        _pos.Z += _dir.Y * elapsed * ThrowSpeed;
+        _pos.X += _dir.X * ThrowSpeed * elapsed;
+        _pos.Z += _dir.Y * ThrowSpeed * elapsed;
     }
 
     public void Throw(Vector2 direction)
@@ -147,7 +137,23 @@ public class Hammer : GameObject
         }
     }
 
-    public void HitPlayer(int id, Vector3 pos)
+
+    private void FollowOwner()
+    {
+        _dir.X = _owner.Position.X - _pos.X;
+        _dir.Y = _owner.Position.Z - _pos.Z;
+        _dir.Normalize();
+    }
+
+    private void PickUp()
+    {
+        _isFlying = false;
+        _isReturning = false;
+        _playerHit = new bool[] { false, false, false, false };
+        _owner.OnHammerReturn();
+    }
+
+    public void OnHit(int id, Vector3 pos)
     {
         _playerHit[id] = true;
         _hitPos[id] = pos;
@@ -160,7 +166,7 @@ public class Hammer : GameObject
 
     public bool CheckDistFromHit(int id, Vector3 pos, float maxdist)
     {
-        return (float)Math.Sqrt(((_hitPos[id].X - pos.X) * (_hitPos[id].X - pos.X)) + ((_hitPos[id].Y - pos.Y) * (_hitPos[id].Y - pos.Y))) <= maxdist;
+        return Vector3.Distance(_hitPos[id], pos) <= maxdist;
     }
 
     public override void Draw(Matrix view, Matrix projection)

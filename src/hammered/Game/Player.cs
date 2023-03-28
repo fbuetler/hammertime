@@ -19,16 +19,17 @@ public class Player : GameObject
     private SoundEffect _hammerHitSound;
     private SoundEffect _killedSound;
 
-    // player attributes
+    // attributes
     public int ID { get { return _id; } }
     private int _id;
 
-    // player state
+    // movement
     public Vector3 Position { get { return _pos; } }
     private Vector3 _pos; // TODO (fbuetler) use center as positions instead of top left corner
     private Vector2 _movement;
     private Vector3 _velocity;
 
+    // hammer
     public Hammer Hammer { get { return _hammer; } }
     private Hammer _hammer;
     private Vector2 _aiming;
@@ -202,9 +203,12 @@ public class Player : GameObject
         // acceleration downward due to gravity
         _velocity.X += _movement.X * MoveAcceleration * elapsed;
         _velocity.Z += _movement.Y * MoveAcceleration * elapsed;
-        _velocity.Y = MathHelper.Clamp(_velocity.Y - GravityAcceleration * elapsed, -MaxFallSpeed, MaxFallSpeed);
+        _velocity.Y = MathHelper.Clamp(
+            _velocity.Y - GravityAcceleration * elapsed,
+            -MaxFallSpeed, MaxFallSpeed
+        );
 
-        _velocity.Y = WalkOffMap(gameTime, _velocity.Y);
+        HandleFall();
 
         if (_isAlive) // not falling
         {
@@ -235,12 +239,13 @@ public class Player : GameObject
             _velocity.Z = 0;
     }
 
-    private float WalkOffMap(GameTime gameTime, float velocityY)
+    private void HandleFall()
     {
         if (_isAlive)
         {
-            return 0;
+            _velocity.Y = 0;
         }
+    }
 
         return velocityY;
     }
