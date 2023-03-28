@@ -104,11 +104,13 @@ public class Player : GameObject
         _velocity = Vector3.Zero;
         _isAlive = true;
         _hammer = new Hammer(_map, this);
+        _aiming = Vector2.Zero;
     }
 
     public override void Update(GameTime gameTime, KeyboardState keyboardState, GamePadState gamePadState)
     {
-        GetInput(gameTime, keyboardState, gamePadState);
+        GetMovementInput(keyboardState, gamePadState);
+        GetAimInput(keyboardState, gamePadState);
 
         ApplyPhysics(gameTime);
 
@@ -118,11 +120,10 @@ public class Player : GameObject
 
         // clear input
         _movement = Vector2.Zero;
-        _aiming = Vector2.Zero;
         _isThrowing = false;
     }
 
-    private void GetInput(GameTime gameTime, KeyboardState keyboardState, GamePadState gamePadState)
+    private void GetMovementInput(KeyboardState keyboardState, GamePadState gamePadState)
     {
         // get analog movement
         _movement.X = gamePadState.ThumbSticks.Left.X * MoveStickScale;
@@ -137,27 +138,23 @@ public class Player : GameObject
 
         // if any digital horizontal movement input is found, override the analog movement
         if (gamePadState.IsButtonDown(Buttons.DPadUp) ||
-            keyboardState.IsKeyDown(Keys.Up) ||
-            keyboardState.IsKeyDown(Keys.W))
+            keyboardState.IsKeyDown(Keys.Up))
         {
             _movement.Y -= 1.0f;
         }
         else if (gamePadState.IsButtonDown(Buttons.DPadDown) ||
-                 keyboardState.IsKeyDown(Keys.Down) ||
-                 keyboardState.IsKeyDown(Keys.S))
+                 keyboardState.IsKeyDown(Keys.Down))
         {
             _movement.Y += 1.0f;
         }
 
         if (gamePadState.IsButtonDown(Buttons.DPadLeft) ||
-            keyboardState.IsKeyDown(Keys.Left) ||
-            keyboardState.IsKeyDown(Keys.A))
+            keyboardState.IsKeyDown(Keys.Left))
         {
             _movement.X -= 1.0f;
         }
         else if (gamePadState.IsButtonDown(Buttons.DPadRight) ||
-                 keyboardState.IsKeyDown(Keys.Right) ||
-                 keyboardState.IsKeyDown(Keys.D))
+                 keyboardState.IsKeyDown(Keys.Right))
         {
             _movement.X += 1.0f;
         }
@@ -167,13 +164,41 @@ public class Player : GameObject
         {
             _movement.Normalize();
         }
+    }
 
+    private void GetAimInput(KeyboardState keyboardState, GamePadState gamePadState)
+    {
         // get analog aim
         _aiming.X = gamePadState.ThumbSticks.Right.X * AimStickScale;
         _aiming.Y = gamePadState.ThumbSticks.Right.Y * AimStickScale;
 
         // flip y: on the thumbsticks, down is -1, but on the screen, down is bigger numbers
         _aiming.Y *= -1;
+
+        // if any digital horizontal aiming input is found, override the analog aiming
+        if (keyboardState.IsKeyDown(Keys.W))
+        {
+            _aiming.Y -= 1.0f;
+        }
+        else if (keyboardState.IsKeyDown(Keys.S))
+        {
+            _aiming.Y += 1.0f;
+        }
+
+        if (keyboardState.IsKeyDown(Keys.A))
+        {
+            _aiming.X -= 1.0f;
+        }
+        else if (keyboardState.IsKeyDown(Keys.D))
+        {
+            _aiming.X += 1.0f;
+        }
+
+        // prevent the player from running faster than his top speed
+        if (_aiming.LengthSquared() > 1)
+        {
+            _aiming.Normalize();
+        }
 
         // in case there is no input use the direction the player is facing
         // (allow playing with keyboard as well)
@@ -182,7 +207,10 @@ public class Player : GameObject
             _aiming.X = _movement.X;
             _aiming.Y = _movement.Y;
         }
+    }
 
+    private void GetChargeInput(GameTime gameTime, KeyboardState keyboardState, GamePadState gamePadState)
+    {
         bool isChargePressed = (keyboardState.IsKeyDown(Keys.Space) || gamePadState.IsButtonDown(ThrowButton));
         if (!_wasChargePressed && isChargePressed)
         {
