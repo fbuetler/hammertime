@@ -230,12 +230,9 @@ public class Player : GameObject
         }
 
         // aiming is a unit vector
-        _aiming.X = _aiming.X < 0 ? MathF.Floor(_aiming.X) : MathF.Ceiling(_aiming.X);
-        _aiming.Y = _aiming.Y < 0 ? MathF.Floor(_aiming.Y) : MathF.Ceiling(_aiming.Y);
-        if (_aiming.Length() > 1)
-        {
-            _aiming.Normalize();
-        }
+        float angle = MathF.Atan2(_aiming.Y, _aiming.X);
+        _aiming.X = MathF.Cos(angle);
+        _aiming.Y = MathF.Sin(angle);
 
         // in case there is no input use the direction the player is facing
         // (allow playing with keyboard as well)

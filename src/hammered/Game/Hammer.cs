@@ -203,7 +203,7 @@ public class Hammer : GameObject
             -Depth / 2
         );
 
-        float throwAngle = MathF.Atan(_dir.Y / _dir.X);
+        float throwAngle = MathF.Atan2(_dir.Y, _dir.X);
         Matrix rotate = Matrix.CreateFromAxisAngle(Vector3.UnitY, throwAngle);
 
         Matrix translateIntoPosition = Matrix.CreateTranslation(
