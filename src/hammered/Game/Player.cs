@@ -187,6 +187,7 @@ public class Player : GameObject
             _movement.Normalize();
         }
 
+        // TODO (fbuetler) aiming should be possible into all directions
         // get analog aim
         _aiming.X = gamePadState.ThumbSticks.Right.X * AimStickScale;
         _aiming.Y = gamePadState.ThumbSticks.Right.Y * AimStickScale;
@@ -259,15 +260,23 @@ public class Player : GameObject
             _pushbackDistanceLeft = Math.Max(0, _pushbackDistanceLeft - (prevPos - _pos).Length());
         }
 
-        // if the collision stopped us from moving, reset the velocity to zero
+        // if the collision stopped us from moving, reset the velocity and the pushbackDistanceLeft
         if (_pos.X == prevPos.X)
+        {
             _velocity.X = 0;
-
+            _pushbackDistanceLeft = 0f;
+        }
         if (_pos.Y == prevPos.Y)
+        {
             _velocity.Y = 0;
+            _pushbackDistanceLeft = 0f;
+        }
 
         if (_pos.Z == prevPos.Z)
+        {
             _velocity.Z = 0;
+            _pushbackDistanceLeft = 0f;
+        }
     }
 
     private void HandleFall()
