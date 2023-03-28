@@ -54,8 +54,9 @@ public class Player : GameObject
         }
     }
 
-    // how far one gets thrown by a hammer
-    private const float ThrowDistance = 3f;
+
+    // if a player is below the kill plane, it disappears
+    private const float KillPlaneLevel = -10f;
 
     // dimensions
     public const float Height = 1f;
@@ -430,6 +431,12 @@ public class Player : GameObject
 
     public override void Draw(Matrix view, Matrix projection)
     {
+        // dont draw player if its fell below the 
+        if (!IsAlive && _pos.Y < KillPlaneLevel)
+        {
+            return;
+        }
+
         Matrix translation = Matrix.CreateTranslation(_pos);
 
         // TODO (fbuetler) rotate player into walking direction
