@@ -33,10 +33,14 @@ public class Hammer : GameObject
     public bool IsReturning { get { return _isReturning; } }
     private bool _isReturning;
 
-    // hamer hit
+    // hammer hit
     private bool[] _playerHit = new bool[] { false, false, false, false };
-    private float[] _hitX = new float[] { 0f, 0f, 0f, 0f };
-    private float[] _hitZ = new float[] { 0f, 0f, 0f, 0f };
+    private Vector3[] _hitPos = new Vector3[] {
+        Vector3.Zero,
+        Vector3.Zero,
+        Vector3.Zero,
+        Vector3.Zero
+    };
 
     public BoundingBox BoundingBox
     {
@@ -56,6 +60,7 @@ public class Hammer : GameObject
     // constants for controlling throwing
     private const float ThrowSpeed = 20f;
     private const float MaxThrowDistance = 10f;
+    private const float PickupDistance = 1f;
 
     // TODO (fbuetler) deacclerate when close to player on return/before hit
 
@@ -89,7 +94,6 @@ public class Hammer : GameObject
         _owner = owner;
         _isFlying = false;
         _isReturning = false;
-        // TODO (fred) replace the speed with some actual speed. not just a fixed number
         _speed = ThrowSpeed;
         _playerHit = new bool[] { false, false, false, false };
     }
@@ -101,38 +105,28 @@ public class Hammer : GameObject
             return;
         }
 
-        // hammer is close to the player, it is returned
-        if (_isReturning && (_pos - _owner.Position).LengthSquared() < 1f)
+        // if hammer is close to the player, it is picked up
+        if (_isReturning && (_pos - _owner.Position).LengthSquared() < PickupDistance)
         {
-            _isFlying = false;
-            _isReturning = false;
-            _throwDistance = 0f;
-            _playerHit = new bool[] { false, false, false, false };
-            _owner.OnHammerReturn();
+            PickUp();
         }
 
         // if max distance is reached, make it return
-        if ((_pos - _origin).LengthSquared() > _throwDistance * _throwDistance)
+        if ((_pos - _origin).Length() > _throwDistance)
         {
-            // TODO (fbuetler) fix buggy return path (should follow player even if falling)
-            _dir.X = _owner.Position.X - _pos.X;
-            _dir.Y = _owner.Position.Z - _pos.Z;
-            _dir.Normalize();
-            _isReturning = true;
-            _playerHit = new bool[] { false, false, false, false };
+            Return();
         }
 
-        // if hammer is returning it should always go to player
+        // if hammer is returning it should always follow its owner
         if (_isReturning)
         {
-            _dir.X = _owner.Position.X - _pos.X;
-            _dir.Y = _owner.Position.Z - _pos.Z;
-            _dir.Normalize();
+            FollowOwner();
         }
 
+        // update position
         float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
-        _pos.X += _dir.X * elapsed * ThrowSpeed;
-        _pos.Z += _dir.Y * elapsed * ThrowSpeed;
+        _pos.X += _dir.X * ThrowSpeed * elapsed;
+        _pos.Z += _dir.Y * ThrowSpeed * elapsed;
     }
 
     public void Throw(Vector2 direction, float throwDistance)
@@ -148,21 +142,42 @@ public class Hammer : GameObject
         }
     }
 
-    public void HitPlayer(int id, float x, float z)
+    private void Return()
+    {
+        // TODO (fbuetler) fix buggy return path (should follow player even if falling)
+        _dir.X = _owner.Position.X - _pos.X;
+        _dir.Y = _owner.Position.Z - _pos.Z;
+        _dir.Normalize();
+        _isReturning = true;
+        _playerHit = new bool[] { false, false, false, false };
+    }
+
+    private void FollowOwner()
+    {
+        _dir.X = _owner.Position.X - _pos.X;
+        _dir.Y = _owner.Position.Z - _pos.Z;
+        _dir.Normalize();
+    }
+
+    private void PickUp()
+    {
+        _isFlying = false;
+        _isReturning = false;
+        _throwDistance = 0f;
+        _playerHit = new bool[] { false, false, false, false };
+        _owner.OnHammerReturn();
+    }
+
+    public void OnHit(int id, Vector3 pos)
     {
         _playerHit[id] = true;
-        _hitX[id] = x;
-        _hitZ[id] = z;
+        _hitPos[id] = pos;
+        Return();
     }
 
     public bool IsPlayerHit(int i)
     {
         return _playerHit[i];
-    }
-
-    public bool CheckDist(int id, float x, float z, float maxdist)
-    {
-        return (float)Math.Sqrt(((_hitX[id] - x) * (_hitX[id] - x)) + ((_hitZ[id] - z) * (_hitZ[id] - z))) <= maxdist;
     }
 
     public override void Draw(Matrix view, Matrix projection)
@@ -173,8 +188,8 @@ public class Hammer : GameObject
         }
 
         // TODO (fbuetler) fix angle
-        float throwAngle = (float)Math.Atan(_dir.Y / _dir.X);
-        Quaternion rotationQuaterion = Quaternion.CreateFromAxisAngle(Vector3.UnitY, (float)throwAngle);
+        float throwAngle = MathF.Atan(_dir.Y / _dir.X);
+        Quaternion rotationQuaterion = Quaternion.CreateFromAxisAngle(Vector3.UnitY, throwAngle);
 
         Matrix rotation = Matrix.CreateFromQuaternion(rotationQuaterion);
         Matrix translation = Matrix.CreateTranslation(_pos);

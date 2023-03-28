@@ -4,6 +4,7 @@ using System.IO;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Input;
+using Microsoft.Xna.Framework.Media;
 
 namespace hammered;
 
@@ -67,6 +68,8 @@ public class Map
             (float)_game.GetBackBufferWidth() / _game.GetBackBufferHeight(),
             Width
         );
+
+        LoadMusic();
     }
 
     private void LoadTiles(Stream fileStream)
@@ -154,6 +157,12 @@ public class Map
     private Player LoadPlayer(float x, float y, float z)
     {
         return new Player(this, _players.Count, new Vector3(x, y, z));
+    }
+
+    private void LoadMusic()
+    {
+        MediaPlayer.Play(_content.Load<Song>("Audio/Stormfront"));
+        MediaPlayer.IsRepeating = true;
     }
 
     public void Dispose()
@@ -278,12 +287,10 @@ public class Map
 
     private void OnPlayerFall(Player player)
     {
-        player.OnKilled();
-    }
-
-    private void OnPlayerHit(Player player)
-    {
-        player.OnHit();
+        if (player.IsAlive)
+        {
+            player.OnKilled();
+        }
     }
 
     public void Draw(GameTime gameTime)
