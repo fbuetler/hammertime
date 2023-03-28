@@ -38,7 +38,6 @@ public class Player : GameObject
     // charge
     private bool _wasChargePressed;
     private float _chargeDuration;
-    private bool _isCharging;
 
     // push back
     private bool _isPushedback;
@@ -125,19 +124,25 @@ public class Player : GameObject
     public void Reset(Vector3 position)
     {
         _pos = position;
+        _hammer = new Hammer(_map, this);
+        _isAlive = true;
+
         _movement = Vector2.Zero;
         _velocity = Vector3.Zero;
-        _hammer = new Hammer(_map, this);
+
         _aiming = Vector2.Zero;
+
+        _chargeDuration = 0f;
+
         _isPushedback = false;
         _pushbackDistanceLeft = 0f;
-        _isAlive = true;
     }
 
     public override void Update(GameTime gameTime, KeyboardState keyboardState, GamePadState gamePadState)
     {
         GetMovementInput(keyboardState, gamePadState);
         GetAimingInput(keyboardState, gamePadState);
+        GetChargeInput(gameTime, keyboardState, gamePadState);
 
         ApplyPhysics(gameTime);
 
@@ -247,11 +252,7 @@ public class Player : GameObject
     private void GetChargeInput(GameTime gameTime, KeyboardState keyboardState, GamePadState gamePadState)
     {
         bool isChargePressed = (keyboardState.IsKeyDown(Keys.Space) || gamePadState.IsButtonDown(ThrowButton));
-        if (!_wasChargePressed && isChargePressed)
-        {
-            _isCharging = true;
-        }
-        if (_isCharging)
+        if (isChargePressed)
         {
             _chargeDuration += (float)gameTime.ElapsedGameTime.TotalMilliseconds;
         }
