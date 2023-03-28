@@ -150,7 +150,9 @@ public class Player : GameObject
 
         // ignore small movements to prevent running in place
         if (_movement.LengthSquared() < 0.5f)
+        {
             _movement = Vector2.Zero;
+        }
 
         // if any digital horizontal movement input is found, override the analog movement
         if (gamePadState.IsButtonDown(Buttons.DPadUp) ||
@@ -180,7 +182,7 @@ public class Player : GameObject
         }
 
         // prevent the player from running faster than his top speed
-        if (_movement.LengthSquared() > 1)
+        if (_movement.Length() > 1)
         {
             _movement.Normalize();
         }
@@ -191,6 +193,16 @@ public class Player : GameObject
 
         // flip y: on the thumbsticks, down is -1, but on the screen, down is bigger numbers
         _aiming.Y *= -1;
+
+        // TODO (fbuetler) should we ignore small aiming inputs like the movement input
+
+        // aiming is a unit vector
+        _aiming.X = _aiming.X < 0 ? MathF.Floor(_aiming.X) : MathF.Ceiling(_aiming.X);
+        _aiming.Y = _aiming.Y < 0 ? MathF.Floor(_aiming.Y) : MathF.Ceiling(_aiming.Y);
+        if (_aiming.Length() > 1)
+        {
+            _aiming.Normalize();
+        }
 
         // in case there is no input use the direction the player is facing
         // (allow playing with keyboard as well)
