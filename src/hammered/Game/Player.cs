@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
@@ -10,9 +11,15 @@ public class Player : GameObject
 {
     private Map _map;
 
+    // model
     private Model _model;
     private Matrix _modelScale;
 
+    // sound
+    private SoundEffect _hammerHitSound;
+    private SoundEffect _killedSound;
+
+    // player attributes
     public int ID { get { return _id; } }
     private int _id;
 
@@ -45,6 +52,9 @@ public class Player : GameObject
             );
         }
     }
+
+    // how far one gets thrown by a hammer
+    private const float ThrowDistance = 3f;
 
     // dimensions
     public const float Height = 1f;
@@ -88,6 +98,9 @@ public class Player : GameObject
         float yScale = Height / (size.Max.Y - size.Min.Y);
         float zScale = Depth / (size.Max.Z - size.Min.Z);
         _modelScale = Matrix.CreateScale(xScale, yScale, zScale);
+
+        _killedSound = _map.Content.Load<SoundEffect>("Audio/Willhelm");
+        _hammerHitSound = _map.Content.Load<SoundEffect>("Audio/hammerBong");
     }
 
     public void Reset(Vector3 position)
@@ -321,13 +334,12 @@ public class Player : GameObject
                 // only hit player, if it is not hit already
                 if (!hammer.IsPlayerHit(_id))
                 {
-                    hammer.HitPlayer(this._id, _pos.X, _pos.Z);
+                    hammer.HitPlayer(this._id, _pos);
                     OnHit();
                 }
 
-                // TODO (fbuetler) can we remove this func and _hitX, _hitZ
-                // TODO (fbuetler) give this constant a reasonable name
-                if (hammer.CheckDist(_id, _pos.X, _pos.Z, 3f))
+                // TODO (fbuetler) can we remove this func and _hit?
+                if (hammer.CheckDistFromHit(_id, _pos, ThrowDistance))
                 {
                     _pos.X += hammer.Dir.X * elapsed * hammer.Speed;
                     _pos.Z += hammer.Dir.Y * elapsed * hammer.Speed;
@@ -400,7 +412,7 @@ public class Player : GameObject
 
     public void OnHit()
     {
-        // TODO (fbuetler) play sound
+        _hammerHitSound.Play();
     }
 
     public void OnKilled()
@@ -408,8 +420,7 @@ public class Player : GameObject
         _isAlive = false;
 
         GamePad.SetVibration(_id, 0.2f, 0.2f, 0.2f, 0.2f);
-
-        // TODO (fbuetler) add fall sound
+        _killedSound.Play();
     }
 
     public override void Draw(Matrix view, Matrix projection)
