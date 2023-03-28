@@ -183,8 +183,8 @@ public class Hammer : GameObject
         }
 
         // TODO (fbuetler) fix angle
-        float throwAngle = (float)Math.Atan(_dir.Y / _dir.X);
-        Quaternion rotationQuaterion = Quaternion.CreateFromAxisAngle(Vector3.UnitY, (float)throwAngle);
+        float throwAngle = MathF.Atan(_dir.Y / _dir.X);
+        Quaternion rotationQuaterion = Quaternion.CreateFromAxisAngle(Vector3.UnitY, throwAngle);
 
         Matrix rotation = Matrix.CreateFromQuaternion(rotationQuaterion);
         Matrix translation = Matrix.CreateTranslation(_pos);

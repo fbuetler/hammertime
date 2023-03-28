@@ -224,7 +224,7 @@ public class DebugDraw : IDisposable
     public void DrawRing(Vector3 origin, Vector3 majorAxis, Vector3 minorAxis, Color color)
     {
         const int RING_SEGMENTS = 32;
-        const float fAngleDelta = 2.0F * (float)Math.PI / RING_SEGMENTS;
+        const float fAngleDelta = 2.0F * MathF.PI / RING_SEGMENTS;
 
         if (Reserve(RING_SEGMENTS, RING_SEGMENTS * 2))
         {
@@ -233,8 +233,8 @@ public class DebugDraw : IDisposable
                 Indices[IndexCount++] = (ushort)(VertexCount + i);
                 Indices[IndexCount++] = (ushort)(VertexCount + (i + 1) % RING_SEGMENTS);
             }
-            float cosDelta = (float)Math.Cos(fAngleDelta);
-            float sinDelta = (float)Math.Sin(fAngleDelta);
+            float cosDelta = MathF.Cos(fAngleDelta);
+            float sinDelta = MathF.Sin(fAngleDelta);
 
             float cosAcc = 1;
             float sinAcc = 0;
