@@ -472,11 +472,11 @@ public class Player : GameObject
         DrawModel(_model, world, view, projection);
 
         // TODO (fbuetler) calculate arrow positions/direction/length
-        // float aimingAngle = (float)Math.Acos((Vector2.Dot(Vector2.UnitX, _aiming)) / _aiming.LengthSquared());
-        // Matrix arrowRotation = Matrix.CreateRotationY(aimingAngle);
-        // Matrix arrowScale = Matrix.CreateScale(1f, 0.1f, 0.5f);
-        // world = arrowScale * arrowRotation * translation;
-        // DrawModel(_model, world, view, projection);
+        float aimingAngle = (float)Math.Acos((Vector2.Dot(Vector2.UnitX, _aiming)) / _aiming.LengthSquared());
+        Matrix arrowRotation = Matrix.CreateRotationY(aimingAngle);
+        Matrix arrowScale = Matrix.CreateScale(1f, 0.1f, 0.5f);
+        world = arrowScale * arrowRotation * translation;
+        DrawModel(_model, world, view, projection);
 
         _hammer.Draw(view, projection);
 
