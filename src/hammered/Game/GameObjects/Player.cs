@@ -219,45 +219,6 @@ public class Player : GameObject<PlayerState>
         }
     }
 
-    private void ResolveCollision(BoundingBox a, BoundingBox b)
-    {
-        Vector3 depth = IntersectionDepth(a, b);
-        if (depth == Vector3.Zero)
-        {
-            return;
-        }
-
-        float absDepthX = Math.Abs(depth.X);
-        float absDepthY = Math.Abs(depth.Y);
-        float absDepthZ = Math.Abs(depth.Z);
-
-        // resolve the collision along the shallow axis
-        if (absDepthX < absDepthY && absDepthX < absDepthZ)
-        {
-            Position = new Vector3(
-                Position.X + depth.X,
-                Position.Y,
-                Position.Z
-            );
-        }
-        else if (absDepthY < absDepthX && absDepthY < absDepthZ)
-        {
-            Position = new Vector3(
-                Position.X,
-                Position.Y + depth.Y,
-                Position.Z
-            );
-        }
-        else
-        {
-            Position = new Vector3(
-                Position.X,
-                Position.Y,
-                Position.Z + depth.Z
-            );
-        }
-    }
-
     private void HandleHammerCollisions(GameTime gameTime)
     {
         float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
@@ -281,39 +242,6 @@ public class Player : GameObject<PlayerState>
 
             }
         }
-    }
-
-    private Vector3 IntersectionDepth(BoundingBox a, BoundingBox b)
-    {
-        // calculate half sizes
-        float halfWidthA = (a.Max.X - a.Min.X) * 0.5f;
-        float halfHeightA = (a.Max.Y - a.Min.Y) * 0.5f;
-        float halfDepthA = (a.Max.Z - a.Min.Z) * 0.5f;
-        float halfWidthB = (b.Max.X - b.Min.X) * 0.5f;
-        float halfHeightB = (b.Max.Y - b.Min.Y) * 0.5f;
-        float halfDepthB = (b.Max.Z - b.Min.Z) * 0.5f;
-
-        // calculate centers
-        Vector3 centerA = new Vector3(a.Min.X + halfWidthA, a.Min.Y + halfHeightA, a.Min.Z + halfDepthA);
-        Vector3 centerB = new Vector3(b.Min.X + halfWidthB, b.Min.Y + halfHeightB, b.Min.Z + halfDepthB);
-
-        // Calculate current and minimum-non-intersecting distances between centers.
-        float distanceX = centerA.X - centerB.X;
-        float distanceY = centerA.Y - centerB.Y;
-        float distanceZ = centerA.Z - centerB.Z;
-        float minDistanceX = halfWidthA + halfWidthB;
-        float minDistanceY = halfHeightA + halfHeightB;
-        float minDistanceZ = halfDepthA + halfDepthB;
-
-        // If we are not intersecting at all, return (0, 0).
-        if (Math.Abs(distanceX) >= minDistanceX || Math.Abs(distanceY) >= minDistanceY || Math.Abs(distanceZ) >= minDistanceZ)
-            return Vector3.Zero;
-
-        // Calculate and return intersection depths.
-        float depthX = distanceX > 0 ? minDistanceX - distanceX : -minDistanceX - distanceX;
-        float depthY = distanceY > 0 ? minDistanceY - distanceY : -minDistanceY - distanceY;
-        float depthZ = distanceZ > 0 ? minDistanceZ - distanceZ : -minDistanceZ - distanceZ;
-        return new Vector3(depthX, depthY, depthZ);
     }
 
     private void OnHammerThrow()
