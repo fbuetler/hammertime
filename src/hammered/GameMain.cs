@@ -33,7 +33,7 @@ public class GameMain : Game
     SpriteFont font;
 
     // game state
-    private int _mapIndex = -1;
+    private int _mapIndex = 0;
     private bool _wasReloadPressed;
     private bool _wasNextPressed;
     private ScoreState _scoreState;
@@ -76,7 +76,7 @@ public class GameMain : Game
         TargetElapsedTime = TimeSpan.FromSeconds(1.0 / 144.0); // set frame rate to 144 fps
         IsFixedTimeStep = true; // decouple draw from update
 
-        LoadNextMap();
+        LoadMap(_mapIndex);
 
         base.Initialize();
 
@@ -124,19 +124,20 @@ public class GameMain : Game
         bool reloadPressed = _keyboardState.IsKeyDown(Keys.R) || _gamePadStates[0].IsButtonDown(Buttons.Start);
         if (!_wasReloadPressed && reloadPressed)
         {
-            ReloadCurrentMap();
+            LoadMap(_mapIndex);
         }
         _wasReloadPressed = reloadPressed;
 
         bool nextPressed = _keyboardState.IsKeyDown(Keys.N) || _gamePadStates[0].IsButtonDown(Buttons.Y);
         if (!_wasNextPressed && nextPressed)
         {
-            LoadNextMap();
+            _mapIndex = (_mapIndex + 1) % numberOfMaps;
+            LoadMap(_mapIndex);
         }
         _wasNextPressed = nextPressed;
     }
 
-    private void LoadNextMap()
+    private void LoadMap(int i)
     {
         // unloads the content for the current map before loading the next one
         if (Map != null)
@@ -145,16 +146,9 @@ public class GameMain : Game
         _scoreState = ScoreState.None;
         _winnerID = -1;
 
-        _mapIndex = (_mapIndex + 1) % numberOfMaps;
         string mapPath = string.Format("Content/Maps/{0}.txt", _mapIndex);
         using (Stream fileStream = TitleContainer.OpenStream(mapPath))
             _map = new Map(this, Services, fileStream);
-    }
-
-    private void ReloadCurrentMap()
-    {
-        _mapIndex--;
-        LoadNextMap();
     }
 
     protected override void Draw(GameTime gameTime)
@@ -182,7 +176,8 @@ public class GameMain : Game
         List<int> playersAlive = new List<int>();
         foreach (Player p in Map.Players.Values)
         {
-            if (p.State == PlayerState.DEAD)
+            // TODO: (lmeinen) Wait with decreasing playsAlive until player hits ground below (could make for fun animation or items that allow one to come back from falling)
+            if (p.State != PlayerState.DEAD && p.State != PlayerState.FALLING)
             {
                 playersAlive.Add(p.PlayerId);
             }
