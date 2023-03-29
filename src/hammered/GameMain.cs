@@ -180,9 +180,9 @@ public class GameMain : Game
         DrawShadowedString(font, "Map: " + _mapIndex, new Vector2(10, 10), Color.White);
 
         List<int> playersAlive = new List<int>();
-        foreach (Player p in Map.Players)
+        foreach (Player p in Map.Players.Values)
         {
-            if (p.IsAlive)
+            if (p.State == PlayerState.DEAD)
             {
                 playersAlive.Add(p.PlayerId);
             }

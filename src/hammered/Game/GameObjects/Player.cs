@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
@@ -29,16 +30,6 @@ public class Player : GameObject<PlayerState>
 
     private Vector3 _velocity;
 
-    public Hammer Hammer { get { return _hammer; } }
-    private Hammer _hammer;
-
-    // a player is alive as long as it stands on the platform
-    public bool IsAlive
-    {
-        get { return _isAlive; }
-    }
-    private bool _isAlive;
-
     public override Vector3 Size => new Vector3(1f, 1f, 1f);
 
     private PlayerState _state;
@@ -62,7 +53,6 @@ public class Player : GameObject<PlayerState>
 
     // input configuration
     private const float MoveStickScale = 1.0f;
-    private const float AimStickScale = 1.0f;
     private const Buttons ThrowButton = Buttons.RightShoulder;
 
     public Player(Game game, Vector3 position, int playerId) : base(game, position)
@@ -79,9 +69,6 @@ public class Player : GameObject<PlayerState>
         // TODO: (lmeinen) Add models for other states
 
         _velocity = Vector3.Zero;
-        _isAlive = true;
-        _hammer = new Hammer(game, position, this);
-        Game.Components.Add(_hammer);
     }
 
     public override void Update(GameTime gameTime)
@@ -94,8 +81,7 @@ public class Player : GameObject<PlayerState>
 
         if (_state == PlayerState.THROWING)
         {
-            Console.WriteLine($"Player {_playerId} is throwing their hammer");
-            _hammer.Throw();
+            GameMain.Map.Hammers[_playerId].Throw();
             OnHammerThrow();
         }
     }
@@ -168,7 +154,7 @@ public class Player : GameObject<PlayerState>
         _velocity.X += Direction.X * MoveAcceleration * elapsed;
         _velocity.Z += Direction.Z * MoveAcceleration * elapsed;
 
-        // handle y velocity by finding relevant tiles and checking whether they still exist
+        // always apply gravity forces, and resolve collisions with tiles later
         _velocity.Y = MathHelper.Clamp(_velocity.Y - GravityAcceleration * elapsed, -MaxFallSpeed, MaxFallSpeed);
 
         if (_state != PlayerState.FALLING) // not falling
@@ -227,14 +213,8 @@ public class Player : GameObject<PlayerState>
 
     private void HandlePlayerCollisions()
     {
-        List<Player> opponents = GameMain.Map.Players;
-        foreach (Player opponent in opponents)
+        foreach (Player opponent in GameMain.Map.Players.Values.Where(p => p.PlayerId != _playerId))
         {
-            // dont do collision detection with itself
-            if (opponent.PlayerId == _playerId)
-            {
-                continue;
-            }
             ResolveCollision(BoundingBox, opponent.BoundingBox);
         }
     }
@@ -281,25 +261,14 @@ public class Player : GameObject<PlayerState>
     private void HandleHammerCollisions(GameTime gameTime)
     {
         float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
-
-        Hammer[] hammers = GameMain.Map.GetHammers();
-        foreach (Hammer hammer in hammers)
+        foreach (Hammer hammer in GameMain.Map.Hammers.Values.Where(h => h.OwnerID != _playerId && h.State != HammerState.IS_NOT_FLYING))
         {
-            // dont do collision detection if the hammer is not flying or this player is its owner
-            if (_hammer.State == HammerState.IS_NOT_FLYING || hammer.OwnerID == _playerId)
-            {
-                continue;
-            }
-
             // detect collision
             if (BoundingBox.Intersects(hammer.BoundingBox))
             {
                 // only hit player, if it is not hit already
-                if (!hammer.IsPlayerHit(_playerId))
-                {
-                    hammer.HitPlayer(this._playerId, Position);
+                if (hammer.HitPlayer(this._playerId, Position))
                     OnHit();
-                }
 
                 // TODO (fbuetler) can we remove this func and _hit?
                 if (hammer.CheckDistFromHit(_playerId, Position, ThrowDistance))
@@ -375,8 +344,6 @@ public class Player : GameObject<PlayerState>
 
     public void OnKilled()
     {
-        _isAlive = false;
-
         GamePad.SetVibration(_playerId, 0.2f, 0.2f, 0.2f, 0.2f);
     }
 

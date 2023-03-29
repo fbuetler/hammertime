@@ -62,10 +62,8 @@ public class Tile : GameObject<TileState>
             return;
         }
 
-        for (int j = 0; j < GameMain.NumberOfPlayers; j++)
+        foreach (Player p in GameMain.Map.Players.Values)
         {
-            Player p = GameMain.Map.Players[j];
-
             // is player standing on tile
             if (p.BoundingBox.Intersects(BoundingBox) && p.State != PlayerState.FALLING)
             {
@@ -79,10 +77,8 @@ public class Tile : GameObject<TileState>
             }
         }
 
-        for (int j = 0; j < GameMain.NumberOfPlayers; j++)
+        foreach (Hammer h in GameMain.Map.Hammers.Values)
         {
-            Hammer h = GameMain.Map.GetHammers()[j];
-
             if (h.BoundingBox.Intersects(BoundingBox) && h.State != HammerState.IS_NOT_FLYING)
             {
                 _state = TileState.HP0;

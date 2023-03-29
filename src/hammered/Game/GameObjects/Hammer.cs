@@ -16,8 +16,8 @@ public enum HammerState
 public class Hammer : GameObject<HammerState>
 {
 
-    public int OwnerID { get { return _owner.PlayerId; } }
-    private Player _owner;
+    private int _ownerId;
+    public int OwnerID { get => _ownerId; }
 
     // hammer position
     private Vector3 _origin;
@@ -25,7 +25,7 @@ public class Hammer : GameObject<HammerState>
     private float _speed;
 
     // hammer hit
-    private bool[] _playerHit = new bool[] { false, false, false, false };
+    private HashSet<int> _hitPlayers;
     private Vector3[] _hitPos = new Vector3[] {
         new Vector3(0f, 0f, 0f),
         new Vector3(0f, 0f, 0f),
@@ -48,28 +48,19 @@ public class Hammer : GameObject<HammerState>
 
     // TODO (fbuetler) deacclerate when close to player on return/before hit
 
-    public Hammer(Game game, Vector3 position, Player owner) : base(game, position)
+    public Hammer(Game game, Vector3 position, int ownerId) : base(game, position)
     {
         this.Enabled = true;
         this.Visible = false;
 
-        _owner = owner;
+        _ownerId = ownerId;
         _state = HammerState.IS_NOT_FLYING;
         _objectModelPaths = new Dictionary<HammerState, string>();
         _objectModelPaths[HammerState.IS_FLYING] = "Hammer/hammerCube";
         _objectModelPaths[HammerState.IS_RETURNING] = "Hammer/hammerCube";
         _objectModelPaths[HammerState.IS_NOT_FLYING] = "Hammer/hammerCube";
         _speed = ThrowSpeed;
-        _playerHit = new bool[] { false, false, false, false };
-    }
-
-    // TODO: (lmeinen) remove
-    public void Reset(Player owner)
-    {
-        _owner = owner;
-        // TODO (fred) replace the speed with some actual speed. not just a fixed number
-        _speed = ThrowSpeed;
-        _playerHit = new bool[] { false, false, false, false };
+        _hitPlayers = new HashSet<int>();
     }
 
     public override void Update(GameTime gameTime)
@@ -83,25 +74,25 @@ public class Hammer : GameObject<HammerState>
                 {
                     // if max distance is reached, make it return
                     _state = HammerState.IS_RETURNING;
-                    _playerHit = new bool[] { false, false, false, false };
+                    _hitPlayers.Clear();
                 }
                 break;
-            case HammerState.IS_RETURNING when (Position - _owner.Position).LengthSquared() < 1f || _owner.State == PlayerState.DEAD:
+            case HammerState.IS_RETURNING when (Position - GameMain.Map.Players[_ownerId].Position).LengthSquared() < 1f || GameMain.Map.Players[_ownerId].State == PlayerState.DEAD:
                 // hammer is close to the player or the player is dead, it is returned
                 _state = HammerState.IS_NOT_FLYING;
                 this.Visible = false;
                 Direction = Vector3.Zero;
-                _playerHit = new bool[] { false, false, false, false };
-                _owner.OnHammerReturn();
+                _hitPlayers.Clear();
+                GameMain.Map.Players[_ownerId].OnHammerReturn();
                 break;
             case HammerState.IS_RETURNING:
-                Vector3 dir = _owner.Position - Position;
+                Vector3 dir = GameMain.Map.Players[_ownerId].Position - Position;
                 dir.Normalize(); // can't work on Direction directly, as Vector3 is a struct, not an object
                 Direction = dir;
                 Move(gameTime, Direction * ThrowSpeed);
                 break;
             case HammerState.IS_NOT_FLYING:
-                Position = _owner.Position + new Vector3(0.25f, 0.25f, 0.25f);
+                Position = GameMain.Map.Players[_ownerId].Position + new Vector3(0.25f, 0.25f, 0.25f);
                 HandleInput();
                 break;
         }
@@ -110,7 +101,7 @@ public class Hammer : GameObject<HammerState>
     private void HandleInput()
     {
         KeyboardState keyboardState = Keyboard.GetState();
-        GamePadState gamePadState = GamePad.GetState(_owner.PlayerId);
+        GamePadState gamePadState = GamePad.GetState(_ownerId);
 
         // get analog aim
         Vector3 aimingDirection = Vector3.Zero;
@@ -130,9 +121,9 @@ public class Hammer : GameObject<HammerState>
         {
             if (Direction == Vector3.Zero)
             {
-                if (_owner.Direction != Vector3.Zero)
+                if (GameMain.Map.Players[_ownerId].Direction != Vector3.Zero)
                 {
-                    Direction = _owner.Direction;
+                    Direction = GameMain.Map.Players[_ownerId].Direction;
                 }
                 else
                 {
@@ -147,15 +138,12 @@ public class Hammer : GameObject<HammerState>
         }
     }
 
-    public void HitPlayer(int id, Vector3 pos)
+    public bool HitPlayer(int id, Vector3 pos)
     {
-        _playerHit[id] = true;
-        _hitPos[id] = pos;
-    }
-
-    public bool IsPlayerHit(int i)
-    {
-        return _playerHit[i];
+        var isHit = _hitPlayers.Add(id);
+        if (isHit)
+            _hitPos[id] = pos;
+        return isHit;
     }
 
     public bool CheckDistFromHit(int id, Vector3 pos, float maxdist)

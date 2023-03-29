@@ -45,14 +45,11 @@ public class Map
     }
     private Tile[,,] _tiles;
 
+    public Dictionary<int, Player> Players { get => _players; }
+    private Dictionary<int, Player> _players = new Dictionary<int, Player>();
 
-    public List<Player> Players
-    {
-        get { return _players; }
-    }
-
-
-    private List<Player> _players = new List<Player>();
+    public Dictionary<int, Hammer> Hammers { get => _hammers; }
+    private Dictionary<int, Hammer> _hammers = new Dictionary<int, Hammer>();
 
     public Map(Game game, IServiceProvider serviceProvider, Stream fileStream)
     {
@@ -152,12 +149,19 @@ public class Map
         // ignore starting tiles if already all players are loaded
         if (_players.Count < _game.NumberOfPlayers)
         {
-            Player player = new Player(_game, new Vector3(x, 1, z), _players.Count);
-            _players.Add(player);
+            int playerId = _players.Count;
+            Player player = new Player(_game, new Vector3(x, 1, z), playerId);
+            Hammer hammer = new Hammer(_game, new Vector3(x, 1, z), playerId);
+            _players.Add(playerId, player);
+            _hammers.Add(playerId, hammer);
 
             // enable player component
             player.UpdateOrder = PLAYER_UPDATE_ORDER;
             _game.Components.Add(player);
+
+            // enable hammer compohent
+            hammer.UpdateOrder = HAMMER_UPDATE_ORDER;
+            _game.Components.Add(hammer);
         }
     }
 
@@ -184,16 +188,6 @@ public class Map
         {
             return _tiles[x, y, z].BoundingBox;
         }
-    }
-
-    public Hammer[] GetHammers()
-    {
-        Hammer[] hammers = new Hammer[_game.NumberOfPlayers];
-        for (int i = 0; i < _game.NumberOfPlayers; i++)
-        {
-            hammers[i] = _players[i].Hammer;
-        }
-        return hammers;
     }
 
     public void Update(GameTime gameTime, KeyboardState keyboardState, GamePadState[] gamePadStates)
