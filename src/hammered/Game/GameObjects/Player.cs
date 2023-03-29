@@ -171,9 +171,7 @@ public class Player : GameObject<PlayerState>
         // handle y velocity by finding relevant tiles and checking whether they still exist
         _velocity.Y = MathHelper.Clamp(_velocity.Y - GravityAcceleration * elapsed, -MaxFallSpeed, MaxFallSpeed);
 
-        _velocity.Y = WalkOffMap(gameTime, _velocity.Y);
-
-        if (_isAlive) // not falling
+        if (_state != PlayerState.FALLING) // not falling
         {
             _velocity *= GroundDragFactor;
         }
@@ -197,19 +195,11 @@ public class Player : GameObject<PlayerState>
 
         if (Position.Y == prevPos.Y)
             _velocity.Y = 0;
+        else
+            OnFalling();
 
         if (Position.Z == prevPos.Z)
             _velocity.Z = 0;
-    }
-
-    private float WalkOffMap(GameTime gameTime, float velocityY)
-    {
-        if (_isAlive)
-        {
-            return 0;
-        }
-
-        return velocityY;
     }
 
     private void HandleTileCollisions()
@@ -225,14 +215,12 @@ public class Player : GameObject<PlayerState>
         {
             for (int x = x_low; x <= x_high; x++)
             {
-                if (!GameMain.Map.HasTile(x, 0, z))
-                {
-                    continue;
-                }
-
                 // determine collision depth (with direction) and magnitude
-                BoundingBox neighbour = GameMain.Map.GetTileBounds(x, 0, z);
-                ResolveCollision(BoundingBox, neighbour);
+                BoundingBox? neighbour = GameMain.Map.GetTileBounds(x, 0, z);
+                if (neighbour != null)
+                {
+                    ResolveCollision(BoundingBox, (BoundingBox)neighbour);
+                }
             }
         }
     }
@@ -260,14 +248,23 @@ public class Player : GameObject<PlayerState>
         }
 
         float absDepthX = Math.Abs(depth.X);
+        float absDepthY = Math.Abs(depth.Y);
         float absDepthZ = Math.Abs(depth.Z);
 
         // resolve the collision along the shallow axis
-        if (absDepthX < absDepthZ)
+        if (absDepthX < absDepthY && absDepthX < absDepthZ)
         {
             Position = new Vector3(
                 Position.X + depth.X,
                 Position.Y,
+                Position.Z
+            );
+        }
+        else if (absDepthY < absDepthX && absDepthY < absDepthZ)
+        {
+            Position = new Vector3(
+                Position.X,
+                Position.Y + depth.Y,
                 Position.Z
             );
         }
@@ -307,6 +304,7 @@ public class Player : GameObject<PlayerState>
                 // TODO (fbuetler) can we remove this func and _hit?
                 if (hammer.CheckDistFromHit(_playerId, Position, ThrowDistance))
                 {
+
                     var pos = Position;
                     pos.X += hammer.Direction.X * elapsed * hammer.Speed;
                     pos.Z += hammer.Direction.Y * elapsed * hammer.Speed;
@@ -371,6 +369,12 @@ public class Player : GameObject<PlayerState>
     public void OnHit()
     {
         // _hammerHitSound.Play();
+    }
+
+    public void OnFalling()
+    {
+        _state = PlayerState.FALLING;
+        GamePad.SetVibration(_playerId, 0.2f, 0.2f, 0.2f, 0.2f);
     }
 
     public void OnKilled()

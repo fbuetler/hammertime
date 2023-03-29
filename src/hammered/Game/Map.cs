@@ -10,6 +10,11 @@ namespace hammered;
 
 public class Map
 {
+
+    private const int TILE_UPDATE_ORDER = 0;
+    private const int HAMMER_UPDATE_ORDER = 1;
+    private const int PLAYER_UPDATE_ORDER = 2;
+
     public ContentManager Content
     {
         get { return _content; }
@@ -104,6 +109,7 @@ public class Map
                 char tileType = lines[z][x];
                 Tile tile = LoadTile(tileType, x, z);
                 _tiles[x, 0, z] = tile; // for now we only load floor tiles
+                tile.UpdateOrder = TILE_UPDATE_ORDER;
                 _game.Components.Add(tile);
             }
         }
@@ -119,35 +125,26 @@ public class Map
         // TODO (fbuetler) introduce different tile types
         switch (tileType)
         {
-            // abyss
             case '.':
-                return LoadAbyssTile(x, z);
-            // breakable floor
+                // abyss
+                return new Tile(_game, new Vector3(x, 0, z), true);
             case '-':
-                return LoadFloorTile(x, z);
-            // non-breakable floor
+                // breakable floor
+                return new Tile(_game, new Vector3(x, 0, z), false);
             case '#':
+                // non-breakable floor
                 throw new NotSupportedException(String.Format("Tile type '{0}' is not yet supported", tileType));
-            // wall
             case 'X':
+                // wall
                 throw new NotSupportedException(String.Format("Tile type '{0}' is not yet supported", tileType));
-            // player
             case 'P':
+                // player
                 LoadPlayer(x, z);
-                return LoadFloorTile(x, z);
+                // breakable floor
+                return new Tile(_game, new Vector3(x, 0, z), false);
             default:
                 throw new NotSupportedException(String.Format("Unsupported tile type character '{0}' at position {1}, {2}.", tileType, x, z));
         }
-    }
-
-    private Tile LoadAbyssTile(int x, int z)
-    {
-        return new Tile(_game, new Vector3(x, 0, z), true);
-    }
-
-    private Tile LoadFloorTile(int x, int z)
-    {
-        return new Tile(_game, new Vector3(x, 0, z), false);
     }
 
     private void LoadPlayer(int x, int z)
@@ -157,6 +154,9 @@ public class Map
         {
             Player player = LoadPlayer(x, 1, z);
             _players.Add(player);
+
+            // enable player component
+            player.UpdateOrder = PLAYER_UPDATE_ORDER;
             _game.Components.Add(player);
         }
     }
@@ -179,30 +179,16 @@ public class Map
         _content.Unload();
     }
 
-    public bool HasTile(int x, int y, int z)
+    public BoundingBox? GetTileBounds(int x, int y, int z)
     {
-        if (x < 0 || x >= Width)
+        if (x < 0 || y < 0 || z < 0 || x >= Width || y >= Height || z >= Depth || _tiles[x, y, z].State == TileState.HP0)
         {
-            return false;
+            return null;
         }
-        if (y < 0 || y >= Height)
+        else
         {
-            return false;
+            return _tiles[x, y, z].BoundingBox;
         }
-        if (z < 0 || z >= Depth)
-        {
-            return false;
-        }
-
-        return _tiles[x, y, z].State != TileState.HP0;
-    }
-
-    public BoundingBox GetTileBounds(int x, int y, int z)
-    {
-        return new BoundingBox(
-                new Vector3(x, y, z),
-                new Vector3(x + Tile.Width, y + Tile.Height, z + Tile.Depth)
-            );
     }
 
     public Hammer[] GetHammers()
@@ -218,83 +204,6 @@ public class Map
     public void Update(GameTime gameTime, KeyboardState keyboardState, GamePadState[] gamePadStates)
     {
         // IMPORTANT! UpdatePlayers has to be AFTER UpdateTiles because of isPlayerStandingOnAnyTile
-        UpdateTiles(gameTime);
-    }
-
-    private void UpdateTiles(GameTime gameTime)
-    {
-        bool[] isPlayerStandingOnAnyTile = new bool[_players.Count];
-
-        // TODO (fbuetler) investigate why sometimes the wrong tiles are breaking
-        foreach (Tile t in _tiles)
-        {
-            t.Update(gameTime);
-
-            if (t.State == TileState.HP0)
-            {
-                continue;
-            }
-
-            for (int j = 0; j < _players.Count; j++)
-            {
-                Player p = _players[j];
-
-                if (!p.IsAlive)
-                {
-                    // HACK (fbuetler) a falling player should not interact with tiles
-                    continue;
-                }
-
-                // is player standing on tile
-                if (p.BoundingBox.Intersects(t.BoundingBox))
-                {
-                    OnTileEnter(t, p);
-                    isPlayerStandingOnAnyTile[j] |= true;
-                }
-                else
-                {
-                    OnTileExit(t, p);
-                }
-            }
-
-            if (t.State == TileState.HP0)
-            {
-                // only called when the tile breaks time
-                t.OnBreak();
-            }
-        }
-
-        // TODO (fbuetler) a bit ugly but is there another efficient way?
-        for (int i = 0; i < isPlayerStandingOnAnyTile.Length; i++)
-        {
-            if (!isPlayerStandingOnAnyTile[i])
-            {
-                OnPlayerFall(_players[i]);
-            }
-        }
-    }
-
-    private void OnTileEnter(Tile tile, Player player)
-    {
-        tile.OnEnter(player);
-    }
-
-    private void OnTileExit(Tile tile, Player player)
-    {
-        tile.OnExit(player);
-    }
-
-    private void OnPlayerFall(Player player)
-    {
-        if (player.IsAlive)
-        {
-            player.OnKilled();
-        }
-    }
-
-    private void OnPlayerHit(Player player)
-    {
-        player.OnHit();
     }
 
     public void Draw(GameTime gameTime)

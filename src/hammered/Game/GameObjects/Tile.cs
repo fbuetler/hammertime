@@ -56,28 +56,46 @@ public class Tile : GameObject<TileState>
 
     public override void Update(GameTime gameTime)
     {
+        if (_state == TileState.HP0)
+        {
+            // TODO: (lmeinen) Can we disable this tile (i.e. no longer updated) if its HP reaches 0?
+            return;
+        }
+
+        for (int j = 0; j < GameMain.NumberOfPlayers; j++)
+        {
+            Player p = GameMain.Map.Players[j];
+
+            // is player standing on tile
+            if (p.BoundingBox.Intersects(BoundingBox) && p.State != PlayerState.FALLING)
+            {
+                if (!_visitors.Contains(p.PlayerId))
+                    OnEnter(p);
+            }
+            else
+            {
+                if (_visitors.Contains(p.PlayerId))
+                    OnExit(p);
+            }
+        }
+
+        if (_state == TileState.HP0)
+        {
+            // only called once
+            OnBreak();
+        }
+
         // TODO (fbuetler) update breaking animation based on health points
     }
 
     public void OnEnter(Player player)
     {
-        if (_visitors.Contains(player.PlayerId))
-        {
-            return;
-        }
-
         _visitors.Add(player.PlayerId);
     }
 
     public void OnExit(Player player)
     {
-        if (!_visitors.Contains(player.PlayerId))
-        {
-            return;
-        }
-
         _visitors.Remove(player.PlayerId);
-
         _state = NextState(_state);
     }
 

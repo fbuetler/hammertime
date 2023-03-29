@@ -76,23 +76,17 @@ public class Hammer : GameObject<HammerState>
     {
         float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
         Vector3 pos = Position;
-        Vector2 dir = new Vector2();
+        Vector3 dir = new Vector3();
         switch (_state)
         {
             case HammerState.IS_FLYING:
-                var prevPos = Position;
-                // if max distance is reached, make it return
+                Move(gameTime, new Vector3(Direction.X, 0f, Direction.Y) * ThrowSpeed);
                 if ((Position - _origin).LengthSquared() > MaxThrowDistance * MaxThrowDistance)
                 {
-                    // TODO (fbuetler) fix buggy return path (should follow player even if falling)
-                    dir.X = _owner.Position.X - Position.X;
-                    dir.Y = _owner.Position.Z - Position.Z;
-                    Direction = dir;
-                    Direction.Normalize();
+                    // if max distance is reached, make it return
                     _state = HammerState.IS_RETURNING;
                     _playerHit = new bool[] { false, false, false, false };
                 }
-                Move(gameTime, new Vector3(Direction.X, 0f, Direction.Y) * ThrowSpeed);
                 break;
             case HammerState.IS_RETURNING when (Position - _owner.Position).LengthSquared() < 1f || _owner.State == PlayerState.DEAD:
                 // hammer is close to the player or the player is dead, it is returned
@@ -103,11 +97,13 @@ public class Hammer : GameObject<HammerState>
                 _owner.OnHammerReturn();
                 break;
             case HammerState.IS_RETURNING:
-                dir.X = _owner.Position.X - Position.X;
-                dir.Y = _owner.Position.Z - Position.Z;
-                Direction = dir;
-                Direction.Normalize();
-                Move(gameTime, new Vector3(Direction.X, 0f, Direction.Y) * ThrowSpeed);
+                dir = _owner.Position - Position;
+                // dir.X = _owner.Position.X - Position.X;
+                // dir.Y = _owner.Position.Z - Position.Z;
+                dir.Normalize();
+                // Direction = dir;
+                // Move(gameTime, new Vector3(Direction.X, 0f, Direction.Y) * ThrowSpeed);
+                Move(gameTime, dir * ThrowSpeed);
                 break;
             case HammerState.IS_NOT_FLYING:
                 Position = _owner.Position;
