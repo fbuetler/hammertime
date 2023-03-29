@@ -23,6 +23,8 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
     private Vector3 _dir = Vector3.Zero;
     public Vector3 Direction { get => _dir; set => _dir = value; }
 
+    public Vector3 Center { get => Position + Size / 2; set => _pos = value - Size / 2; }
+
     public abstract Vector3 Size
     {
         get;
@@ -91,21 +93,29 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
 
             _models[state] = new ScaledModel(model, modelScale);
         }
+
+        LoadAudioContent();
     }
+
+    protected virtual void LoadAudioContent() { }
 
     public override void Draw(GameTime gameTime)
     {
         Matrix view = GameMain.Map.Camera.View;
         Matrix projection = GameMain.Map.Camera.Projection;
 
-        float rotation = (float)Math.Atan(_dir.Y / _dir.X);
-        Quaternion rotationQuaterion = Quaternion.CreateFromAxisAngle(Vector3.UnitY, rotation);
-        Matrix rotationMatrix = Matrix.CreateFromQuaternion(rotationQuaterion);
+        // as the model is rotate we have to
+        // * move it into the origin
+        // * rotate
+        // * move it into it designated positions and also compensate for the move into the origin
+        Matrix translateIntoOrigin = Matrix.CreateTranslation(-Size / 2);
 
-        Matrix translation = Matrix.CreateTranslation(Position);
+        float angle = MathF.Atan2(_dir.Y, _dir.X);
+        Matrix rotate = Matrix.CreateFromAxisAngle(Vector3.UnitY, angle);
 
-        // Matrix world = _models[State].modelScale * rotationMatrix * translation;
-        Matrix world = _models[State].modelScale * translation;
+        Matrix translateIntoPosition = Matrix.CreateTranslation(Center);
+
+        Matrix world = _models[State].modelScale * translateIntoOrigin * rotate * translateIntoPosition;
 
         // change tile model based on current object state
         DrawModel(_models[State].model, world, view, projection);

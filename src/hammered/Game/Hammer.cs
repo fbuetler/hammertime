@@ -45,6 +45,7 @@ public class Hammer : GameObject<HammerState>
     private const float ThrowSpeed = 20f;
     private const float MaxThrowDistance = 10f;
     private const float AimStickScale = 1.0f;
+    private const float PickupDistance = 1f;
 
     // TODO (fbuetler) deacclerate when close to player on return/before hit
 
@@ -70,14 +71,13 @@ public class Hammer : GameObject<HammerState>
         {
             case HammerState.IS_FLYING:
                 Move(gameTime, Direction * ThrowSpeed);
-                if ((Position - _origin).LengthSquared() > MaxThrowDistance * MaxThrowDistance)
+                if ((Center - _origin).LengthSquared() > MaxThrowDistance * MaxThrowDistance)
                 {
                     // if max distance is reached, make it return
                     _state = HammerState.IS_RETURNING;
-                    _hitPlayers.Clear();
                 }
                 break;
-            case HammerState.IS_RETURNING when (Position - GameMain.Map.Players[_ownerId].Position).LengthSquared() < 1f || GameMain.Map.Players[_ownerId].State == PlayerState.DEAD:
+            case HammerState.IS_RETURNING when (Center - GameMain.Map.Players[_ownerId].Center).LengthSquared() < PickupDistance || GameMain.Map.Players[_ownerId].State == PlayerState.DEAD:
                 // hammer is close to the player or the player is dead, it is returned
                 _state = HammerState.IS_NOT_FLYING;
                 this.Visible = false;
@@ -86,13 +86,13 @@ public class Hammer : GameObject<HammerState>
                 GameMain.Map.Players[_ownerId].OnHammerReturn();
                 break;
             case HammerState.IS_RETURNING:
-                Vector3 dir = GameMain.Map.Players[_ownerId].Position - Position;
+                Vector3 dir = GameMain.Map.Players[_ownerId].Center - Center;
                 dir.Normalize(); // can't work on Direction directly, as Vector3 is a struct, not an object
                 Direction = dir;
                 Move(gameTime, Direction * ThrowSpeed);
                 break;
             case HammerState.IS_NOT_FLYING:
-                Position = GameMain.Map.Players[_ownerId].Position + new Vector3(0.25f, 0.25f, 0.25f);
+                Center = GameMain.Map.Players[_ownerId].Center;
                 HandleInput();
                 break;
         }
@@ -116,7 +116,6 @@ public class Hammer : GameObject<HammerState>
 
     public void Throw()
     {
-        // TODO: (lmeinen) If direction is 0 then we're just throwing downwards - which should be fine really?
         if (_state == HammerState.IS_NOT_FLYING)
         {
             if (Direction == Vector3.Zero)
@@ -138,17 +137,9 @@ public class Hammer : GameObject<HammerState>
         }
     }
 
-    public bool HitPlayer(int id, Vector3 pos)
+    public void Hit()
     {
-        var isHit = _hitPlayers.Add(id);
-        if (isHit)
-            _hitPos[id] = pos;
-        return isHit;
-    }
-
-    public bool CheckDistFromHit(int id, Vector3 pos, float maxdist)
-    {
-        return (float)Math.Sqrt(((_hitPos[id].X - pos.X) * (_hitPos[id].X - pos.X)) + ((_hitPos[id].Y - pos.Y) * (_hitPos[id].Y - pos.Y))) <= maxdist;
+        _state = HammerState.IS_RETURNING;
     }
 
 }

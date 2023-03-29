@@ -35,11 +35,20 @@ public class Player : GameObject<PlayerState>
     private PlayerState _state;
     public override PlayerState State => _state;
 
+    // push back
+    private bool _isPushedback;
+    private Vector3 _pushbackDir;
+    private float _pushbackDistanceLeft;
+
     private Dictionary<PlayerState, string> _objectModelPaths;
     public override Dictionary<PlayerState, string> ObjectModelPaths => _objectModelPaths;
 
-    // how far one gets thrown by a hammer
-    private const float ThrowDistance = 3f;
+    // how far one gets pushed back by a hammer
+    private const float PushbackDistance = 3f;
+    private const float PushbackSpeed = 2000f;
+
+    // if a player is below the kill plane, it disappears
+    private const float KillPlaneLevel = -10f;
 
     // constants for controlling horizontal movement
     private const float MoveAcceleration = 1300f;
@@ -71,6 +80,12 @@ public class Player : GameObject<PlayerState>
         _velocity = Vector3.Zero;
     }
 
+    protected override void LoadAudioContent()
+    {
+        _killedSound = GameMain.Map.Content.Load<SoundEffect>("Audio/Willhelm");
+        _hammerHitSound = GameMain.Map.Content.Load<SoundEffect>("Audio/hammerBong");
+    }
+
     public override void Update(GameTime gameTime)
     {
         KeyboardState keyboardState = Keyboard.GetState();
@@ -83,6 +98,12 @@ public class Player : GameObject<PlayerState>
         {
             GameMain.Map.Hammers[_playerId].Throw();
             OnHammerThrow();
+        }
+
+        if (_state == PlayerState.FALLING && Position.Y < KillPlaneLevel)
+        {
+            _state = PlayerState.DEAD;
+            Visible = false;
         }
     }
 
@@ -102,30 +123,27 @@ public class Player : GameObject<PlayerState>
 
         // if any digital horizontal movement input is found, override the analog movement
         if (gamePadState.IsButtonDown(Buttons.DPadUp) ||
-            keyboardState.IsKeyDown(Keys.Up) ||
-            keyboardState.IsKeyDown(Keys.W))
+            keyboardState.IsKeyDown(Keys.Up))
         {
             movement.Z -= 1.0f;
         }
         else if (gamePadState.IsButtonDown(Buttons.DPadDown) ||
-                 keyboardState.IsKeyDown(Keys.Down) ||
-                 keyboardState.IsKeyDown(Keys.S))
+                 keyboardState.IsKeyDown(Keys.Down))
         {
             movement.Z += 1.0f;
         }
 
         if (gamePadState.IsButtonDown(Buttons.DPadLeft) ||
-            keyboardState.IsKeyDown(Keys.Left) ||
-            keyboardState.IsKeyDown(Keys.A))
+            keyboardState.IsKeyDown(Keys.Left))
         {
             movement.X -= 1.0f;
         }
         else if (gamePadState.IsButtonDown(Buttons.DPadRight) ||
-                 keyboardState.IsKeyDown(Keys.Right) ||
-                 keyboardState.IsKeyDown(Keys.D))
+                 keyboardState.IsKeyDown(Keys.Right))
         {
             movement.X += 1.0f;
         }
+
 
         // prevent the player from running faster than his top speed
         if (movement.LengthSquared() > 1)
@@ -166,7 +184,9 @@ public class Player : GameObject<PlayerState>
             _velocity *= AirDragFactor;
         }
 
-        HandleHammerCollisions(gameTime);
+        HandleHammerCollisions();
+
+        HandlePushback(gameTime);
 
         // apply velocity
         Move(gameTime, _velocity);
@@ -174,6 +194,8 @@ public class Player : GameObject<PlayerState>
         // if the player is now colliding with the map, separate them.
         HandleTileCollisions();
         HandlePlayerCollisions();
+
+        _pushbackDistanceLeft = Math.Max(0, _pushbackDistanceLeft - (prevPos - Position).Length());
 
         // if the collision stopped us from moving, reset the velocity to zero
         if (Position.X == prevPos.X)
@@ -186,6 +208,17 @@ public class Player : GameObject<PlayerState>
 
         if (Position.Z == prevPos.Z)
             _velocity.Z = 0;
+    }
+
+    private void HandlePushback(GameTime gameTime)
+    {
+        float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+        if (_isPushedback && _pushbackDistanceLeft > 0)
+        {
+            _velocity = _pushbackDir * PushbackSpeed * elapsed;
+            Console.WriteLine($"Pushed back with force {_velocity} - distance left: {_pushbackDistanceLeft}");
+        }
     }
 
     private void HandleTileCollisions()
@@ -219,27 +252,15 @@ public class Player : GameObject<PlayerState>
         }
     }
 
-    private void HandleHammerCollisions(GameTime gameTime)
+    private void HandleHammerCollisions()
     {
-        float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
         foreach (Hammer hammer in GameMain.Map.Hammers.Values.Where(h => h.OwnerID != _playerId && h.State != HammerState.IS_NOT_FLYING))
         {
             // detect collision
             if (BoundingBox.Intersects(hammer.BoundingBox))
             {
-                // only hit player, if it is not hit already
-                if (hammer.HitPlayer(this._playerId, Position))
-                    OnHit();
-
-                // TODO (fbuetler) can we remove this func and _hit?
-                if (hammer.CheckDistFromHit(_playerId, Position, ThrowDistance))
-                {
-                    Position += hammer.Direction * elapsed * hammer.Speed;
-
-                    _velocity.X = 0;
-                    _velocity.Z = 0;
-                }
-
+                OnHit(hammer.Direction);
+                hammer.Hit();
             }
         }
     }
@@ -259,9 +280,12 @@ public class Player : GameObject<PlayerState>
         // TODO (fbuetler) update texture
     }
 
-    public void OnHit()
+    public void OnHit(Vector3 pushbackDir)
     {
-        // _hammerHitSound.Play();
+        _hammerHitSound.Play();
+        _isPushedback = true;
+        _pushbackDir = pushbackDir;
+        _pushbackDistanceLeft = PushbackDistance;
     }
 
     public void OnFalling()
