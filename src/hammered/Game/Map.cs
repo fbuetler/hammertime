@@ -173,7 +173,7 @@ public class Map
 
     public void Dispose()
     {
-        // TODO: (lmeinen) remove components
+        // just reload all components
         _game.Components.Clear();
         _content.Unload();
     }
