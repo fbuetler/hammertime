@@ -68,7 +68,7 @@ public class Map
         _content = new ContentManager(serviceProvider, "Content");
 
         // load tiles and players
-        LoadTiles(fileStream);
+        LoadMap(fileStream);
 
         // setup camera
         _camera = new Camera(
@@ -80,7 +80,7 @@ public class Map
         LoadMusic();
     }
 
-    private void LoadTiles(Stream fileStream)
+    private void LoadMap(Stream fileStream)
     {
         int width;
         List<string> lines = new List<string>();
@@ -152,18 +152,13 @@ public class Map
         // ignore starting tiles if already all players are loaded
         if (_players.Count < _game.NumberOfPlayers)
         {
-            Player player = LoadPlayer(x, 1, z);
+            Player player = new Player(_game, new Vector3(x, 1, z), _players.Count);
             _players.Add(player);
 
             // enable player component
             player.UpdateOrder = PLAYER_UPDATE_ORDER;
             _game.Components.Add(player);
         }
-    }
-
-    private Player LoadPlayer(float x, float y, float z)
-    {
-        return new Player(_game, new Vector3(x, y, z), _players.Count);
     }
 
     private void LoadMusic()
@@ -179,7 +174,7 @@ public class Map
         _content.Unload();
     }
 
-    public BoundingBox? GetTileBounds(int x, int y, int z)
+    public BoundingBox? TryGetTileBounds(int x, int y, int z)
     {
         if (x < 0 || y < 0 || z < 0 || x >= Width || y >= Height || z >= Depth || _tiles[x, y, z].State == TileState.HP0)
         {

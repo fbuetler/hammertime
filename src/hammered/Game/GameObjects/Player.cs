@@ -102,30 +102,30 @@ public class Player : GameObject<PlayerState>
 
     private void HandleInput(KeyboardState keyboardState, GamePadState gamePadState)
     {
-        Vector2 movement = new Vector2();
+        Vector3 movement = Vector3.Zero;
         // get analog movement
         movement.X = gamePadState.ThumbSticks.Left.X * MoveStickScale;
-        movement.Y = gamePadState.ThumbSticks.Left.Y * MoveStickScale;
+        movement.Z = gamePadState.ThumbSticks.Left.Y * MoveStickScale;
 
         // flip y: on the thumbsticks, down is -1, but on the screen, down is bigger numbers
-        movement.Y *= -1;
+        movement.Z *= -1;
 
         // ignore small movements to prevent running in place
         if (movement.LengthSquared() < 0.5f)
-            movement = Vector2.Zero;
+            movement = Vector3.Zero;
 
         // if any digital horizontal movement input is found, override the analog movement
         if (gamePadState.IsButtonDown(Buttons.DPadUp) ||
             keyboardState.IsKeyDown(Keys.Up) ||
             keyboardState.IsKeyDown(Keys.W))
         {
-            movement.Y -= 1.0f;
+            movement.Z -= 1.0f;
         }
         else if (gamePadState.IsButtonDown(Buttons.DPadDown) ||
                  keyboardState.IsKeyDown(Keys.Down) ||
                  keyboardState.IsKeyDown(Keys.S))
         {
-            movement.Y += 1.0f;
+            movement.Z += 1.0f;
         }
 
         if (gamePadState.IsButtonDown(Buttons.DPadLeft) ||
@@ -166,7 +166,7 @@ public class Player : GameObject<PlayerState>
         // base velocity is a combination of horizontal movement control and
         // acceleration downward due to gravity
         _velocity.X += Direction.X * MoveAcceleration * elapsed;
-        _velocity.Z += Direction.Y * MoveAcceleration * elapsed;
+        _velocity.Z += Direction.Z * MoveAcceleration * elapsed;
 
         // handle y velocity by finding relevant tiles and checking whether they still exist
         _velocity.Y = MathHelper.Clamp(_velocity.Y - GravityAcceleration * elapsed, -MaxFallSpeed, MaxFallSpeed);
@@ -195,7 +195,7 @@ public class Player : GameObject<PlayerState>
 
         if (Position.Y == prevPos.Y)
             _velocity.Y = 0;
-        else
+        else if (_state != PlayerState.FALLING)
             OnFalling();
 
         if (Position.Z == prevPos.Z)
@@ -216,7 +216,7 @@ public class Player : GameObject<PlayerState>
             for (int x = x_low; x <= x_high; x++)
             {
                 // determine collision depth (with direction) and magnitude
-                BoundingBox? neighbour = GameMain.Map.GetTileBounds(x, 0, z);
+                BoundingBox? neighbour = GameMain.Map.TryGetTileBounds(x, 0, z);
                 if (neighbour != null)
                 {
                     ResolveCollision(BoundingBox, (BoundingBox)neighbour);
@@ -304,11 +304,7 @@ public class Player : GameObject<PlayerState>
                 // TODO (fbuetler) can we remove this func and _hit?
                 if (hammer.CheckDistFromHit(_playerId, Position, ThrowDistance))
                 {
-
-                    var pos = Position;
-                    pos.X += hammer.Direction.X * elapsed * hammer.Speed;
-                    pos.Z += hammer.Direction.Y * elapsed * hammer.Speed;
-                    Position = pos;
+                    Position += hammer.Direction * elapsed * hammer.Speed;
 
                     _velocity.X = 0;
                     _velocity.Z = 0;

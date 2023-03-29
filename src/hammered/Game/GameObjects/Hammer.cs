@@ -76,11 +76,10 @@ public class Hammer : GameObject<HammerState>
     {
         float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
         Vector3 pos = Position;
-        Vector3 dir = new Vector3();
         switch (_state)
         {
             case HammerState.IS_FLYING:
-                Move(gameTime, new Vector3(Direction.X, 0f, Direction.Y) * ThrowSpeed);
+                Move(gameTime, Direction * ThrowSpeed);
                 if ((Position - _origin).LengthSquared() > MaxThrowDistance * MaxThrowDistance)
                 {
                     // if max distance is reached, make it return
@@ -92,18 +91,15 @@ public class Hammer : GameObject<HammerState>
                 // hammer is close to the player or the player is dead, it is returned
                 _state = HammerState.IS_NOT_FLYING;
                 this.Visible = false;
-                Direction = Vector2.Zero;
+                Direction = Vector3.Zero;
                 _playerHit = new bool[] { false, false, false, false };
                 _owner.OnHammerReturn();
                 break;
             case HammerState.IS_RETURNING:
-                dir = _owner.Position - Position;
-                // dir.X = _owner.Position.X - Position.X;
-                // dir.Y = _owner.Position.Z - Position.Z;
-                dir.Normalize();
-                // Direction = dir;
-                // Move(gameTime, new Vector3(Direction.X, 0f, Direction.Y) * ThrowSpeed);
-                Move(gameTime, dir * ThrowSpeed);
+                Vector3 dir = _owner.Position - Position;
+                dir.Normalize(); // can't work on Direction directly, as Vector3 is a struct, not an object
+                Direction = dir;
+                Move(gameTime, Direction * ThrowSpeed);
                 break;
             case HammerState.IS_NOT_FLYING:
                 Position = _owner.Position;
@@ -118,12 +114,12 @@ public class Hammer : GameObject<HammerState>
         GamePadState gamePadState = GamePad.GetState(_owner.PlayerId);
 
         // get analog aim
-        Vector2 aimingDirection = new Vector2();
+        Vector3 aimingDirection = Vector3.Zero;
         aimingDirection.X = gamePadState.ThumbSticks.Right.X * AimStickScale;
-        aimingDirection.Y = gamePadState.ThumbSticks.Right.Y * AimStickScale;
+        aimingDirection.Z = gamePadState.ThumbSticks.Right.Y * AimStickScale;
 
         // flip y: on the thumbsticks, down is -1, but on the screen, down is bigger numbers
-        aimingDirection.Y *= -1;
+        aimingDirection.Z *= -1;
 
         Direction = aimingDirection;
     }
@@ -133,15 +129,15 @@ public class Hammer : GameObject<HammerState>
         // TODO: (lmeinen) If direction is 0 then we're just throwing downwards - which should be fine really?
         if (_state == HammerState.IS_NOT_FLYING)
         {
-            if (Direction == Vector2.Zero)
+            if (Direction == Vector3.Zero)
             {
-                if (_owner.Direction != Vector2.Zero)
+                if (_owner.Direction != Vector3.Zero)
                 {
                     Direction = _owner.Direction;
                 }
                 else
                 {
-                    Direction = new Vector2(0, 1);
+                    Direction = new Vector3(0, 0, 1);
                 }
             }
             Direction.Normalize();

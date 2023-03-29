@@ -20,8 +20,8 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
     private Vector3 _pos;
     public Vector3 Position { get => _pos; set => _pos = value; }
 
-    private Vector2 _dir = new Vector2(0, 0);
-    public Vector2 Direction { get => _dir; set => _dir = value; }
+    private Vector3 _dir = Vector3.Zero;
+    public Vector3 Direction { get => _dir; set => _dir = value; }
 
     public abstract Vector3 Size
     {
