@@ -110,6 +110,8 @@ public class Player : GameObject<PlayerState>
             _state = PlayerState.DEAD;
             Visible = false;
         }
+
+        Console.WriteLine($"Player {_playerId} is in state {_state}");
     }
 
     private void HandleInput(KeyboardState keyboardState, GamePadState gamePadState)
@@ -200,6 +202,18 @@ public class Player : GameObject<PlayerState>
         HandlePlayerCollisions();
 
         _pushbackDistanceLeft = Math.Max(0, _pushbackDistanceLeft - (prevPos - Position).Length());
+        switch (_state)
+        {
+            case PlayerState.PUSHBACK when _pushbackDistanceLeft == 0:
+                _state = PlayerState.ALIVE;
+                break;
+            case PlayerState.PUSHBACK_NO_HAMMER when _pushbackDistanceLeft == 0:
+                _state = PlayerState.ALIVE_NO_HAMMER;
+                break;
+            default:
+                // do nothing
+                break;
+        }
 
         // if the collision stopped us from moving, reset the velocity to zero
         if (Position.X == prevPos.X)
@@ -221,7 +235,6 @@ public class Player : GameObject<PlayerState>
         if ((_state == PlayerState.PUSHBACK || _state == PlayerState.PUSHBACK_NO_HAMMER) && _pushbackDistanceLeft > 0)
         {
             _velocity = _pushbackDir * PushbackSpeed * elapsed;
-            Console.WriteLine($"Pushed back with force {_velocity} - distance left: {_pushbackDistanceLeft}");
         }
     }
 
