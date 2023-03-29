@@ -14,6 +14,8 @@ public enum PlayerState
     FALLING,
     ALIVE,
     ALIVE_NO_HAMMER,
+    PUSHBACK,
+    PUSHBACK_NO_HAMMER,
     THROWING,
 }
 
@@ -72,6 +74,8 @@ public class Player : GameObject<PlayerState>
         _objectModelPaths = new Dictionary<PlayerState, string>();
         _objectModelPaths[PlayerState.ALIVE] = "Player/playerCube";
         _objectModelPaths[PlayerState.ALIVE_NO_HAMMER] = "Player/playerCube";
+        _objectModelPaths[PlayerState.PUSHBACK] = "Player/playerCube";
+        _objectModelPaths[PlayerState.PUSHBACK_NO_HAMMER] = "Player/playerCube";
         _objectModelPaths[PlayerState.THROWING] = "Player/playerCube";
         _objectModelPaths[PlayerState.FALLING] = "Player/playerCube";
         _objectModelPaths[PlayerState.DEAD] = "Player/playerCube";
@@ -91,6 +95,7 @@ public class Player : GameObject<PlayerState>
         KeyboardState keyboardState = Keyboard.GetState();
         GamePadState gamePadState = GamePad.GetState(_playerId);
         HandleInput(keyboardState, gamePadState);
+        CheckHammerCollisions();
 
         ApplyPhysics(gameTime);
 
@@ -184,7 +189,6 @@ public class Player : GameObject<PlayerState>
             _velocity *= AirDragFactor;
         }
 
-        HandleHammerCollisions();
 
         HandlePushback(gameTime);
 
@@ -214,7 +218,7 @@ public class Player : GameObject<PlayerState>
     {
         float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
-        if (_isPushedback && _pushbackDistanceLeft > 0)
+        if ((_state == PlayerState.PUSHBACK || _state == PlayerState.PUSHBACK_NO_HAMMER) && _pushbackDistanceLeft > 0)
         {
             _velocity = _pushbackDir * PushbackSpeed * elapsed;
             Console.WriteLine($"Pushed back with force {_velocity} - distance left: {_pushbackDistanceLeft}");
@@ -252,7 +256,7 @@ public class Player : GameObject<PlayerState>
         }
     }
 
-    private void HandleHammerCollisions()
+    private void CheckHammerCollisions()
     {
         foreach (Hammer hammer in GameMain.Map.Hammers.Values.Where(h => h.OwnerID != _playerId && h.State != HammerState.IS_NOT_FLYING))
         {
@@ -282,8 +286,20 @@ public class Player : GameObject<PlayerState>
 
     public void OnHit(Vector3 pushbackDir)
     {
+        switch (_state)
+        {
+            case PlayerState.ALIVE | PlayerState.THROWING:
+                _state = PlayerState.PUSHBACK;
+                break;
+            case PlayerState.ALIVE_NO_HAMMER:
+                _state = PlayerState.PUSHBACK_NO_HAMMER;
+                break;
+            default:
+                // ignore hammer hits in any other case
+                return;
+        }
+
         _hammerHitSound.Play();
-        _isPushedback = true;
         _pushbackDir = pushbackDir;
         _pushbackDistanceLeft = PushbackDistance;
     }
