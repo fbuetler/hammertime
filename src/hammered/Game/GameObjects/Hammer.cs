@@ -75,7 +75,6 @@ public class Hammer : GameObject<HammerState>
     public override void Update(GameTime gameTime)
     {
         float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
-        Vector3 pos = Position;
         switch (_state)
         {
             case HammerState.IS_FLYING:
@@ -102,7 +101,7 @@ public class Hammer : GameObject<HammerState>
                 Move(gameTime, Direction * ThrowSpeed);
                 break;
             case HammerState.IS_NOT_FLYING:
-                Position = _owner.Position;
+                Position = _owner.Position + new Vector3(0.25f, 0.25f, 0.25f);
                 HandleInput();
                 break;
         }

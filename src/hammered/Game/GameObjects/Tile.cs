@@ -79,6 +79,16 @@ public class Tile : GameObject<TileState>
             }
         }
 
+        for (int j = 0; j < GameMain.NumberOfPlayers; j++)
+        {
+            Hammer h = GameMain.Map.GetHammers()[j];
+
+            if (h.BoundingBox.Intersects(BoundingBox) && h.State != HammerState.IS_NOT_FLYING)
+            {
+                _state = TileState.HP0;
+            }
+        }
+
         if (_state == TileState.HP0)
         {
             // only called once
