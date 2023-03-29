@@ -1,9 +1,9 @@
-﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 
 namespace hammered;
 
@@ -24,13 +24,16 @@ public class GameMain : Game
     {
         get { return _debugDraw; }
     }
+
+    private Map _map;
+    public Map Map { get => _map; }
+
     private DebugDraw _debugDraw;
 
     SpriteFont font;
 
     // game state
     private int _mapIndex = -1;
-    private Map _map;
     private bool _wasReloadPressed;
     private bool _wasNextPressed;
     private ScoreState _scoreState;
@@ -41,7 +44,11 @@ public class GameMain : Game
     private GamePadState[] _gamePadStates;
     private KeyboardState _keyboardState;
 
-    public const int NumberOfPlayers = 4;
+    private int _numberOfPlayers = 4;
+    public int NumberOfPlayers
+    {
+        get => _numberOfPlayers;
+    }
     // The number of levels in the Levels directory of our content. We assume that
     // levels in our content are 0-based and that all numbers under this constant
     // have a level file present. This allows us to not need to check for the file
@@ -69,6 +76,8 @@ public class GameMain : Game
         TargetElapsedTime = TimeSpan.FromSeconds(1.0 / 144.0); // set frame rate to 144 fps
         IsFixedTimeStep = true; // decouple draw from update
 
+        LoadNextMap();
+
         base.Initialize();
 
         // set window size to 720p
@@ -85,15 +94,13 @@ public class GameMain : Game
         _spriteBatch = new SpriteBatch(GraphicsDevice);
 
         font = Content.Load<SpriteFont>("Fonts/font");
-
-        LoadNextMap();
     }
 
     protected override void Update(GameTime gameTime)
     {
         HandleInput(gameTime);
 
-        _map.Update(gameTime, _keyboardState, _gamePadStates);
+        Map.Update(gameTime, _keyboardState, _gamePadStates);
 
         base.Update(gameTime);
     }
@@ -110,7 +117,9 @@ public class GameMain : Game
 
         // TODO (fbuetler) proper input handling instead of just taking the input of the first player
         if (_keyboardState.IsKeyDown(Keys.Escape) || _gamePadStates[0].IsButtonDown(Buttons.Back))
+        {
             this.Exit();
+        }
 
         bool reloadPressed = _keyboardState.IsKeyDown(Keys.R) || _gamePadStates[0].IsButtonDown(Buttons.Start);
         if (!_wasReloadPressed && reloadPressed)
@@ -130,8 +139,8 @@ public class GameMain : Game
     private void LoadNextMap()
     {
         // unloads the content for the current map before loading the next one
-        if (_map != null)
-            _map.Dispose();
+        if (Map != null)
+            Map.Dispose();
 
         _scoreState = ScoreState.None;
         _winnerID = -1;
@@ -152,7 +161,7 @@ public class GameMain : Game
     {
         GraphicsDevice.Clear(Color.CornflowerBlue);
 
-        _map.Draw(gameTime);
+        Map.Draw(gameTime);
 
         // _spriteBatch.Begin alters the state of the graphics pipeline
         // therefore we have to reenable the depth buffer here
@@ -171,11 +180,11 @@ public class GameMain : Game
         DrawShadowedString(font, "Map: " + _mapIndex, new Vector2(10, 10), Color.White);
 
         List<int> playersAlive = new List<int>();
-        foreach (Player p in _map.Players)
+        foreach (Player p in Map.Players)
         {
             if (p.IsAlive)
             {
-                playersAlive.Add(p.ID);
+                playersAlive.Add(p.PlayerId);
             }
         }
 

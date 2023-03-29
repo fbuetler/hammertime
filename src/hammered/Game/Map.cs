@@ -24,6 +24,7 @@ public class Map
     private GameMain _game;
 
     private Camera _camera;
+    public Camera Camera { get => _camera; }
 
     public int Width
     {
@@ -44,6 +45,8 @@ public class Map
     {
         get { return _players; }
     }
+
+
     private List<Player> _players = new List<Player>();
 
     public Map(Game game, IServiceProvider serviceProvider, Stream fileStream)
@@ -99,11 +102,13 @@ public class Map
             for (int x = 0; x < width; x++)
             {
                 char tileType = lines[z][x];
-                _tiles[x, 0, z] = LoadTile(tileType, x, z); // for now we only load floor tiles
+                Tile tile = LoadTile(tileType, x, z);
+                _tiles[x, 0, z] = tile; // for now we only load floor tiles
+                _game.Components.Add(tile);
             }
         }
 
-        if (_players.Count < GameMain.NumberOfPlayers)
+        if (_players.Count < _game.NumberOfPlayers)
         {
             throw new NotSupportedException("A map must have starting points for all players");
         }
@@ -128,7 +133,8 @@ public class Map
                 throw new NotSupportedException(String.Format("Tile type '{0}' is not yet supported", tileType));
             // player
             case 'P':
-                return LoadPlayerStartTile(x, z);
+                LoadPlayer(x, z);
+                return LoadFloorTile(x, z);
             default:
                 throw new NotSupportedException(String.Format("Unsupported tile type character '{0}' at position {1}, {2}.", tileType, x, z));
         }
@@ -136,27 +142,28 @@ public class Map
 
     private Tile LoadAbyssTile(int x, int z)
     {
-        return new Tile(this, new Vector3(x, 0, z), TileCollision.Passable);
+        return new Tile(_game, new Vector3(x, 0, z), true);
     }
 
     private Tile LoadFloorTile(int x, int z)
     {
-        return new Tile(this, new Vector3(x, 0, z), TileCollision.Impassable);
+        return new Tile(_game, new Vector3(x, 0, z), false);
     }
 
-    private Tile LoadPlayerStartTile(int x, int z)
+    private void LoadPlayer(int x, int z)
     {
         // ignore starting tiles if already all players are loaded
-        if (_players.Count < GameMain.NumberOfPlayers)
+        if (_players.Count < _game.NumberOfPlayers)
         {
-            _players.Add(LoadPlayer(x, 1, z));
+            Player player = LoadPlayer(x, 1, z);
+            _players.Add(player);
+            _game.Components.Add(player);
         }
-        return new Tile(this, new Vector3(x, 0, z), TileCollision.Impassable);
     }
 
     private Player LoadPlayer(float x, float y, float z)
     {
-        return new Player(this, _players.Count, new Vector3(x, y, z));
+        return new Player(_game, new Vector3(x, y, z), _players.Count);
     }
 
     private void LoadMusic()
@@ -167,25 +174,27 @@ public class Map
 
     public void Dispose()
     {
+        // TODO: (lmeinen) remove components
+        _game.Components.Clear();
         _content.Unload();
     }
 
-    public TileCollision GetTileCollision(int x, int y, int z)
+    public bool HasTile(int x, int y, int z)
     {
         if (x < 0 || x >= Width)
         {
-            return TileCollision.Passable;
+            return false;
         }
         if (y < 0 || y >= Height)
         {
-            return TileCollision.Passable;
+            return false;
         }
         if (z < 0 || z >= Depth)
         {
-            return TileCollision.Passable;
+            return false;
         }
 
-        return _tiles[x, y, z].Collision;
+        return _tiles[x, y, z].State != TileState.HP0;
     }
 
     public BoundingBox GetTileBounds(int x, int y, int z)
@@ -198,8 +207,8 @@ public class Map
 
     public Hammer[] GetHammers()
     {
-        Hammer[] hammers = new Hammer[GameMain.NumberOfPlayers];
-        for (int i = 0; i < GameMain.NumberOfPlayers; i++)
+        Hammer[] hammers = new Hammer[_game.NumberOfPlayers];
+        for (int i = 0; i < _game.NumberOfPlayers; i++)
         {
             hammers[i] = _players[i].Hammer;
         }
@@ -210,16 +219,6 @@ public class Map
     {
         // IMPORTANT! UpdatePlayers has to be AFTER UpdateTiles because of isPlayerStandingOnAnyTile
         UpdateTiles(gameTime);
-        UpdatePlayers(gameTime, keyboardState, gamePadStates);
-    }
-
-    private void UpdatePlayers(GameTime gameTime, KeyboardState keyboardState, GamePadState[] gamePadStates)
-    {
-        for (int i = 0; i < _players.Count; i++)
-        {
-            Player p = _players[i];
-            p.Update(gameTime, keyboardState, gamePadStates[i]);
-        }
     }
 
     private void UpdateTiles(GameTime gameTime)
@@ -231,7 +230,7 @@ public class Map
         {
             t.Update(gameTime);
 
-            if (t.IsBroken)
+            if (t.State == TileState.HP0)
             {
                 continue;
             }
@@ -258,7 +257,7 @@ public class Map
                 }
             }
 
-            if (t.IsBroken)
+            if (t.State == TileState.HP0)
             {
                 // only called when the tile breaks time
                 t.OnBreak();
@@ -301,20 +300,11 @@ public class Map
     public void Draw(GameTime gameTime)
     {
 
-        Matrix view = _camera.View;
-        Matrix projection = _camera.Projection;
+        Matrix view = Camera.View;
+        Matrix projection = Camera.Projection;
 
-        foreach (Player p in _players)
-        {
-            p.Draw(view, projection);
-        }
-        foreach (Tile t in _tiles)
-        {
-            t.Draw(view, projection);
-        }
-
-        // draw coordinate system
 #if DEBUG
+        // draw coordinate system
         DebugDraw.Begin(Matrix.Identity, view, projection);
         DebugDraw.DrawLine(Vector3.Zero, 30 * Vector3.UnitX, Color.Black);
         DebugDraw.DrawLine(Vector3.Zero, 30 * Vector3.UnitY, Color.Black);

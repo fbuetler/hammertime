@@ -7,32 +7,30 @@ using Microsoft.Xna.Framework.Input;
 
 namespace hammered;
 
-public class Player : GameObject
+public enum PlayerState
 {
-    private Map _map;
+    DEAD,
+    FALLING,
+    ALIVE,
+    ALIVE_NO_HAMMER,
+    THROWING,
+}
 
-    // model
-    private Model _model;
-    private Matrix _modelScale;
+public class Player : GameObject<PlayerState>
+{
 
     // sound
     private SoundEffect _hammerHitSound;
     private SoundEffect _killedSound;
 
     // player attributes
-    public int ID { get { return _id; } }
-    private int _id;
+    public int PlayerId { get { return _playerId; } }
+    private int _playerId;
 
-    // player state
-    public Vector3 Position { get { return _pos; } }
-    private Vector3 _pos; // TODO (fbuetler) use center as positions instead of top left corner
-    private Vector2 _movement;
     private Vector3 _velocity;
 
     public Hammer Hammer { get { return _hammer; } }
     private Hammer _hammer;
-    private Vector2 _aiming;
-    private bool _isThrowing;
 
     // a player is alive as long as it stands on the platform
     public bool IsAlive
@@ -41,25 +39,16 @@ public class Player : GameObject
     }
     private bool _isAlive;
 
-    // TODO (fbuetler) Bounding box should rotate with hammer
-    public BoundingBox BoundingBox
-    {
-        get
-        {
-            return new BoundingBox(
-                new Vector3(_pos.X, _pos.Y, _pos.Z),
-                new Vector3(_pos.X + Player.Width, _pos.Y + Player.Height, _pos.Z + Player.Depth)
-            );
-        }
-    }
+    public override Vector3 Size => new Vector3(1f, 1f, 1f);
+
+    private PlayerState _state;
+    public override PlayerState State => _state;
+
+    private Dictionary<PlayerState, string> _objectModelPaths;
+    public override Dictionary<PlayerState, string> ObjectModelPaths => _objectModelPaths;
 
     // how far one gets thrown by a hammer
     private const float ThrowDistance = 3f;
-
-    // dimensions
-    public const float Height = 1f;
-    public const float Width = 1f;
-    public const float Depth = 1f;
 
     // constants for controlling horizontal movement
     private const float MoveAcceleration = 1300f;
@@ -76,132 +65,110 @@ public class Player : GameObject
     private const float AimStickScale = 1.0f;
     private const Buttons ThrowButton = Buttons.RightShoulder;
 
-    public Player(Map map, int id, Vector3 position)
+    public Player(Game game, Vector3 position, int playerId) : base(game, position)
     {
-        if (map == null)
-            throw new ArgumentNullException("map");
+        _playerId = playerId;
 
-        _map = map;
-        _id = id;
+        _state = PlayerState.ALIVE;
+        _objectModelPaths = new Dictionary<PlayerState, string>();
+        _objectModelPaths[PlayerState.ALIVE] = "Player/playerCube";
+        _objectModelPaths[PlayerState.ALIVE_NO_HAMMER] = "Player/playerCube";
+        _objectModelPaths[PlayerState.THROWING] = "Player/playerCube";
+        _objectModelPaths[PlayerState.FALLING] = "Player/playerCube";
+        _objectModelPaths[PlayerState.DEAD] = "Player/playerCube";
+        // TODO: (lmeinen) Add models for other states
 
-        LoadContent();
-
-        Reset(position);
-    }
-
-    public void LoadContent()
-    {
-        _model = _map.Content.Load<Model>("Player/playerCube");
-
-        BoundingBox size = GetModelSize(_model);
-        float xScale = Width / (size.Max.X - size.Min.X);
-        float yScale = Height / (size.Max.Y - size.Min.Y);
-        float zScale = Depth / (size.Max.Z - size.Min.Z);
-        _modelScale = Matrix.CreateScale(xScale, yScale, zScale);
-
-        _killedSound = _map.Content.Load<SoundEffect>("Audio/Willhelm");
-        _hammerHitSound = _map.Content.Load<SoundEffect>("Audio/hammerBong");
-    }
-
-    public void Reset(Vector3 position)
-    {
-        _pos = position;
         _velocity = Vector3.Zero;
         _isAlive = true;
-        _hammer = new Hammer(_map, this);
+        _hammer = new Hammer(game, position, this);
+        Game.Components.Add(_hammer);
     }
 
-    public override void Update(GameTime gameTime, KeyboardState keyboardState, GamePadState gamePadState)
+    public override void Update(GameTime gameTime)
     {
-        GetInput(keyboardState, gamePadState);
+        KeyboardState keyboardState = Keyboard.GetState();
+        GamePadState gamePadState = GamePad.GetState(_playerId);
+        HandleInput(keyboardState, gamePadState);
 
         ApplyPhysics(gameTime);
 
-        DoThrowHammer();
-
-        _hammer.Update(gameTime, keyboardState, gamePadState);
-
-        // clear input
-        _movement = Vector2.Zero;
-        _aiming = Vector2.Zero;
-        _isThrowing = false;
+        if (_state == PlayerState.THROWING)
+        {
+            Console.WriteLine($"Player {_playerId} is throwing their hammer");
+            _hammer.Throw();
+            OnHammerThrow();
+        }
     }
 
-    private void GetInput(KeyboardState keyboardState, GamePadState gamePadState)
+    private void HandleInput(KeyboardState keyboardState, GamePadState gamePadState)
     {
+        Vector2 movement = new Vector2();
         // get analog movement
-        _movement.X = gamePadState.ThumbSticks.Left.X * MoveStickScale;
-        _movement.Y = gamePadState.ThumbSticks.Left.Y * MoveStickScale;
+        movement.X = gamePadState.ThumbSticks.Left.X * MoveStickScale;
+        movement.Y = gamePadState.ThumbSticks.Left.Y * MoveStickScale;
 
         // flip y: on the thumbsticks, down is -1, but on the screen, down is bigger numbers
-        _movement.Y *= -1;
+        movement.Y *= -1;
 
         // ignore small movements to prevent running in place
-        if (_movement.LengthSquared() < 0.5f)
-            _movement = Vector2.Zero;
+        if (movement.LengthSquared() < 0.5f)
+            movement = Vector2.Zero;
 
         // if any digital horizontal movement input is found, override the analog movement
         if (gamePadState.IsButtonDown(Buttons.DPadUp) ||
             keyboardState.IsKeyDown(Keys.Up) ||
             keyboardState.IsKeyDown(Keys.W))
         {
-            _movement.Y -= 1.0f;
+            movement.Y -= 1.0f;
         }
         else if (gamePadState.IsButtonDown(Buttons.DPadDown) ||
                  keyboardState.IsKeyDown(Keys.Down) ||
                  keyboardState.IsKeyDown(Keys.S))
         {
-            _movement.Y += 1.0f;
+            movement.Y += 1.0f;
         }
 
         if (gamePadState.IsButtonDown(Buttons.DPadLeft) ||
             keyboardState.IsKeyDown(Keys.Left) ||
             keyboardState.IsKeyDown(Keys.A))
         {
-            _movement.X -= 1.0f;
+            movement.X -= 1.0f;
         }
         else if (gamePadState.IsButtonDown(Buttons.DPadRight) ||
                  keyboardState.IsKeyDown(Keys.Right) ||
                  keyboardState.IsKeyDown(Keys.D))
         {
-            _movement.X += 1.0f;
+            movement.X += 1.0f;
         }
 
         // prevent the player from running faster than his top speed
-        if (_movement.LengthSquared() > 1)
+        if (movement.LengthSquared() > 1)
         {
-            _movement.Normalize();
+            movement.Normalize();
         }
 
-        // get analog aim
-        _aiming.X = gamePadState.ThumbSticks.Right.X * AimStickScale;
-        _aiming.Y = gamePadState.ThumbSticks.Right.Y * AimStickScale;
+        Direction = movement;
 
-        // flip y: on the thumbsticks, down is -1, but on the screen, down is bigger numbers
-        _aiming.Y *= -1;
-
-        // in case there is no input use the direction the player is facing
-        // (allow playing with keyboard as well)
-        if (_aiming.X == 0 && _aiming.Y == 0)
-        {
-            _aiming.X = _movement.X;
-            _aiming.Y = _movement.Y;
-        }
 
         // check if player is alive before throwing hammer
-        _isThrowing = _isAlive && (keyboardState.IsKeyDown(Keys.Space) || gamePadState.IsButtonDown(ThrowButton));
+        if (_state == PlayerState.ALIVE && (keyboardState.IsKeyDown(Keys.Space) || gamePadState.IsButtonDown(ThrowButton)))
+        {
+            _state = PlayerState.THROWING;
+        }
     }
 
     private void ApplyPhysics(GameTime gameTime)
     {
         float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
-        Vector3 prevPos = _pos;
+        Vector3 prevPos = Position;
 
         // base velocity is a combination of horizontal movement control and
         // acceleration downward due to gravity
-        _velocity.X += _movement.X * MoveAcceleration * elapsed;
-        _velocity.Z += _movement.Y * MoveAcceleration * elapsed;
+        _velocity.X += Direction.X * MoveAcceleration * elapsed;
+        _velocity.Z += Direction.Y * MoveAcceleration * elapsed;
+
+        // handle y velocity by finding relevant tiles and checking whether they still exist
         _velocity.Y = MathHelper.Clamp(_velocity.Y - GravityAcceleration * elapsed, -MaxFallSpeed, MaxFallSpeed);
 
         _velocity.Y = WalkOffMap(gameTime, _velocity.Y);
@@ -218,20 +185,20 @@ public class Player : GameObject
         HandleHammerCollisions(gameTime);
 
         // apply velocity
-        _pos += _velocity * elapsed;
+        Move(gameTime, _velocity);
 
         // if the player is now colliding with the map, separate them.
         HandleTileCollisions();
         HandlePlayerCollisions();
 
         // if the collision stopped us from moving, reset the velocity to zero
-        if (_pos.X == prevPos.X)
+        if (Position.X == prevPos.X)
             _velocity.X = 0;
 
-        if (_pos.Y == prevPos.Y)
+        if (Position.Y == prevPos.Y)
             _velocity.Y = 0;
 
-        if (_pos.Z == prevPos.Z)
+        if (Position.Z == prevPos.Z)
             _velocity.Z = 0;
     }
 
@@ -258,14 +225,13 @@ public class Player : GameObject
         {
             for (int x = x_low; x <= x_high; x++)
             {
-                TileCollision collision = _map.GetTileCollision(x, 0, z);
-                if (collision == TileCollision.Passable)
+                if (!GameMain.Map.HasTile(x, 0, z))
                 {
                     continue;
                 }
 
                 // determine collision depth (with direction) and magnitude
-                BoundingBox neighbour = _map.GetTileBounds(x, 0, z);
+                BoundingBox neighbour = GameMain.Map.GetTileBounds(x, 0, z);
                 ResolveCollision(BoundingBox, neighbour);
             }
         }
@@ -273,11 +239,11 @@ public class Player : GameObject
 
     private void HandlePlayerCollisions()
     {
-        List<Player> opponents = _map.Players;
+        List<Player> opponents = GameMain.Map.Players;
         foreach (Player opponent in opponents)
         {
             // dont do collision detection with itself
-            if (opponent.ID == _id)
+            if (opponent.PlayerId == _playerId)
             {
                 continue;
             }
@@ -299,18 +265,18 @@ public class Player : GameObject
         // resolve the collision along the shallow axis
         if (absDepthX < absDepthZ)
         {
-            _pos = new Vector3(
-                _pos.X + depth.X,
-                _pos.Y,
-                _pos.Z
+            Position = new Vector3(
+                Position.X + depth.X,
+                Position.Y,
+                Position.Z
             );
         }
         else
         {
-            _pos = new Vector3(
-                _pos.X,
-                _pos.Y,
-                _pos.Z + depth.Z
+            Position = new Vector3(
+                Position.X,
+                Position.Y,
+                Position.Z + depth.Z
             );
         }
     }
@@ -319,11 +285,11 @@ public class Player : GameObject
     {
         float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
-        Hammer[] hammers = _map.GetHammers();
+        Hammer[] hammers = GameMain.Map.GetHammers();
         foreach (Hammer hammer in hammers)
         {
             // dont do collision detection if the hammer is not flying or this player is its owner
-            if (!hammer.IsFlying || hammer.OwnerID == _id)
+            if (_hammer.State == HammerState.IS_NOT_FLYING || hammer.OwnerID == _playerId)
             {
                 continue;
             }
@@ -332,17 +298,20 @@ public class Player : GameObject
             if (BoundingBox.Intersects(hammer.BoundingBox))
             {
                 // only hit player, if it is not hit already
-                if (!hammer.IsPlayerHit(_id))
+                if (!hammer.IsPlayerHit(_playerId))
                 {
-                    hammer.HitPlayer(this._id, _pos);
+                    hammer.HitPlayer(this._playerId, Position);
                     OnHit();
                 }
 
                 // TODO (fbuetler) can we remove this func and _hit?
-                if (hammer.CheckDistFromHit(_id, _pos, ThrowDistance))
+                if (hammer.CheckDistFromHit(_playerId, Position, ThrowDistance))
                 {
-                    _pos.X += hammer.Dir.X * elapsed * hammer.Speed;
-                    _pos.Z += hammer.Dir.Y * elapsed * hammer.Speed;
+                    var pos = Position;
+                    pos.X += hammer.Direction.X * elapsed * hammer.Speed;
+                    pos.Z += hammer.Direction.Y * elapsed * hammer.Speed;
+                    Position = pos;
+
                     _velocity.X = 0;
                     _velocity.Z = 0;
                 }
@@ -384,60 +353,31 @@ public class Player : GameObject
         return new Vector3(depthX, depthY, depthZ);
     }
 
-    private void DoThrowHammer()
-    {
-        // if player is killed, its hammer is deleted, once it starts returning
-        if (!_isAlive && _hammer.IsReturning)
-        {
-            _hammer.Reset(this);
-        }
-        if (_isThrowing)
-        {
-            _hammer.Throw(_aiming);
-
-            OnHammerThrow();
-        }
-        // TODO (fbuetler) update texture
-    }
-
     private void OnHammerThrow()
     {
+        _state = PlayerState.ALIVE_NO_HAMMER;
         // TODO (fbuetler) update texture
     }
 
     public void OnHammerReturn()
     {
+        if (_state == PlayerState.ALIVE_NO_HAMMER)
+        {
+            _state = PlayerState.ALIVE;
+        }
         // TODO (fbuetler) update texture
     }
 
     public void OnHit()
     {
-        _hammerHitSound.Play();
+        // _hammerHitSound.Play();
     }
 
     public void OnKilled()
     {
         _isAlive = false;
 
-        GamePad.SetVibration(_id, 0.2f, 0.2f, 0.2f, 0.2f);
-        _killedSound.Play();
+        GamePad.SetVibration(_playerId, 0.2f, 0.2f, 0.2f, 0.2f);
     }
 
-    public override void Draw(Matrix view, Matrix projection)
-    {
-        Matrix translation = Matrix.CreateTranslation(_pos);
-
-        // TODO (fbuetler) rotate player into walking direction
-
-        Matrix world = _modelScale * translation;
-        DrawModel(_model, world, view, projection);
-
-        _hammer.Draw(view, projection);
-
-#if DEBUG
-        _map.DebugDraw.Begin(Matrix.Identity, view, projection);
-        _map.DebugDraw.DrawWireBox(BoundingBox, Color.White);
-        _map.DebugDraw.End();
-#endif
-    }
 }
