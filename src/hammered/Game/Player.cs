@@ -110,8 +110,7 @@ public class Player : GameObject<PlayerState>
 
         if (_state == PlayerState.FALLING && Position.Y < KillPlaneLevel)
         {
-            _state = PlayerState.DEAD;
-            Visible = false;
+            OnKilled();
         }
     }
 
@@ -329,12 +328,16 @@ public class Player : GameObject<PlayerState>
     public void OnFalling()
     {
         _state = PlayerState.FALLING;
+        _killedSound.Play();
         GamePad.SetVibration(_playerId, 0.2f, 0.2f, 0.2f, 0.2f);
     }
 
     public void OnKilled()
     {
-        GamePad.SetVibration(_playerId, 0.2f, 0.2f, 0.2f, 0.2f);
+        _state = PlayerState.DEAD;
+        Visible = false;
+        Enabled = false;
+        GamePad.SetVibration(_playerId, 0.0f, 0.0f, 0.0f, 0.0f);
     }
 
 }
