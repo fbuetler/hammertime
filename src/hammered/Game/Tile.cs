@@ -52,12 +52,6 @@ public class Tile : GameObject<TileState>
 
     public override void Update(GameTime gameTime)
     {
-        if (_state == TileState.HP0)
-        {
-            // TODO: (lmeinen) Can we disable this tile (i.e. no longer updated) if its HP reaches 0?
-            return;
-        }
-
         foreach (Player p in GameMain.Map.Players.Values)
         {
             // is player standing on tile
@@ -123,5 +117,6 @@ public class Tile : GameObject<TileState>
     {
         // TODO (fbuetler) make invisible i.e. change/remove texture
         this.Visible = false;
+        this.Enabled = false;
     }
 }

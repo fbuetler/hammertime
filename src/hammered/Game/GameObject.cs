@@ -108,6 +108,7 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
         // * move it into it designated positions and also compensate for the move into the origin
         Matrix translateIntoOrigin = Matrix.CreateTranslation(-Size / 2);
 
+        // TODO (fbuetler) fix angle
         float angle = MathF.Atan2(_dir.Z, _dir.X);
         Matrix rotate = Matrix.CreateFromAxisAngle(Vector3.UnitY, angle);
 
