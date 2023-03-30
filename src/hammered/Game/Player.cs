@@ -307,7 +307,8 @@ public class Player : GameObject<PlayerState>
     {
         switch (_state)
         {
-            case PlayerState.ALIVE | PlayerState.THROWING:
+            case PlayerState.ALIVE:
+            case PlayerState.THROWING:
                 _state = PlayerState.PUSHBACK;
                 break;
             case PlayerState.ALIVE_NO_HAMMER:
