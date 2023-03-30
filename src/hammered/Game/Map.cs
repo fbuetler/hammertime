@@ -10,41 +10,31 @@ namespace hammered;
 
 public class Map
 {
-    public ContentManager Content
-    {
-        get { return _content; }
-    }
+
+    private const int TILE_UPDATE_ORDER = 0;
+    private const int HAMMER_UPDATE_ORDER = 1;
+    private const int PLAYER_UPDATE_ORDER = 2;
+
+    public ContentManager Content { get => _content; }
     ContentManager _content;
 
-    public DebugDraw DebugDraw
-    {
-        get { return _game.DebugDraw; }
-    }
+    public DebugDraw DebugDraw { get => _game.DebugDraw; }
 
     private GameMain _game;
 
+    public Camera Camera { get => _camera; }
     private Camera _camera;
 
-    public int Width
-    {
-        get { return _tiles.GetLength(0); }
-    }
-    public int Height
-    {
-        get { return _tiles.GetLength(1); }
-    }
-    public int Depth
-    {
-        get { return _tiles.GetLength(2); }
-    }
+    public int Width { get => _tiles.GetLength(0); }
+    public int Height { get => _tiles.GetLength(1); }
+    public int Depth { get => _tiles.GetLength(2); }
     private Tile[,,] _tiles;
 
+    public Dictionary<int, Player> Players { get => _players; }
+    private Dictionary<int, Player> _players = new Dictionary<int, Player>();
 
-    public List<Player> Players
-    {
-        get { return _players; }
-    }
-    private List<Player> _players = new List<Player>();
+    public Dictionary<int, Hammer> Hammers { get => _hammers; }
+    private Dictionary<int, Hammer> _hammers = new Dictionary<int, Hammer>();
 
     public Map(Game game, IServiceProvider serviceProvider, Stream fileStream)
     {
@@ -60,7 +50,7 @@ public class Map
         _content = new ContentManager(serviceProvider, "Content");
 
         // load tiles and players
-        LoadTiles(fileStream);
+        LoadMap(fileStream);
 
         // setup camera
         _camera = new Camera(
@@ -72,7 +62,7 @@ public class Map
         LoadMusic();
     }
 
-    private void LoadTiles(Stream fileStream)
+    private void LoadMap(Stream fileStream)
     {
         int width;
         List<string> lines = new List<string>();
@@ -99,11 +89,14 @@ public class Map
             for (int x = 0; x < width; x++)
             {
                 char tileType = lines[z][x];
-                _tiles[x, 0, z] = LoadTile(tileType, x, z); // for now we only load floor tiles
+                Tile tile = LoadTile(tileType, x, z);
+                _tiles[x, 0, z] = tile; // for now we only load floor tiles
+                tile.UpdateOrder = TILE_UPDATE_ORDER;
+                _game.Components.Add(tile);
             }
         }
 
-        if (_players.Count < GameMain.NumberOfPlayers)
+        if (_players.Count < _game.NumberOfPlayers)
         {
             throw new NotSupportedException("A map must have starting points for all players");
         }
@@ -114,21 +107,17 @@ public class Map
         // TODO (fbuetler) introduce different tile types
         switch (tileType)
         {
-            // abyss
             case '.':
                 return LoadAbyssTile(x, z);
-            // breakable floor
             case '-':
-                return LoadFloorTile(x, z);
-            // non-breakable floor
+                return LoadBreakableFloorTile(x, z);
             case '#':
-                throw new NotSupportedException(String.Format("Tile type '{0}' is not yet supported", tileType));
-            // wall
+                return LoadNonBreakableFloorTile(x, z);
             case 'X':
-                throw new NotSupportedException(String.Format("Tile type '{0}' is not yet supported", tileType));
-            // player
+                return LoadWallTile(x, z);
             case 'P':
-                return LoadPlayerStartTile(x, z);
+                LoadPlayer(x, z);
+                return LoadBreakableFloorTile(x, z);
             default:
                 throw new NotSupportedException(String.Format("Unsupported tile type character '{0}' at position {1}, {2}.", tileType, x, z));
         }
@@ -136,27 +125,42 @@ public class Map
 
     private Tile LoadAbyssTile(int x, int z)
     {
-        return new Tile(this, new Vector3(x, 0, z), TileCollision.Passable);
+        return new Tile(_game, new Vector3(x, 0, z), true);
     }
 
-    private Tile LoadFloorTile(int x, int z)
+    private Tile LoadBreakableFloorTile(int x, int z)
     {
-        return new Tile(this, new Vector3(x, 0, z), TileCollision.Impassable);
+        return new Tile(_game, new Vector3(x, 0, z), false);
     }
 
-    private Tile LoadPlayerStartTile(int x, int z)
+    private Tile LoadNonBreakableFloorTile(int x, int z)
+    {
+        throw new NotSupportedException(String.Format("Tile type 'non breakable floor' is not yet supported"));
+    }
+    private Tile LoadWallTile(int x, int z)
+    {
+        throw new NotSupportedException(String.Format("Tile type 'wall' is not yet supported"));
+    }
+
+    private void LoadPlayer(int x, int z)
     {
         // ignore starting tiles if already all players are loaded
-        if (_players.Count < GameMain.NumberOfPlayers)
+        if (_players.Count < _game.NumberOfPlayers)
         {
-            _players.Add(LoadPlayer(x, 1, z));
-        }
-        return new Tile(this, new Vector3(x, 0, z), TileCollision.Impassable);
-    }
+            int playerId = _players.Count;
+            Player player = new Player(_game, new Vector3(x, 1, z), playerId);
+            Hammer hammer = new Hammer(_game, new Vector3(x, 1, z), playerId);
+            _players.Add(playerId, player);
+            _hammers.Add(playerId, hammer);
 
-    private Player LoadPlayer(float x, float y, float z)
-    {
-        return new Player(this, _players.Count, new Vector3(x, y, z));
+            // enable player component
+            player.UpdateOrder = PLAYER_UPDATE_ORDER;
+            _game.Components.Add(player);
+
+            // enable hammer compohent
+            hammer.UpdateOrder = HAMMER_UPDATE_ORDER;
+            _game.Components.Add(hammer);
+        }
     }
 
     private void LoadMusic()
@@ -170,146 +174,26 @@ public class Map
         _content.Unload();
     }
 
-    public TileCollision GetTileCollision(int x, int y, int z)
+    public BoundingBox? TryGetTileBounds(int x, int y, int z)
     {
-        if (x < 0 || x >= Width)
+        if (x < 0 || y < 0 || z < 0 || x >= Width || y >= Height || z >= Depth || _tiles[x, y, z].State == TileState.HP0)
         {
-            return TileCollision.Passable;
+            return null;
         }
-        if (y < 0 || y >= Height)
+        else
         {
-            return TileCollision.Passable;
-        }
-        if (z < 0 || z >= Depth)
-        {
-            return TileCollision.Passable;
-        }
-
-        return _tiles[x, y, z].Collision;
-    }
-
-    public BoundingBox GetTileBounds(int x, int y, int z)
-    {
-        return new BoundingBox(
-                new Vector3(x, y, z),
-                new Vector3(x + Tile.Width, y + Tile.Height, z + Tile.Depth)
-            );
-    }
-
-    public Hammer[] GetHammers()
-    {
-        Hammer[] hammers = new Hammer[GameMain.NumberOfPlayers];
-        for (int i = 0; i < GameMain.NumberOfPlayers; i++)
-        {
-            hammers[i] = _players[i].Hammer;
-        }
-        return hammers;
-    }
-
-    public void Update(GameTime gameTime, KeyboardState keyboardState, GamePadState[] gamePadStates)
-    {
-        // IMPORTANT! UpdatePlayers has to be AFTER UpdateTiles because of isPlayerStandingOnAnyTile
-        UpdateTiles(gameTime);
-        UpdatePlayers(gameTime, keyboardState, gamePadStates);
-    }
-
-    private void UpdatePlayers(GameTime gameTime, KeyboardState keyboardState, GamePadState[] gamePadStates)
-    {
-        for (int i = 0; i < _players.Count; i++)
-        {
-            Player p = _players[i];
-            p.Update(gameTime, keyboardState, gamePadStates[i]);
-        }
-    }
-
-    private void UpdateTiles(GameTime gameTime)
-    {
-        bool[] isPlayerStandingOnAnyTile = new bool[_players.Count];
-
-        // TODO (fbuetler) investigate why sometimes the wrong tiles are breaking
-        foreach (Tile t in _tiles)
-        {
-            t.Update(gameTime);
-
-            if (t.IsBroken)
-            {
-                continue;
-            }
-
-            for (int j = 0; j < _players.Count; j++)
-            {
-                Player p = _players[j];
-
-                if (!p.IsAlive)
-                {
-                    // HACK (fbuetler) a falling player should not interact with tiles
-                    continue;
-                }
-
-                // is player standing on tile
-                if (p.BoundingBox.Intersects(t.BoundingBox))
-                {
-                    OnTileEnter(t, p);
-                    isPlayerStandingOnAnyTile[j] |= true;
-                }
-                else
-                {
-                    OnTileExit(t, p);
-                }
-            }
-
-            if (t.IsBroken)
-            {
-                // only called when the tile breaks time
-                t.OnBreak();
-            }
-        }
-
-        // TODO (fbuetler) a bit ugly but is there another efficient way?
-        for (int i = 0; i < isPlayerStandingOnAnyTile.Length; i++)
-        {
-            if (!isPlayerStandingOnAnyTile[i])
-            {
-                OnPlayerFall(_players[i]);
-            }
-        }
-    }
-
-    private void OnTileEnter(Tile tile, Player player)
-    {
-        tile.OnEnter(player);
-    }
-
-    private void OnTileExit(Tile tile, Player player)
-    {
-        tile.OnExit(player);
-    }
-
-    private void OnPlayerFall(Player player)
-    {
-        if (player.IsAlive)
-        {
-            player.OnKilled();
+            return _tiles[x, y, z].BoundingBox;
         }
     }
 
     public void Draw(GameTime gameTime)
     {
 
-        Matrix view = _camera.View;
-        Matrix projection = _camera.Projection;
+        Matrix view = Camera.View;
+        Matrix projection = Camera.Projection;
 
-        foreach (Player p in _players)
-        {
-            p.Draw(view, projection);
-        }
-        foreach (Tile t in _tiles)
-        {
-            t.Draw(view, projection);
-        }
-
-        // draw coordinate system
 #if DEBUG
+        // draw coordinate system
         DebugDraw.Begin(Matrix.Identity, view, projection);
         DebugDraw.DrawLine(Vector3.Zero, 30 * Vector3.UnitX, Color.Black);
         DebugDraw.DrawLine(Vector3.Zero, 30 * Vector3.UnitY, Color.Black);
