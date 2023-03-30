@@ -22,7 +22,7 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
     public Vector3 Direction { get => _dir; set => _dir = value; }
     private Vector3 _dir = Vector3.Zero;
 
-    public Vector3 Center { get => Position + Size / 2; set => _pos = value - Size / 2; }
+    public Vector3 Center { get => Position + Size / 2; }
 
     public abstract Vector3 Size
     {

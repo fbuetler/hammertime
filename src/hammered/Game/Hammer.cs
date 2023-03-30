@@ -63,7 +63,6 @@ public class Hammer : GameObject<HammerState>
         switch (_state)
         {
             case HammerState.IS_HELT:
-                Center = GameMain.Map.Players[_ownerId].Center;
                 HandleInput();
                 break;
             case HammerState.IS_FLYING:
@@ -149,7 +148,9 @@ public class Hammer : GameObject<HammerState>
 
             _state = HammerState.IS_FLYING;
             this.Visible = true;
-            _origin = Position;
+
+            _origin = GameMain.Map.Players[_ownerId].Center;
+            Position = GameMain.Map.Players[_ownerId].Center - Size / 2;
         }
     }
 
