@@ -15,34 +15,19 @@ public class Map
     private const int HAMMER_UPDATE_ORDER = 1;
     private const int PLAYER_UPDATE_ORDER = 2;
 
-    public ContentManager Content
-    {
-        get { return _content; }
-    }
+    public ContentManager Content { get => _content; }
     ContentManager _content;
 
-    public DebugDraw DebugDraw
-    {
-        get { return _game.DebugDraw; }
-    }
+    public DebugDraw DebugDraw { get => _game.DebugDraw; }
 
     private GameMain _game;
 
-    private Camera _camera;
     public Camera Camera { get => _camera; }
+    private Camera _camera;
 
-    public int Width
-    {
-        get { return _tiles.GetLength(0); }
-    }
-    public int Height
-    {
-        get { return _tiles.GetLength(1); }
-    }
-    public int Depth
-    {
-        get { return _tiles.GetLength(2); }
-    }
+    public int Width { get => _tiles.GetLength(0); }
+    public int Height { get => _tiles.GetLength(1); }
+    public int Depth { get => _tiles.GetLength(2); }
     private Tile[,,] _tiles;
 
     public Dictionary<int, Player> Players { get => _players; }
@@ -173,8 +158,6 @@ public class Map
 
     public void Dispose()
     {
-        // just reload all components
-        _game.Components.Clear();
         _content.Unload();
     }
 
@@ -188,11 +171,6 @@ public class Map
         {
             return _tiles[x, y, z].BoundingBox;
         }
-    }
-
-    public void Update(GameTime gameTime, KeyboardState keyboardState, GamePadState[] gamePadStates)
-    {
-        // IMPORTANT! UpdatePlayers has to be AFTER UpdateTiles because of isPlayerStandingOnAnyTile
     }
 
     public void Draw(GameTime gameTime)

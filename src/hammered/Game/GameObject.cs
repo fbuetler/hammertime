@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
 
 namespace hammered;
 
@@ -13,15 +12,15 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
     private string _objectId;
     private Dictionary<GameObjectState, ScaledModel> _models;
 
-    private GameMain _game;
     public GameMain GameMain { get => _game; }
+    private GameMain _game;
 
     // TODO: (lmeinen) goal is to eventually make this private
-    private Vector3 _pos;
     public Vector3 Position { get => _pos; set => _pos = value; }
+    private Vector3 _pos;
 
-    private Vector3 _dir = Vector3.Zero;
     public Vector3 Direction { get => _dir; set => _dir = value; }
+    private Vector3 _dir = Vector3.Zero;
 
     public Vector3 Center { get => Position + Size / 2; set => _pos = value - Size / 2; }
 
@@ -40,7 +39,7 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
         get;
     }
 
-    // TODO (fbuetler) Bounding box should rotate with hammer
+    // TODO (fbuetler) Bounding box should rotate with object
     public BoundingBox BoundingBox
     {
         get
@@ -51,7 +50,6 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
             );
         }
     }
-
 
     protected virtual Color GetDebugColor()
     {
@@ -66,14 +64,14 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
 
     public GameObject(Game game, Vector3 position) : this(game)
     {
-        Position = position;
+        _pos = position;
     }
 
     public void Move(GameTime gameTime, Vector3 velocity)
     {
         // TODO: (lmeinen) handle collisions
         float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
-        Position += velocity * elapsed;
+        _pos += velocity * elapsed;
     }
 
     protected override void LoadContent()

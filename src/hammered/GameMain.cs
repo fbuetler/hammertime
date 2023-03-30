@@ -23,10 +23,7 @@ public class GameMain : Game
     public SpriteBatch SpriteBatch { get => _spriteBatch; }
     private SpriteBatch _spriteBatch;
 
-    public DebugDraw DebugDraw
-    {
-        get { return _debugDraw; }
-    }
+    public DebugDraw DebugDraw { get => _debugDraw; }
     private DebugDraw _debugDraw;
 
     private Map _map;
@@ -48,15 +45,13 @@ public class GameMain : Game
 
     // store input states so that they are only polled once per frame, 
     // then the same input state is used wherever needed
-    private GamePadState[] _gamePadStates;
-    private KeyboardState _keyboardState;
+    // private GamePadState[] _gamePadStates;
+    // private KeyboardState _keyboardState;
 
     private int _numberOfPlayers = 4;
-    public int NumberOfPlayers
-    {
-        get => _numberOfPlayers;
-    }
+    public int NumberOfPlayers { get => _numberOfPlayers; }
 
+    private const int maxNumberOfPlayers = 4;
     // The number of levels in the Levels directory of our content. We assume that
     // levels in our content are 0-based and that all numbers under this constant
     // have a level file present. This allows us to not need to check for the file
@@ -118,35 +113,29 @@ public class GameMain : Game
     protected override void Update(GameTime gameTime)
     {
         HandleInput(gameTime);
-        Map.Update(gameTime, _keyboardState, _gamePadStates);
         UpdateGameState();
         base.Update(gameTime);
     }
 
     private void HandleInput(GameTime gameTime)
     {
-        _keyboardState = Keyboard.GetState();
-
-        _gamePadStates = new GamePadState[4];
-        for (int i = 0; i < NumberOfPlayers; i++)
-        {
-            _gamePadStates[i] = GamePad.GetState(i);
-        }
-
         // TODO (fbuetler) proper input handling instead of just taking the input of the first player
-        if (_keyboardState.IsKeyDown(Keys.Escape) || _gamePadStates[0].IsButtonDown(Buttons.Back))
+        KeyboardState keyboardState = Keyboard.GetState();
+        GamePadState gamePadState = GamePad.GetState(0);
+
+        if (keyboardState.IsKeyDown(Keys.Escape) || gamePadState.IsButtonDown(Buttons.Back))
         {
             this.Exit();
         }
 
-        bool reloadPressed = _keyboardState.IsKeyDown(Keys.R) || _gamePadStates[0].IsButtonDown(Buttons.Start);
+        bool reloadPressed = keyboardState.IsKeyDown(Keys.R) || gamePadState.IsButtonDown(Buttons.Start);
         if (!_wasReloadPressed && reloadPressed)
         {
             InitializeComponents();
         }
         _wasReloadPressed = reloadPressed;
 
-        bool nextPressed = _keyboardState.IsKeyDown(Keys.N) || _gamePadStates[0].IsButtonDown(Buttons.Y);
+        bool nextPressed = keyboardState.IsKeyDown(Keys.N) || gamePadState.IsButtonDown(Buttons.Y);
         if (!_wasNextPressed && nextPressed)
         {
             _mapIndex = (_mapIndex + 1) % numberOfMaps;
@@ -157,7 +146,7 @@ public class GameMain : Game
 
     private void UpdateGameState()
     {
-        foreach (Player p in _map.Players.Values)
+        foreach (Player p in Map.Players.Values)
         {
             // TODO: (lmeinen) Wait with decreasing playsAlive until player hits ground below (could make for fun animation or items that allow one to come back from falling)
             if (p.State == PlayerState.DEAD || p.State == PlayerState.FALLING)
@@ -184,7 +173,11 @@ public class GameMain : Game
     {
         // unloads the content for the current map before loading the next one
         if (Map != null)
+        {
+            // just reload all components
+            Components.Clear();
             Map.Dispose();
+        }
 
         _scoreState = ScoreState.None;
 
@@ -192,7 +185,7 @@ public class GameMain : Game
         using (Stream fileStream = TitleContainer.OpenStream(mapPath))
             _map = new Map(this, Services, fileStream);
 
-        _playersAlive = _map.Players.Keys.ToList();
+        _playersAlive = Map.Players.Keys.ToList();
     }
 
     protected override void Draw(GameTime gameTime)

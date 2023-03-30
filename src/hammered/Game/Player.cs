@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
-using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
 namespace hammered;
@@ -27,18 +26,17 @@ public class Player : GameObject<PlayerState>
     private SoundEffect _killedSound;
 
     // player attributes
-    public int PlayerId { get { return _playerId; } }
+    public int PlayerId { get => _playerId; }
     private int _playerId;
 
     private Vector3 _velocity;
 
-    public override Vector3 Size => new Vector3(1f, 1f, 1f);
+    public override Vector3 Size { get => new Vector3(1f, 1f, 1f); }
 
     private PlayerState _state;
     public override PlayerState State => _state;
 
     // push back
-    private bool _isPushedback;
     private Vector3 _pushbackDir;
     private float _pushbackDistanceLeft;
 
@@ -68,9 +66,14 @@ public class Player : GameObject<PlayerState>
 
     public Player(Game game, Vector3 position, int playerId) : base(game, position)
     {
+        // make update and draw called by monogame
+        Enabled = true;
+        Visible = true;
+
         _playerId = playerId;
 
         _state = PlayerState.ALIVE;
+
         _objectModelPaths = new Dictionary<PlayerState, string>();
         _objectModelPaths[PlayerState.ALIVE] = "Player/playerCube";
         _objectModelPaths[PlayerState.ALIVE_NO_HAMMER] = "Player/playerCube";
@@ -110,8 +113,6 @@ public class Player : GameObject<PlayerState>
             _state = PlayerState.DEAD;
             Visible = false;
         }
-
-        Console.WriteLine($"Player {_playerId} is in state {_state}");
     }
 
     private void HandleInput(KeyboardState keyboardState, GamePadState gamePadState)
@@ -151,7 +152,6 @@ public class Player : GameObject<PlayerState>
             movement.X += 1.0f;
         }
 
-
         // prevent the player from running faster than his top speed
         if (movement.LengthSquared() > 1)
         {
@@ -159,7 +159,6 @@ public class Player : GameObject<PlayerState>
         }
 
         Direction = movement;
-
 
         // check if player is alive before throwing hammer
         if (_state == PlayerState.ALIVE && (keyboardState.IsKeyDown(Keys.Space) || gamePadState.IsButtonDown(ThrowButton)))
@@ -191,13 +190,12 @@ public class Player : GameObject<PlayerState>
             _velocity *= AirDragFactor;
         }
 
-
         HandlePushback(gameTime);
 
         // apply velocity
         Move(gameTime, _velocity);
 
-        // if the player is now colliding with the map, separate them.
+        // if the player is now colliding with the map, separate them
         HandleTileCollisions();
         HandlePlayerCollisions();
 
@@ -217,15 +215,23 @@ public class Player : GameObject<PlayerState>
 
         // if the collision stopped us from moving, reset the velocity to zero
         if (Position.X == prevPos.X)
+        {
             _velocity.X = 0;
+        }
 
         if (Position.Y == prevPos.Y)
+        {
             _velocity.Y = 0;
+        }
         else if (_state != PlayerState.FALLING)
+        {
             OnFalling();
+        }
 
         if (Position.Z == prevPos.Z)
+        {
             _velocity.Z = 0;
+        }
     }
 
     private void HandlePushback(GameTime gameTime)
@@ -271,7 +277,7 @@ public class Player : GameObject<PlayerState>
 
     private void CheckHammerCollisions()
     {
-        foreach (Hammer hammer in GameMain.Map.Hammers.Values.Where(h => h.OwnerID != _playerId && h.State != HammerState.IS_NOT_FLYING))
+        foreach (Hammer hammer in GameMain.Map.Hammers.Values.Where(h => h.OwnerId != _playerId && h.State != HammerState.IS_HELT))
         {
             // detect collision
             if (BoundingBox.Intersects(hammer.BoundingBox))
@@ -315,6 +321,8 @@ public class Player : GameObject<PlayerState>
         _hammerHitSound.Play();
         _pushbackDir = pushbackDir;
         _pushbackDistanceLeft = PushbackDistance;
+
+        GamePad.SetVibration(_playerId, 0.2f, 0.2f, 0.2f, 0.2f);
     }
 
     public void OnFalling()

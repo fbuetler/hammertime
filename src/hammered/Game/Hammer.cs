@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
 namespace hammered;
@@ -10,36 +9,27 @@ public enum HammerState
 {
     IS_FLYING,
     IS_RETURNING,
-    IS_NOT_FLYING
+    IS_HELT
 }
 
 public class Hammer : GameObject<HammerState>
 {
 
     private int _ownerId;
-    public int OwnerID { get => _ownerId; }
+    public int OwnerId { get => _ownerId; }
 
     // hammer position
     private Vector3 _origin;
-    public float Speed { get { return _speed; } }
+    public float Speed { get => _speed; }
     private float _speed;
 
-    // hammer hit
-    private HashSet<int> _hitPlayers;
-    private Vector3[] _hitPos = new Vector3[] {
-        new Vector3(0f, 0f, 0f),
-        new Vector3(0f, 0f, 0f),
-        new Vector3(0f, 0f, 0f),
-        new Vector3(0f, 0f, 0f)
-    };
-
-    public override Vector3 Size => new Vector3(0.5f, 0.5f, 0.5f);
+    public override Vector3 Size { get => new Vector3(0.5f, 0.5f, 0.5f); }
 
     private HammerState _state;
-    public override HammerState State => _state;
+    public override HammerState State { get => _state; }
 
     private Dictionary<HammerState, string> _objectModelPaths;
-    public override Dictionary<HammerState, string> ObjectModelPaths => _objectModelPaths;
+    public override Dictionary<HammerState, string> ObjectModelPaths { get => _objectModelPaths; }
 
     // constants for controlling throwing
     private const float ThrowSpeed = 20f;
@@ -51,17 +41,19 @@ public class Hammer : GameObject<HammerState>
 
     public Hammer(Game game, Vector3 position, int ownerId) : base(game, position)
     {
-        this.Enabled = true;
-        this.Visible = false;
+        // make update and draw called by monogame
+        Enabled = true;
+        Visible = false;
 
         _ownerId = ownerId;
-        _state = HammerState.IS_NOT_FLYING;
+
+        _state = HammerState.IS_HELT;
+
         _objectModelPaths = new Dictionary<HammerState, string>();
         _objectModelPaths[HammerState.IS_FLYING] = "Hammer/hammerCube";
         _objectModelPaths[HammerState.IS_RETURNING] = "Hammer/hammerCube";
-        _objectModelPaths[HammerState.IS_NOT_FLYING] = "Hammer/hammerCube";
+        _objectModelPaths[HammerState.IS_HELT] = "Hammer/hammerCube";
         _speed = ThrowSpeed;
-        _hitPlayers = new HashSet<int>();
     }
 
     public override void Update(GameTime gameTime)
@@ -69,6 +61,10 @@ public class Hammer : GameObject<HammerState>
         float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
         switch (_state)
         {
+            case HammerState.IS_HELT:
+                Center = GameMain.Map.Players[_ownerId].Center;
+                HandleInput();
+                break;
             case HammerState.IS_FLYING:
                 Move(gameTime, Direction * ThrowSpeed);
                 if ((Center - _origin).LengthSquared() > MaxThrowDistance * MaxThrowDistance)
@@ -77,23 +73,14 @@ public class Hammer : GameObject<HammerState>
                     _state = HammerState.IS_RETURNING;
                 }
                 break;
-            case HammerState.IS_RETURNING when (Center - GameMain.Map.Players[_ownerId].Center).LengthSquared() < PickupDistance || GameMain.Map.Players[_ownerId].State == PlayerState.DEAD:
-                // hammer is close to the player or the player is dead, it is returned
-                _state = HammerState.IS_NOT_FLYING;
-                this.Visible = false;
-                Direction = Vector3.Zero;
-                _hitPlayers.Clear();
+            case HammerState.IS_RETURNING when (Center - GameMain.Map.Players[_ownerId].Center).LengthSquared() < PickupDistance * PickupDistance || GameMain.Map.Players[_ownerId].State == PlayerState.DEAD:
+                // if hammer is close to the player or the player is dead, it is picked up
+                PickUp();
                 GameMain.Map.Players[_ownerId].OnHammerReturn();
                 break;
             case HammerState.IS_RETURNING:
-                Vector3 dir = GameMain.Map.Players[_ownerId].Center - Center;
-                dir.Normalize(); // can't work on Direction directly, as Vector3 is a struct, not an object
-                Direction = dir;
+                FollowOwner();
                 Move(gameTime, Direction * ThrowSpeed);
-                break;
-            case HammerState.IS_NOT_FLYING:
-                Center = GameMain.Map.Players[_ownerId].Center;
-                HandleInput();
                 break;
         }
     }
@@ -111,12 +98,33 @@ public class Hammer : GameObject<HammerState>
         // flip y: on the thumbsticks, down is -1, but on the screen, down is bigger numbers
         aimingDirection.Z *= -1;
 
+        // TODO (fbuetler) should we ignore small aiming inputs like the movement input
+
+        // if any digital horizontal aiming input is found, override the analog aiming
+        if (keyboardState.IsKeyDown(Keys.W))
+        {
+            aimingDirection.Z -= 1.0f;
+        }
+        else if (keyboardState.IsKeyDown(Keys.S))
+        {
+            aimingDirection.Z += 1.0f;
+        }
+
+        if (keyboardState.IsKeyDown(Keys.A))
+        {
+            aimingDirection.X -= 1.0f;
+        }
+        else if (keyboardState.IsKeyDown(Keys.D))
+        {
+            aimingDirection.X += 1.0f;
+        }
+
         Direction = aimingDirection;
     }
 
     public void Throw()
     {
-        if (_state == HammerState.IS_NOT_FLYING)
+        if (_state == HammerState.IS_HELT)
         {
             if (Direction == Vector3.Zero)
             {
@@ -129,12 +137,32 @@ public class Hammer : GameObject<HammerState>
                     Direction = new Vector3(0, 0, 1);
                 }
             }
-            Direction.Normalize();
+
+            // aiming is a unit vector
+            float angle = MathF.Atan2(Direction.Z, Direction.X);
+            Direction = new Vector3(
+                MathF.Cos(angle),
+                Direction.Y,
+                MathF.Sin(angle)
+            );
 
             _state = HammerState.IS_FLYING;
             this.Visible = true;
             _origin = Position;
         }
+    }
+
+    private void FollowOwner()
+    {
+        Direction = GameMain.Map.Players[_ownerId].Center - Center;
+        Direction.Normalize();
+    }
+
+    private void PickUp()
+    {
+        _state = HammerState.IS_HELT;
+        this.Visible = false;
+        Direction = Vector3.Zero;
     }
 
     public void Hit()
