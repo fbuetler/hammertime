@@ -53,6 +53,7 @@ public class Hammer : GameObject<HammerState>
         _objectModelPaths[HammerState.IS_FLYING] = "Hammer/hammerCube";
         _objectModelPaths[HammerState.IS_RETURNING] = "Hammer/hammerCube";
         _objectModelPaths[HammerState.IS_HELT] = "Hammer/hammerCube";
+
         _speed = ThrowSpeed;
     }
 
@@ -154,8 +155,9 @@ public class Hammer : GameObject<HammerState>
 
     private void FollowOwner()
     {
-        Direction = GameMain.Map.Players[_ownerId].Center - Center;
-        Direction.Normalize();
+        Vector3 dir = GameMain.Map.Players[_ownerId].Center - Center;
+        dir.Normalize();
+        Direction = dir;
     }
 
     private void PickUp()
