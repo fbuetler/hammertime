@@ -43,11 +43,6 @@ public class GameMain : Game
     public int? WinnerId { get => _winnerId; }
     private int? _winnerId = null;
 
-    // store input states so that they are only polled once per frame, 
-    // then the same input state is used wherever needed
-    // private GamePadState[] _gamePadStates;
-    // private KeyboardState _keyboardState;
-
     private int _numberOfPlayers = 4;
     public int NumberOfPlayers { get => _numberOfPlayers; }
 
