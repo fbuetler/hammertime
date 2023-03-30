@@ -108,25 +108,38 @@ public class Map
         switch (tileType)
         {
             case '.':
-                // abyss
-                return new Tile(_game, new Vector3(x, 0, z), true);
+                return LoadAbyssTile(x, z);
             case '-':
-                // breakable floor
-                return new Tile(_game, new Vector3(x, 0, z), false);
+                return LoadBreakableFloorTile(x, z);
             case '#':
-                // non-breakable floor
-                throw new NotSupportedException(String.Format("Tile type '{0}' is not yet supported", tileType));
+                return LoadNonBreakableFloorTile(x, z);
             case 'X':
-                // wall
-                throw new NotSupportedException(String.Format("Tile type '{0}' is not yet supported", tileType));
+                return LoadWallTile(x, z);
             case 'P':
-                // player
                 LoadPlayer(x, z);
-                // breakable floor
-                return new Tile(_game, new Vector3(x, 0, z), false);
+                return LoadBreakableFloorTile(x, z);
             default:
                 throw new NotSupportedException(String.Format("Unsupported tile type character '{0}' at position {1}, {2}.", tileType, x, z));
         }
+    }
+
+    private Tile LoadAbyssTile(int x, int z)
+    {
+        return new Tile(_game, new Vector3(x, 0, z), true);
+    }
+
+    private Tile LoadBreakableFloorTile(int x, int z)
+    {
+        return new Tile(_game, new Vector3(x, 0, z), false);
+    }
+
+    private Tile LoadNonBreakableFloorTile(int x, int z)
+    {
+        throw new NotSupportedException(String.Format("Tile type 'non breakable floor' is not yet supported"));
+    }
+    private Tile LoadWallTile(int x, int z)
+    {
+        throw new NotSupportedException(String.Format("Tile type 'wall' is not yet supported"));
     }
 
     private void LoadPlayer(int x, int z)
