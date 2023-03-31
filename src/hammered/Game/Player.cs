@@ -95,9 +95,7 @@ public class Player : GameObject<PlayerState>
 
     public override void Update(GameTime gameTime)
     {
-        KeyboardState keyboardState = Keyboard.GetState();
-        GamePadState gamePadState = GamePad.GetState(_playerId);
-        HandleInput(keyboardState, gamePadState);
+        HandleInput();
         CheckHammerCollisions();
 
         ApplyPhysics(gameTime);
@@ -114,8 +112,11 @@ public class Player : GameObject<PlayerState>
         }
     }
 
-    private void HandleInput(KeyboardState keyboardState, GamePadState gamePadState)
+    private void HandleInput()
     {
+        KeyboardState keyboardState = Keyboard.GetState();
+        GamePadState gamePadState = GamePad.GetState(_playerId);
+
         Vector3 movement = Vector3.Zero;
         // get analog movement
         movement.X = gamePadState.ThumbSticks.Left.X * MoveStickScale;
