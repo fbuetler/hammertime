@@ -1,9 +1,10 @@
-﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 
 namespace hammered;
 
@@ -18,30 +19,34 @@ public class GameMain : Game
 {
     // drawing
     private GraphicsDeviceManager _graphics;
+
+    public SpriteBatch SpriteBatch { get => _spriteBatch; }
     private SpriteBatch _spriteBatch;
 
-    public DebugDraw DebugDraw
-    {
-        get { return _debugDraw; }
-    }
+    public DebugDraw DebugDraw { get => _debugDraw; }
     private DebugDraw _debugDraw;
 
-    SpriteFont font;
+    private Map _map;
+    public Map Map { get => _map; }
 
     // game state
-    private int _mapIndex = -1;
-    private Map _map;
+    public int MapIndex { get => _mapIndex; }
+    private int _mapIndex = 0;
+
     private bool _wasReloadPressed;
     private bool _wasNextPressed;
     private ScoreState _scoreState;
-    private int _winnerID;
+    public ScoreState ScoreState { get => _scoreState; }
+    private List<int> _playersAlive;
+    public List<int> PlayersAlive { get => _playersAlive; }
 
-    // store input states so that they are only polled once per frame, 
-    // then the same input state is used wherever needed
-    private GamePadState[] _gamePadStates;
-    private KeyboardState _keyboardState;
+    public int? WinnerId { get => _winnerId; }
+    private int? _winnerId = null;
 
-    public const int NumberOfPlayers = 4;
+    private int _numberOfPlayers = 4;
+    public int NumberOfPlayers { get => _numberOfPlayers; }
+
+    private const int maxNumberOfPlayers = 4;
     // The number of levels in the Levels directory of our content. We assume that
     // levels in our content are 0-based and that all numbers under this constant
     // have a level file present. This allows us to not need to check for the file
@@ -69,6 +74,8 @@ public class GameMain : Game
         TargetElapsedTime = TimeSpan.FromSeconds(1.0 / 144.0); // set frame rate to 144 fps
         IsFixedTimeStep = true; // decouple draw from update
 
+        InitializeComponents();
+
         base.Initialize();
 
 #if DEBUG
@@ -84,135 +91,102 @@ public class GameMain : Game
         _debugDraw = new DebugDraw(GraphicsDevice);
     }
 
+    private void InitializeComponents()
+    {
+        // initialize game objects
+        LoadMap(_mapIndex);
+
+        // initialize game overlay
+        Components.Add(new HudOverlay(this));
+    }
+
     protected override void LoadContent()
     {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
-
-        font = Content.Load<SpriteFont>("Fonts/font");
-
-        LoadNextMap();
     }
 
     protected override void Update(GameTime gameTime)
     {
         HandleInput(gameTime);
-
-        _map.Update(gameTime, _keyboardState, _gamePadStates);
-
+        UpdateGameState();
         base.Update(gameTime);
     }
 
     private void HandleInput(GameTime gameTime)
     {
-        _keyboardState = Keyboard.GetState();
+        // TODO (fbuetler) proper input handling instead of just taking the input of the first player
+        KeyboardState keyboardState = Keyboard.GetState();
+        GamePadState gamePadState = GamePad.GetState(0);
 
-        _gamePadStates = new GamePadState[4];
-        for (int i = 0; i < NumberOfPlayers; i++)
+        if (keyboardState.IsKeyDown(Keys.Escape) || gamePadState.IsButtonDown(Buttons.Back))
         {
-            _gamePadStates[i] = GamePad.GetState(i);
+            this.Exit();
         }
 
-        // TODO (fbuetler) proper input handling instead of just taking the input of the first player
-        if (_keyboardState.IsKeyDown(Keys.Escape) || _gamePadStates[0].IsButtonDown(Buttons.Back))
-            this.Exit();
-
-        bool reloadPressed = _keyboardState.IsKeyDown(Keys.R) || _gamePadStates[0].IsButtonDown(Buttons.Start);
+        bool reloadPressed = keyboardState.IsKeyDown(Keys.R) || gamePadState.IsButtonDown(Buttons.Start);
         if (!_wasReloadPressed && reloadPressed)
         {
-            ReloadCurrentMap();
+            InitializeComponents();
         }
         _wasReloadPressed = reloadPressed;
 
-        bool nextPressed = _keyboardState.IsKeyDown(Keys.N) || _gamePadStates[0].IsButtonDown(Buttons.Y);
+        bool nextPressed = keyboardState.IsKeyDown(Keys.N) || gamePadState.IsButtonDown(Buttons.Y);
         if (!_wasNextPressed && nextPressed)
         {
-            LoadNextMap();
+            _mapIndex = (_mapIndex + 1) % numberOfMaps;
+            InitializeComponents();
         }
         _wasNextPressed = nextPressed;
     }
 
-    private void LoadNextMap()
+    private void UpdateGameState()
+    {
+        foreach (Player p in Map.Players.Values)
+        {
+            // TODO: (lmeinen) Wait with decreasing playsAlive until player hits ground below (could make for fun animation or items that allow one to come back from falling)
+            if (p.State == PlayerState.DEAD || p.State == PlayerState.FALLING)
+            {
+                _playersAlive.Remove(p.PlayerId);
+            }
+        }
+
+        if (_scoreState == ScoreState.None)
+        {
+            if (_playersAlive.Count == 1)
+            {
+                _scoreState = ScoreState.Winner;
+                _winnerId = _playersAlive[0];
+            }
+            else if (_playersAlive.Count == 0)
+            {
+                _scoreState = ScoreState.Draw;
+            }
+        }
+    }
+
+    private void LoadMap(int i)
     {
         // unloads the content for the current map before loading the next one
-        if (_map != null)
-            _map.Dispose();
+        if (Map != null)
+        {
+            // just reload all components
+            Components.Clear();
+            Map.Dispose();
+        }
 
         _scoreState = ScoreState.None;
-        _winnerID = -1;
 
-        _mapIndex = (_mapIndex + 1) % numberOfMaps;
         string mapPath = string.Format("Content/Maps/{0}.txt", _mapIndex);
         using (Stream fileStream = TitleContainer.OpenStream(mapPath))
             _map = new Map(this, Services, fileStream);
-    }
 
-    private void ReloadCurrentMap()
-    {
-        _mapIndex--;
-        LoadNextMap();
+        _playersAlive = Map.Players.Keys.ToList();
     }
 
     protected override void Draw(GameTime gameTime)
     {
         GraphicsDevice.Clear(Color.CornflowerBlue);
-
-        _map.Draw(gameTime);
-
-        // _spriteBatch.Begin alters the state of the graphics pipeline
-        // therefore we have to reenable the depth buffer here
-        _spriteBatch.Begin(depthStencilState: DepthStencilState.Default);
-
-        // TODO (fbuetler) create start screen
-        DrawHud();
-
-        _spriteBatch.End();
-
+        Map.Draw(gameTime);
         base.Draw(gameTime);
-    }
-
-    private void DrawHud()
-    {
-        DrawShadowedString(font, "Map: " + _mapIndex, new Vector2(10, 10), Color.White);
-
-        List<int> playersAlive = new List<int>();
-        foreach (Player p in _map.Players)
-        {
-            if (p.IsAlive)
-            {
-                playersAlive.Add(p.ID);
-            }
-        }
-
-        DrawShadowedString(font, "Players alive: " + playersAlive.Count, new Vector2(10, 60), Color.White);
-
-        // TODO (fbuetle) draw overlay instead of strings
-        switch (_scoreState)
-        {
-            case ScoreState.None:
-                if (playersAlive.Count == 1)
-                {
-                    _scoreState = ScoreState.Winner;
-                    _winnerID = playersAlive[0];
-                }
-                else if (playersAlive.Count == 0)
-                {
-                    _scoreState = ScoreState.Draw;
-                }
-                break;
-            case ScoreState.Winner:
-                DrawShadowedString(font, "Winner: Player " + (_winnerID + 1), new Vector2(10, 110), Color.White);
-                break;
-            case ScoreState.Draw:
-                DrawShadowedString(font, "Draw", new Vector2(10, 120), Color.White);
-                break;
-            default:
-                throw new NotSupportedException(String.Format("Scorestate type '{0}' is not supported", _scoreState));
-        }
-    }
-
-    private void DrawShadowedString(SpriteFont font, string value, Vector2 position, Color color)
-    {
-        _spriteBatch.DrawString(font, value, position + new Vector2(1.0f, 1.0f), Color.Black);
-        _spriteBatch.DrawString(font, value, position, color);
     }
 }

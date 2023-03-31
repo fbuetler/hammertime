@@ -1,168 +1,122 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
 
 namespace hammered;
 
-public enum TileCollision
+public enum TileState
 {
-    Passable = 0,
-
-    Impassable = 1,
+    HP100,
+    HP80,
+    HP60,
+    HP40,
+    HP20,
+    HP0
 }
 
-public class Tile : GameObject
+public class Tile : GameObject<TileState>
 {
-    public Map Map
-    {
-        get { return _map; }
-    }
-    Map _map;
-
-    // TODO (fbuetler) Bounding box should rotate with hammer
-    public BoundingBox BoundingBox
-    {
-        get
-        {
-            return new BoundingBox(
-                new Vector3(_pos.X, _pos.Y, _pos.Z),
-                new Vector3(_pos.X + Tile.Width, _pos.Y + Tile.Height, _pos.Z + Tile.Depth)
-            );
-        }
-    }
-
-    public bool IsBroken
-    {
-        get { return _healthPoints <= 0; }
-    }
-    private float _healthPoints;
-
-    public TileCollision Collision
-    {
-        get { return _collision; }
-    }
-    private TileCollision _collision;
 
     private HashSet<int> _visitors;
 
-    private Model[] _model;
-    private Matrix _modelScale;
+    public override TileState State => _state;
+    private TileState _state;
 
-    public Vector3 Pos
-    {
-        get { return _pos; }
-    }
-    private Vector3 _pos;
+    public override Dictionary<TileState, string> ObjectModelPaths { get => _objectModelPaths; }
+    private Dictionary<TileState, string> _objectModelPaths;
+
+    public override Vector3 Size { get => new Vector3(Width, Height, Depth); }
 
     public const float Width = 1f;
     public const float Height = 1f;
     public const float Depth = 1f;
 
-    private const float maxHealthPoints = 90f;
-    private const float damage = 30f;
-    private const float healthLevel = 20f;
-
-    public Tile(Map map, Vector3 position, TileCollision collision)
+    public Tile(Game game, Vector3 position, Boolean isBroken) : base(game, position)
     {
-        if (map == null)
-            throw new ArgumentNullException("map");
+        // make update and draw called by monogame
+        Enabled = true;
+        Visible = !isBroken;
 
-        _map = map;
-        _pos = new Vector3(position.X, position.Y, position.Z);
+        _state = isBroken ? TileState.HP0 : TileState.HP100;
 
-        LoadContent();
-
-        Reset(collision);
-    }
-
-    public void LoadContent()
-    {
-        _model = new Model[] {
-            _map.Content.Load<Model>("Tile/tileCube0"),
-            _map.Content.Load<Model>("Tile/tileCube1"),
-            _map.Content.Load<Model>("Tile/tileCube2"),
-            _map.Content.Load<Model>("Tile/tileCube3"),
-            _map.Content.Load<Model>("Tile/tileCube4"),
-        };
-
-        // all models should have the same size
-        BoundingBox size = GetModelSize(_model[0]);
-        float xScale = Width / (size.Max.X - size.Min.X);
-        float yScale = Height / (size.Max.Y - size.Min.Y);
-        float zScale = Depth / (size.Max.Z - size.Min.Z);
-        _modelScale = Matrix.CreateScale(xScale, yScale, zScale);
-    }
-
-    public void Reset(TileCollision collision)
-    {
-        _collision = collision;
-        if (_collision == TileCollision.Impassable)
-        {
-            _healthPoints = maxHealthPoints;
-        }
-        else
-        {
-            _healthPoints = 0;
-        }
-
+        _objectModelPaths = new Dictionary<TileState, string>();
+        _objectModelPaths[TileState.HP100] = "Tile/tileCube4";
+        _objectModelPaths[TileState.HP80] = "Tile/tileCube3";
+        _objectModelPaths[TileState.HP60] = "Tile/tileCube2";
+        _objectModelPaths[TileState.HP40] = "Tile/tileCube1";
+        _objectModelPaths[TileState.HP20] = "Tile/tileCube0";
+        _objectModelPaths[TileState.HP0] = "Tile/tileCube0";
 
         _visitors = new HashSet<int>();
     }
 
-    public override void Update(GameTime gameTime, KeyboardState keyboardState, GamePadState gamePadState) { /* THIS IS JUST HERE FOR OVERRIDING */ }
-
-    public void Update(GameTime gameTime)
+    public override void Update(GameTime gameTime)
     {
+        foreach (Player p in GameMain.Map.Players.Values)
+        {
+            // is player standing on tile
+            if (p.BoundingBox.Intersects(BoundingBox) && p.State != PlayerState.FALLING)
+            {
+                if (!_visitors.Contains(p.PlayerId))
+                {
+                    OnEnter(p);
+                }
+            }
+            else
+            {
+                if (_visitors.Contains(p.PlayerId))
+                {
+                    OnExit(p);
+                }
+            }
+        }
+
+        foreach (Hammer h in GameMain.Map.Hammers.Values)
+        {
+            // wall collisions
+            if (h.BoundingBox.Intersects(BoundingBox) && h.State != HammerState.IS_HELD)
+            {
+                // TODO (fbuetler) maybe decrease health instead of directly destroying it
+                _state = TileState.HP0;
+            }
+        }
+
+        if (_state == TileState.HP0)
+        {
+            // only called once
+            OnBreak();
+        }
+
         // TODO (fbuetler) update breaking animation based on health points
     }
 
     public void OnEnter(Player player)
     {
-        if (_visitors.Contains(player.ID))
-        {
-            return;
-        }
-
-        _visitors.Add(player.ID);
+        _visitors.Add(player.PlayerId);
     }
 
     public void OnExit(Player player)
     {
-        if (!_visitors.Contains(player.ID))
-        {
-            return;
-        }
-
-        _visitors.Remove(player.ID);
-        _healthPoints = Math.Max(0, _healthPoints - Tile.damage);
+        _visitors.Remove(player.PlayerId);
+        _state = NextState(_state);
     }
+
+    private static TileState NextState(TileState tileState) => tileState switch
+    {
+        // TODO: (lmeinen) Wouldn't it be cooler if we used this everywhere, using case guards and callable actions?
+        TileState.HP100 => TileState.HP80,
+        TileState.HP80 => TileState.HP60,
+        TileState.HP60 => TileState.HP40,
+        TileState.HP40 => TileState.HP20,
+        TileState.HP20 => TileState.HP0,
+        TileState.HP0 => TileState.HP0,
+        _ => throw new ArgumentOutOfRangeException(nameof(tileState), $"Unexpected tile state: {tileState}"),
+    };
 
     public void OnBreak()
     {
-        _collision = TileCollision.Passable;
         // TODO (fbuetler) make invisible i.e. change/remove texture
-    }
-
-    public override void Draw(Matrix view, Matrix projection)
-    {
-        if (IsBroken)
-        {
-            return;
-        }
-
-        Matrix translation = Matrix.CreateTranslation(_pos);
-
-        Matrix world = _modelScale * translation;
-
-        // change tile model based on current health
-        DrawModel(_model[(int)Math.Floor(_healthPoints / healthLevel)], world, view, projection);
-
-#if DEBUG
-        _map.DebugDraw.Begin(Matrix.Identity, view, projection);
-        _map.DebugDraw.DrawWireBox(BoundingBox, Color.Black);
-        _map.DebugDraw.End();
-#endif
+        this.Visible = false;
+        this.Enabled = false;
     }
 }
