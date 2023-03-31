@@ -75,13 +75,13 @@ public class Player : GameObject<PlayerState>
         _state = PlayerState.ALIVE;
 
         _objectModelPaths = new Dictionary<PlayerState, string>();
-        _objectModelPaths[PlayerState.ALIVE] = "Player/playerCube";
-        _objectModelPaths[PlayerState.ALIVE_NO_HAMMER] = "Player/playerCube";
-        _objectModelPaths[PlayerState.PUSHBACK] = "Player/playerCube";
-        _objectModelPaths[PlayerState.PUSHBACK_NO_HAMMER] = "Player/playerCube";
-        _objectModelPaths[PlayerState.THROWING] = "Player/playerCube";
-        _objectModelPaths[PlayerState.FALLING] = "Player/playerCube";
-        _objectModelPaths[PlayerState.DEAD] = "Player/playerCube";
+        _objectModelPaths[PlayerState.ALIVE] = "Player/playerNoHammer";
+        _objectModelPaths[PlayerState.ALIVE_NO_HAMMER] = "Player/playerNoHammer";
+        _objectModelPaths[PlayerState.PUSHBACK] = "Player/playerNoHammer";
+        _objectModelPaths[PlayerState.PUSHBACK_NO_HAMMER] = "Player/playerNoHammer";
+        _objectModelPaths[PlayerState.THROWING] = "Player/playerNoHammer";
+        _objectModelPaths[PlayerState.FALLING] = "Player/playerNoHammer";
+        _objectModelPaths[PlayerState.DEAD] = "Player/playerNoHammer";
         // TODO: (lmeinen) Add models for other states
 
         _velocity = Vector3.Zero;

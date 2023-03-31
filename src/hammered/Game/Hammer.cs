@@ -50,9 +50,9 @@ public class Hammer : GameObject<HammerState>
         _state = HammerState.IS_HELD;
 
         _objectModelPaths = new Dictionary<HammerState, string>();
-        _objectModelPaths[HammerState.IS_FLYING] = "Hammer/hammerCube";
-        _objectModelPaths[HammerState.IS_RETURNING] = "Hammer/hammerCube";
-        _objectModelPaths[HammerState.IS_HELD] = "Hammer/hammerCube";
+        _objectModelPaths[HammerState.IS_FLYING] = "Hammer/hammerFly";
+        _objectModelPaths[HammerState.IS_RETURNING] = "Hammer/hammerFly";
+        _objectModelPaths[HammerState.IS_HELD] = "Hammer/hammerFly";
 
         _speed = ThrowSpeed;
     }
