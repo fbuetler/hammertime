@@ -24,6 +24,9 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
 
     public Vector3 Center { get => Position + Size / 2; }
 
+    // rotation center isn't necessarily equal to center for all models
+    public virtual Vector3 RotCenter { get => Center; }
+
     public abstract Vector3 Size
     {
         get;
@@ -112,7 +115,7 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
         float angle = MathF.Atan2(_dir.Z, _dir.X);
         Matrix rotate = Matrix.CreateFromAxisAngle(Vector3.UnitY, angle);
 
-        Matrix translateIntoPosition = Matrix.CreateTranslation(Center);
+        Matrix translateIntoPosition = Matrix.CreateTranslation(RotCenter);
 
         Matrix world = _models[State].modelScale * translateIntoOrigin * rotate * translateIntoPosition;
 

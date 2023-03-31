@@ -22,6 +22,9 @@ public class Arrow : GameObject<ArrowState>
     private ArrowState _state;
     public override ArrowState State { get => _state; }
 
+    // TODO: (lmeinen) why isn't this working?
+    public override Vector3 RotCenter { get => Position; }
+
     private Dictionary<ArrowState, string> _objectModelPaths;
     public override Dictionary<ArrowState, string> ObjectModelPaths { get => _objectModelPaths; }
 
@@ -43,12 +46,15 @@ public class Arrow : GameObject<ArrowState>
     public override void Update(GameTime gameTime)
     {
         float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
+        Vector3 pos;
         switch (_state)
         {
             case ArrowState.IS_NOT_CHARGING when GameMain.Map.Players[OwnerId].State == PlayerState.CHARGING:
                 _state = ArrowState.IS_CHARGING;
                 Direction = GameMain.Map.Hammers[OwnerId].Direction;
-                Position = GameMain.Map.Players[OwnerId].Position;
+                pos = GameMain.Map.Players[OwnerId].Center;
+                pos.Y = 1f; // arrow should be on the floor
+                Position = pos;
                 Visible = true;
                 break;
             case ArrowState.IS_CHARGING when GameMain.Map.Players[OwnerId].State != PlayerState.CHARGING:
@@ -57,7 +63,9 @@ public class Arrow : GameObject<ArrowState>
                 break;
             case ArrowState.IS_CHARGING:
                 Direction = GameMain.Map.Hammers[OwnerId].Direction;
-                Position = GameMain.Map.Players[OwnerId].Position;
+                pos = GameMain.Map.Players[OwnerId].Center;
+                pos.Y = 1f; // arrow should be on the floor
+                Position = pos;
                 break;
             default:
                 // do nothing
