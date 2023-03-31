@@ -9,7 +9,7 @@ public enum HammerState
 {
     IS_FLYING,
     IS_RETURNING,
-    IS_HELT
+    IS_HELD
 }
 
 public class Hammer : GameObject<HammerState>
@@ -47,12 +47,12 @@ public class Hammer : GameObject<HammerState>
 
         _ownerId = ownerId;
 
-        _state = HammerState.IS_HELT;
+        _state = HammerState.IS_HELD;
 
         _objectModelPaths = new Dictionary<HammerState, string>();
         _objectModelPaths[HammerState.IS_FLYING] = "Hammer/hammerCube";
         _objectModelPaths[HammerState.IS_RETURNING] = "Hammer/hammerCube";
-        _objectModelPaths[HammerState.IS_HELT] = "Hammer/hammerCube";
+        _objectModelPaths[HammerState.IS_HELD] = "Hammer/hammerCube";
 
         _speed = ThrowSpeed;
     }
@@ -62,7 +62,7 @@ public class Hammer : GameObject<HammerState>
         float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
         switch (_state)
         {
-            case HammerState.IS_HELT:
+            case HammerState.IS_HELD:
                 HandleInput();
                 break;
             case HammerState.IS_FLYING:
@@ -124,7 +124,7 @@ public class Hammer : GameObject<HammerState>
 
     public void Throw()
     {
-        if (_state == HammerState.IS_HELT)
+        if (_state == HammerState.IS_HELD)
         {
             if (Direction == Vector3.Zero)
             {
@@ -163,7 +163,7 @@ public class Hammer : GameObject<HammerState>
 
     private void PickUp()
     {
-        _state = HammerState.IS_HELT;
+        _state = HammerState.IS_HELD;
         this.Visible = false;
         Direction = Vector3.Zero;
     }

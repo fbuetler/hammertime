@@ -276,7 +276,7 @@ public class Player : GameObject<PlayerState>
 
     private void CheckHammerCollisions()
     {
-        foreach (Hammer hammer in GameMain.Map.Hammers.Values.Where(h => h.OwnerId != _playerId && h.State != HammerState.IS_HELT))
+        foreach (Hammer hammer in GameMain.Map.Hammers.Values.Where(h => h.OwnerId != _playerId && h.State != HammerState.IS_HELD))
         {
             // detect collision
             if (BoundingBox.Intersects(hammer.BoundingBox))
