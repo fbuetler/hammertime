@@ -112,7 +112,7 @@ public class Player : GameObject<PlayerState>
         KeyboardState keyboardState = Keyboard.GetState();
         GamePadState gamePadState = GamePad.GetState(_playerId);
         Vector3 moveInput = ReadMovementInput(keyboardState, gamePadState);
-        Vector3 currPos = Position;
+        Vector3 prevPos = Position;
 
         switch (State)
         {
@@ -164,7 +164,7 @@ public class Player : GameObject<PlayerState>
         if (pushback != null)
         {
             _pushback = (Pushback)pushback;
-            if (_state == PlayerState.FALLING || State == PlayerState.ALIVE)
+            if (State == PlayerState.FALLING || State == PlayerState.ALIVE)
                 _state = PlayerState.PUSHBACK;
             else if (State == PlayerState.FALLING_NO_HAMMER || State == PlayerState.ALIVE_NO_HAMMER)
                 _state = PlayerState.PUSHBACK_NO_HAMMER;
@@ -174,11 +174,11 @@ public class Player : GameObject<PlayerState>
         HandleTileCollisions();
 
         // if collision prevented us from moving, reset velocity
-        if (currPos.X == Position.X)
+        if (prevPos.X == Position.X)
             _velocity.X = 0;
-        if (currPos.Y == Position.Y)
+        if (prevPos.Y == Position.Y)
             _velocity.Y = 0;
-        if (currPos.Z == Position.Z)
+        if (prevPos.Z == Position.Z)
             _velocity.Z = 0;
 
         if (_velocity.Y != 0)
@@ -310,7 +310,7 @@ public class Player : GameObject<PlayerState>
 
     public void OnHammerReturn()
     {
-        if (_state == PlayerState.ALIVE_NO_HAMMER)
+        if (State == PlayerState.ALIVE_NO_HAMMER)
         {
             _state = PlayerState.ALIVE;
         }
