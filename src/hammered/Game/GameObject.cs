@@ -67,7 +67,7 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
 
     public GameObject(Game game, Vector3 position) : this(game)
     {
-        _pos = position;
+        Position = position;
     }
 
     public float Move(GameTime gameTime, Vector3 velocity)
@@ -75,7 +75,7 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
         // TODO: (lmeinen) handle collisions
         float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
         Vector3 displacement = velocity * elapsed;
-        _pos += displacement;
+        Position += displacement;
         return displacement.Length();
     }
 
@@ -114,7 +114,7 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
         Matrix translateIntoOrigin = Matrix.CreateTranslation(Position - RotCenter);
 
         // TODO (fbuetler) fix angle
-        float angle = MathF.Atan2(_dir.Z, _dir.X);
+        float angle = MathF.Atan2(-Direction.Z, Direction.X);
         Matrix rotate = Matrix.CreateFromAxisAngle(Vector3.UnitY, angle);
 
         Matrix translateIntoPosition = Matrix.CreateTranslation(RotCenter);
