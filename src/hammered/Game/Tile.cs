@@ -55,7 +55,7 @@ public class Tile : GameObject<TileState>
         foreach (Player p in GameMain.Map.Players.Values)
         {
             // is player standing on tile
-            if (p.BoundingBox.Intersects(BoundingBox) && p.State != PlayerState.FALLING)
+            if (BoundingBox.Contains(p.Center - Vector3.UnitY).Equals(ContainmentType.Contains) && p.State != PlayerState.FALLING)
             {
                 if (!_visitors.Contains(p.PlayerId))
                 {

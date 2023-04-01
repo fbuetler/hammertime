@@ -70,11 +70,13 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
         _pos = position;
     }
 
-    public void Move(GameTime gameTime, Vector3 velocity)
+    public float Move(GameTime gameTime, Vector3 velocity)
     {
         // TODO: (lmeinen) handle collisions
         float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
-        _pos += velocity * elapsed;
+        Vector3 displacement = velocity * elapsed;
+        _pos += displacement;
+        return displacement.Length();
     }
 
     protected override void LoadContent()
