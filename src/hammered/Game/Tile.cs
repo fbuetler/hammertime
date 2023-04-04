@@ -76,8 +76,7 @@ public class Tile : GameObject<TileState>
             // wall collisions
             if (h.BoundingBox.Intersects(BoundingBox) && h.State != HammerState.IS_HELD)
             {
-                // TODO (fbuetler) maybe decrease health instead of directly destroying it
-                _state = TileState.HP0;
+                _state = NextState(_state);
             }
         }
 
