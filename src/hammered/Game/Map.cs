@@ -169,8 +169,15 @@ public class Map
 
     private void LoadMusic()
     {
-        MediaPlayer.Play(_content.Load<Song>("Audio/Stormfront"));
-        MediaPlayer.IsRepeating = true;
+        // game crashes sometimes with:
+        // Unhandled exception. System.NullReferenceException: Object reference not set to an instance of an object.
+        // are we loading not fast enough?
+        try
+        {
+            MediaPlayer.Play(_content.Load<Song>("Audio/Stormfront"));
+            MediaPlayer.IsRepeating = true;
+        }
+        catch { }
     }
 
     public void Dispose()
