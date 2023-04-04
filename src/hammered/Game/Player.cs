@@ -259,29 +259,6 @@ public class Player : GameObject<PlayerState>
         return velocity;
     }
 
-    private void HandleTileCollisions()
-    {
-        BoundingBox bounds = BoundingBox;
-        int x_low = (int)Math.Floor((float)bounds.Min.X / Tile.Width);
-        int x_high = (int)Math.Ceiling(((float)bounds.Max.X / Tile.Width)) - 1;
-        int z_low = (int)Math.Floor(((float)bounds.Min.Z / Tile.Depth));
-        int z_high = (int)Math.Ceiling((float)bounds.Max.Z / Tile.Depth) - 1;
-
-        // TODO (fbuetler) iterate over y as well to respect walls (only positive)
-        for (int z = z_low; z <= z_high; z++)
-        {
-            for (int x = x_low; x <= x_high; x++)
-            {
-                // determine collision depth (with direction) and magnitude
-                BoundingBox? neighbour = GameMain.Map.TryGetTileBounds(x, 0, z);
-                if (neighbour != null)
-                {
-                    ResolveCollision(BoundingBox, (BoundingBox)neighbour);
-                }
-            }
-        }
-    }
-
     private void HandlePlayerCollisions()
     {
         foreach (Player opponent in GameMain.Map.Players.Values.Where(p => p.PlayerId != _playerId))

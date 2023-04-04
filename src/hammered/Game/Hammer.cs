@@ -67,20 +67,34 @@ public class Hammer : GameObject<HammerState>
                 break;
             case HammerState.IS_FLYING:
                 Move(gameTime, Direction * ThrowSpeed);
+
+                bool collided = HandleTileCollisions();
+                if (collided)
+                {
+                    _state = HammerState.IS_RETURNING;
+                }
+
                 if ((Center - _origin).LengthSquared() > MaxThrowDistance * MaxThrowDistance)
                 {
                     // if max distance is reached, make it return
                     _state = HammerState.IS_RETURNING;
                 }
                 break;
-            case HammerState.IS_RETURNING when (Center - GameMain.Map.Players[_ownerId].Center).LengthSquared() < PickupDistance * PickupDistance || GameMain.Map.Players[_ownerId].State == PlayerState.DEAD:
-                // if hammer is close to the player or the player is dead, it is picked up
-                PickUp();
-                GameMain.Map.Players[_ownerId].OnHammerReturn();
-                break;
             case HammerState.IS_RETURNING:
-                FollowOwner();
-                Move(gameTime, Direction * ThrowSpeed);
+                HandleTileCollisions();
+
+                if ((Center - GameMain.Map.Players[_ownerId].Center).LengthSquared() < PickupDistance * PickupDistance ||
+                    GameMain.Map.Players[_ownerId].State == PlayerState.DEAD)
+                {
+                    // if hammer is close to the player or the player is dead, it is picked up
+                    PickUp();
+                    GameMain.Map.Players[_ownerId].OnHammerReturn();
+                }
+                else
+                {
+                    FollowOwner();
+                    Move(gameTime, Direction * ThrowSpeed);
+                }
                 break;
         }
     }
@@ -126,34 +140,37 @@ public class Hammer : GameObject<HammerState>
 
     public void Throw()
     {
-        if (_state == HammerState.IS_HELD)
+        if (_state != HammerState.IS_HELD)
         {
-            if (Direction == Vector3.Zero)
-            {
-                if (GameMain.Map.Players[_ownerId].Direction != Vector3.Zero)
-                {
-                    Direction = GameMain.Map.Players[_ownerId].Direction;
-                }
-                else
-                {
-                    Direction = new Vector3(0, 0, 1);
-                }
-            }
-
-            // aiming is a unit vector
-            float angle = MathF.Atan2(Direction.Z, Direction.X);
-            Direction = new Vector3(
-                MathF.Cos(angle),
-                Direction.Y,
-                MathF.Sin(angle)
-            );
-
-            _state = HammerState.IS_FLYING;
-            this.Visible = true;
-
-            _origin = GameMain.Map.Players[_ownerId].Center;
-            Position = GameMain.Map.Players[_ownerId].Center - Size / 2;
+            return;
         }
+
+        // if there is no aiming input, use walking direction or default
+        if (Direction == Vector3.Zero)
+        {
+            if (GameMain.Map.Players[_ownerId].Direction != Vector3.Zero)
+            {
+                Direction = GameMain.Map.Players[_ownerId].Direction;
+            }
+            else
+            {
+                Direction = new Vector3(0, 0, 1);
+            }
+        }
+
+        // aiming is a unit vector (all in or nothing)
+        float angle = MathF.Atan2(Direction.Z, Direction.X);
+        Direction = new Vector3(
+            MathF.Cos(angle),
+            Direction.Y,
+            MathF.Sin(angle)
+        );
+
+        _state = HammerState.IS_FLYING;
+        this.Visible = true;
+
+        _origin = GameMain.Map.Players[_ownerId].Center;
+        Position = GameMain.Map.Players[_ownerId].Center - Size / 2;
     }
 
     private void FollowOwner()

@@ -170,6 +170,36 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
         return new BoundingBox(min, max);
     }
 
+    protected bool HandleTileCollisions()
+    {
+        BoundingBox bounds = BoundingBox;
+        int x_low = (int)Math.Floor((float)bounds.Min.X / Tile.Width);
+        int x_high = (int)Math.Ceiling(((float)bounds.Max.X / Tile.Width)) - 1;
+        int y_low = (int)Math.Floor((float)bounds.Min.Y / Tile.Height); ;
+        int y_high = (int)Math.Ceiling(((float)bounds.Max.Y / Tile.Height)) - 1;
+        int z_low = (int)Math.Floor(((float)bounds.Min.Z / Tile.Depth));
+        int z_high = (int)Math.Ceiling((float)bounds.Max.Z / Tile.Depth) - 1;
+
+        bool collided = false;
+        for (int z = z_low; z <= z_high; z++)
+        {
+            for (int y = y_low; y <= y_high; y++)
+            {
+                for (int x = x_low; x <= x_high; x++)
+                {
+                    // determine collision depth (with direction) and magnitude
+                    BoundingBox? neighbour = GameMain.Map.TryGetTileBounds(x, y, z);
+                    if (neighbour != null)
+                    {
+                        ResolveCollision(BoundingBox, (BoundingBox)neighbour);
+                        collided = true;
+                    }
+                }
+            }
+        }
+        return collided;
+    }
+
     protected void ResolveCollision(BoundingBox a, BoundingBox b)
     {
         Vector3 depth = IntersectionDepth(a, b);
