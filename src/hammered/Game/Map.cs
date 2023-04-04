@@ -135,16 +135,17 @@ public class Map
 
     private Tile LoadBreakableFloorTile(int x, int y, int z)
     {
-        return new Tile(_game, new Vector3(x, y, z), false);
+        return new Tile(_game, new Vector3(x, y, z));
     }
 
     private Tile LoadNonBreakableFloorTile(int x, int y, int z)
     {
         throw new NotSupportedException(String.Format("Tile type 'non breakable floor' is not yet supported"));
     }
+
     private Tile LoadWallTile(int x, int y, int z)
     {
-        return new Tile(_game, new Vector3(x, y, z), false);
+        return new Tile(_game, new Vector3(x, y, z));
     }
 
     private void LoadPlayer(int x, int y, int z)
