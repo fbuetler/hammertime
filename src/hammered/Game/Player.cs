@@ -57,20 +57,20 @@ public class Player : GameObject<PlayerState>
 
     // how far one gets pushed back by a hammer
     private const float PushbackDistance = 3f;
-    private const float PushbackSpeed = 2000f;
+    private const float PushbackVelocity = 2000f;
 
     // if a player is below the kill plane, it disappears
     private const float KillPlaneLevel = -10f;
 
     // constants for controlling horizontal movement
     private const float MoveAcceleration = 1300f;
-    private const float MaxMoveSpeed = 175f;
+    private const float MaxMoveVelocity = 175f;
     private const float GroundDragFactor = 0.48f;
     private const float AirDragFactor = 0.58f;
 
     // constants for controlling vertical movement
     private const float GravityAcceleration = 960f;
-    private const float MaxFallSpeed = 340f;
+    private const float MaxFallVelocity = 340f;
 
     // input configuration
     private const float MoveStickScale = 1.0f;
@@ -139,7 +139,7 @@ public class Player : GameObject<PlayerState>
                 break;
             case PlayerState.PUSHBACK:
             case PlayerState.PUSHBACK_NO_HAMMER:
-                _velocity = ComputeVelocity(_velocity, _pushback.Direction, PushbackSpeed, GroundDragFactor, gameTime);
+                _velocity = ComputeVelocity(_velocity, _pushback.Direction, PushbackVelocity, GroundDragFactor, gameTime);
                 _pushback.Distance -= Move(gameTime, _velocity);
                 break;
             case PlayerState.FALLING when Position.Y < KillPlaneLevel:
@@ -252,7 +252,7 @@ public class Player : GameObject<PlayerState>
         Vector3 velocity = currentVelocity + direction * acceleration * elapsed;
 
         // always apply gravity forces, and resolve collisions with tiles later
-        velocity.Y = MathHelper.Clamp(currentVelocity.Y - GravityAcceleration * elapsed, -MaxFallSpeed, MaxFallSpeed);
+        velocity.Y = MathHelper.Clamp(currentVelocity.Y - GravityAcceleration * elapsed, -MaxFallVelocity, MaxFallVelocity);
 
         velocity *= dragFactor;
 

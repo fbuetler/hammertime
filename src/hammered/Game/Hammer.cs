@@ -20,8 +20,8 @@ public class Hammer : GameObject<HammerState>
 
     // hammer position
     private Vector3 _origin;
-    public float Speed { get => _speed; }
-    private float _speed;
+
+    private float _velocity;
 
     public override Vector3 Size { get => new Vector3(0.5f, 0.5f, 0.5f); }
 
@@ -32,7 +32,7 @@ public class Hammer : GameObject<HammerState>
     public override Dictionary<HammerState, string> ObjectModelPaths { get => _objectModelPaths; }
 
     // constants for controlling throwing
-    private const float ThrowSpeed = 20f;
+    private const float MaxThrowVelocity = 20f;
     private const float MaxThrowDistance = 10f;
     private const float AimStickScale = 1.0f;
     private const float PickupDistance = 1f;
@@ -54,7 +54,7 @@ public class Hammer : GameObject<HammerState>
         _objectModelPaths[HammerState.IS_RETURNING] = "Hammer/hammerCube";
         _objectModelPaths[HammerState.IS_HELD] = "Hammer/hammerCube";
 
-        _speed = ThrowSpeed;
+        _velocity = MaxThrowVelocity;
     }
 
     public override void Update(GameTime gameTime)
@@ -66,7 +66,7 @@ public class Hammer : GameObject<HammerState>
                 HandleInput();
                 break;
             case HammerState.IS_FLYING:
-                Move(gameTime, Direction * ThrowSpeed);
+                Move(gameTime, Direction * MaxThrowVelocity);
 
                 bool collided = HandleTileCollisions();
                 if (collided)
@@ -93,7 +93,7 @@ public class Hammer : GameObject<HammerState>
                 else
                 {
                     FollowOwner();
-                    Move(gameTime, Direction * ThrowSpeed);
+                    Move(gameTime, Direction * MaxThrowVelocity);
                 }
                 break;
         }
