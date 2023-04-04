@@ -115,7 +115,6 @@ public class Tile : GameObject<TileState>
 
     public void OnBreak()
     {
-        // TODO (fbuetler) make invisible i.e. change/remove texture
         this.Visible = false;
         this.Enabled = false;
     }

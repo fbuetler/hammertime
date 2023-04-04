@@ -15,7 +15,6 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
     public GameMain GameMain { get => _game; }
     private GameMain _game;
 
-    // TODO: (lmeinen) goal is to eventually make this private
     public Vector3 Position { get => _pos; set => _pos = value; }
     private Vector3 _pos;
 
@@ -69,7 +68,6 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
 
     public float Move(GameTime gameTime, Vector3 velocity)
     {
-        // TODO: (lmeinen) handle collisions
         float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
         Vector3 displacement = velocity * elapsed;
         _pos += displacement;

@@ -43,6 +43,7 @@ public class Player : GameObject<PlayerState>
 
     private Vector3 _velocity;
 
+    // TODO (fbuetler) if a player is smaller than a tile it is immediately falling upon start
     public override Vector3 Size { get => new Vector3(1f, 1f, 1f); }
 
     private PlayerState _state;
@@ -107,8 +108,7 @@ public class Player : GameObject<PlayerState>
 
     public override void Update(GameTime gameTime)
     {
-        // TODO: (lmeinen) Introduce switch statements with appropriate behavior
-        // TODO: (lmeinen) Both Hammer and Player now have Hammer.is_held type states - only one needs to store that info
+        // TODO: (lmeinen) Both Hammer and Player now have Hammer.is_held type states - only one needs to store that info (buzzword: concurrent state machines)
         KeyboardState keyboardState = Keyboard.GetState();
         GamePadState gamePadState = GamePad.GetState(_playerId);
         Vector3 moveInput = ReadMovementInput(keyboardState, gamePadState);
@@ -149,7 +149,7 @@ public class Player : GameObject<PlayerState>
                 break;
             case PlayerState.FALLING:
             case PlayerState.FALLING_NO_HAMMER:
-                // FIXME: (lmeinen) there's currently a bug where a player transitions into a FALLING state when they manage to cross a gap
+                // TODO: (lmeinen) there's currently a bug where a player transitions into a FALLING state when they manage to cross a gap
                 if (moveInput != Vector3.Zero)
                     Direction = moveInput;
                 _velocity = ComputeVelocity(_velocity, Direction, MoveAcceleration, AirDragFactor, gameTime);
