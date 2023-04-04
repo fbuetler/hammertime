@@ -90,10 +90,7 @@ public class Map
                 for (int x = 0; x < width; x++)
                 {
                     char tileType = lines[z][x];
-                    Tile tile = LoadTile(tileType, x, y, z);
-                    _tiles[x, y, z] = tile;
-                    tile.UpdateOrder = TILE_UPDATE_ORDER;
-                    _game.Components.Add(tile);
+                    _tiles[x, y, z] = LoadTile(tileType, x, y, z);
                 }
             }
         }
@@ -107,29 +104,33 @@ public class Map
     private Tile LoadTile(char tileType, int x, int y, int z)
     {
         // TODO (fbuetler) introduce different tile types
+        Tile tile;
         switch (tileType)
         {
             case '.' when y == 0:
-                return LoadAbyssTile(x, y, z);
+                return null;
             case '-' when y == 0:
-                return LoadBreakableFloorTile(x, y, z);
+                tile = LoadBreakableFloorTile(x, y, z);
+                break;
             case '#' when y == 0:
-                return LoadNonBreakableFloorTile(x, y, z);
+                tile = LoadNonBreakableFloorTile(x, y, z);
+                break;
             case 'P' when y == 0:
                 LoadPlayer(x, 1, z);
-                return LoadBreakableFloorTile(x, y, z);
+                tile = LoadBreakableFloorTile(x, y, z);
+                break;
             case 'W' when y == 0:
-                return LoadBreakableFloorTile(x, y, z);
+                tile = LoadBreakableFloorTile(x, y, z);
+                break;
             case 'W' when y == 1:
-                return LoadWallTile(x, y, z);
+                tile = LoadWallTile(x, y, z);
+                break;
             default:
-                return LoadAbyssTile(x, y, z);
+                return null;
         }
-    }
-
-    private Tile LoadAbyssTile(int x, int y, int z)
-    {
-        return new Tile(_game, new Vector3(x, y, z), true);
+        tile.UpdateOrder = TILE_UPDATE_ORDER;
+        _game.Components.Add(tile);
+        return tile;
     }
 
     private Tile LoadBreakableFloorTile(int x, int y, int z)
@@ -187,7 +188,10 @@ public class Map
 
     public BoundingBox? TryGetTileBounds(int x, int y, int z)
     {
-        if (x < 0 || y < 0 || z < 0 || x >= Width || y >= Height || z >= Depth || _tiles[x, y, z].State == TileState.HP0)
+        if (x < 0 || y < 0 || z < 0 ||
+            x >= Width || y >= Height || z >= Depth ||
+            _tiles[x, y, z] == null ||
+            _tiles[x, y, z].State == TileState.HP0)
         {
             return null;
         }
