@@ -98,7 +98,9 @@ public class Hammer : GameObject<HammerState>
         // flip y: on the thumbsticks, down is -1, but on the screen, down is bigger numbers
         aimingDirection.Z *= -1;
 
-        // TODO (fbuetler) should we ignore small aiming inputs like the movement input
+        // ignore small aiming input
+        if (aimingDirection.LengthSquared() < 0.5f)
+            aimingDirection = Vector3.Zero;
 
         // if any digital horizontal aiming input is found, override the analog aiming
         if (keyboardState.IsKeyDown(Keys.W))
