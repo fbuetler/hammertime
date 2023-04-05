@@ -35,7 +35,7 @@ public class Player : GameObject<PlayerState>
 
     // sound
     private SoundEffect _hammerHitSound;
-    private SoundEffect _killedSound;
+    private SoundEffect _fallingSound;
 
     // player attributes
     public int PlayerId { get => _playerId; }
@@ -102,7 +102,7 @@ public class Player : GameObject<PlayerState>
 
     protected override void LoadAudioContent()
     {
-        _killedSound = GameMain.Map.Content.Load<SoundEffect>("Audio/Willhelm");
+        _fallingSound = GameMain.Map.Content.Load<SoundEffect>("Audio/falling");
         _hammerHitSound = GameMain.Map.Content.Load<SoundEffect>("Audio/hammerBong");
     }
 
@@ -296,7 +296,7 @@ public class Player : GameObject<PlayerState>
 
     public void OnFalling()
     {
-        _killedSound.Play();
+        _fallingSound.Play();
         GamePad.SetVibration(_playerId, 0.2f, 0.2f, 0.2f, 0.2f);
     }
 
