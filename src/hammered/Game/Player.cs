@@ -160,8 +160,11 @@ public class Player : GameObject<PlayerState>
                 break;
         }
 
+        HandlePlayerCollisions();
+        HandleTileCollisions();
+
         Pushback pushback = CheckHammerCollisions();
-        if (pushback != null)
+        if (pushback != null && _pushback == null)
         {
             _pushback = (Pushback)pushback;
             if (State == PlayerState.FALLING || State == PlayerState.ALIVE)
@@ -169,9 +172,6 @@ public class Player : GameObject<PlayerState>
             else if (State == PlayerState.FALLING_NO_HAMMER || State == PlayerState.ALIVE_NO_HAMMER)
                 _state = PlayerState.PUSHBACK_NO_HAMMER;
         }
-
-        HandlePlayerCollisions();
-        HandleTileCollisions();
 
         // if collision prevented us from moving, reset velocity
         if (prevPos.X == Position.X)
@@ -274,15 +274,19 @@ public class Player : GameObject<PlayerState>
             // detect collision
             if (BoundingBox.Intersects(hammer.BoundingBox))
             {
-                hammer.Hit();
-                _hammerHitSound.Play();
-                GamePad.SetVibration(_playerId, 0.2f, 0.2f, 0.2f, 0.2f);
-
+                OnHit(hammer);
                 // Pushback distance could be modifiable based on charge
                 return new Pushback(hammer.Direction, PushbackDistance);
             }
         }
         return null;
+    }
+
+    private void OnHit(Hammer hammer)
+    {
+        hammer.Hit();
+        _hammerHitSound.Play();
+        GamePad.SetVibration(_playerId, 0.2f, 0.2f, 0.2f, 0.2f);
     }
 
     public void OnHammerReturn()
