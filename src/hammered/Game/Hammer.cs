@@ -32,12 +32,15 @@ public class Hammer : GameObject<HammerState>
     public override Dictionary<HammerState, string> ObjectModelPaths { get => _objectModelPaths; }
 
     // constants for controlling throwing
+    private const float ThrowAcceleration = 10f;
     private const float MaxThrowVelocity = 20f;
     private const float MaxThrowDistance = 10f;
-    private const float AimStickScale = 1.0f;
+
+    // constants for controlling pickup
     private const float PickupDistance = 1f;
 
-    // TODO (fbuetler) deacclerate when close to player on return/before hit
+    // input configuration
+    private const float AimStickScale = 1.0f;
 
     public Hammer(Game game, Vector3 position, int ownerId) : base(game, position)
     {
@@ -53,8 +56,6 @@ public class Hammer : GameObject<HammerState>
         _objectModelPaths[HammerState.IS_FLYING] = "Hammer/hammerCube";
         _objectModelPaths[HammerState.IS_RETURNING] = "Hammer/hammerCube";
         _objectModelPaths[HammerState.IS_HELD] = "Hammer/hammerCube";
-
-        _velocity = MaxThrowVelocity;
     }
 
     public override void Update(GameTime gameTime)
@@ -63,43 +64,41 @@ public class Hammer : GameObject<HammerState>
         switch (_state)
         {
             case HammerState.IS_HELD:
-                HandleInput();
+                Vector3 aimInput = ReadAimingInput();
+                Direction = aimInput;
                 break;
             case HammerState.IS_FLYING:
-                Move(gameTime, Direction * MaxThrowVelocity);
+                _velocity = ComputeVelocity(gameTime, _velocity, ThrowAcceleration);
+                Move(gameTime, Direction * _velocity);
 
                 bool collided = HandleTileCollisions();
                 if (collided)
                 {
-                    _state = HammerState.IS_RETURNING;
+                    Return();
                 }
-
                 if ((Center - _origin).LengthSquared() > MaxThrowDistance * MaxThrowDistance)
                 {
                     // if max distance is reached, make it return
-                    _state = HammerState.IS_RETURNING;
+                    Return();
                 }
+                break;
+            case HammerState.IS_RETURNING when (Center - GameMain.Map.Players[_ownerId].Center).LengthSquared() < PickupDistance * PickupDistance || GameMain.Map.Players[_ownerId].State == PlayerState.DEAD:
+                // if hammer is close to the player or the player is dead, it is picked up
+                PickUp();
+                GameMain.Map.Players[_ownerId].OnHammerReturn();
                 break;
             case HammerState.IS_RETURNING:
                 HandleTileCollisions();
+                FollowOwner();
 
-                if ((Center - GameMain.Map.Players[_ownerId].Center).LengthSquared() < PickupDistance * PickupDistance ||
-                    GameMain.Map.Players[_ownerId].State == PlayerState.DEAD)
-                {
-                    // if hammer is close to the player or the player is dead, it is picked up
-                    PickUp();
-                    GameMain.Map.Players[_ownerId].OnHammerReturn();
-                }
-                else
-                {
-                    FollowOwner();
-                    Move(gameTime, Direction * MaxThrowVelocity);
-                }
+                _velocity = ComputeVelocity(gameTime, _velocity, ThrowAcceleration);
+                Move(gameTime, Direction * _velocity);
+                Move(gameTime, Direction * _velocity);
                 break;
         }
     }
 
-    private void HandleInput()
+    private Vector3 ReadAimingInput()
     {
         KeyboardState keyboardState = Keyboard.GetState();
         GamePadState gamePadState = GamePad.GetState(_ownerId);
@@ -135,7 +134,7 @@ public class Hammer : GameObject<HammerState>
             aimingDirection.X += 1.0f;
         }
 
-        Direction = aimingDirection;
+        return aimingDirection;
     }
 
     public void Throw()
@@ -162,9 +161,11 @@ public class Hammer : GameObject<HammerState>
         float angle = MathF.Atan2(Direction.Z, Direction.X);
         Direction = new Vector3(
             MathF.Cos(angle),
-            Direction.Y,
+            0,
             MathF.Sin(angle)
         );
+
+        _velocity = MaxThrowVelocity;
 
         _state = HammerState.IS_FLYING;
         this.Visible = true;
@@ -189,7 +190,21 @@ public class Hammer : GameObject<HammerState>
 
     public void Hit()
     {
+        Return();
+    }
+
+    public void Return()
+    {
         _state = HammerState.IS_RETURNING;
+        _velocity = 0;
+    }
+
+    private float ComputeVelocity(GameTime gameTime, float currentVelocity, float acceleration)
+    {
+        float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
+        float velocity = MathHelper.Clamp(currentVelocity + acceleration * elapsed, 0, MaxThrowVelocity);
+
+        return velocity;
     }
 
 }
