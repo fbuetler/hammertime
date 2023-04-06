@@ -25,13 +25,14 @@ public class Tile : GameObject<TileState>
     public override Dictionary<TileState, string> ObjectModelPaths { get => _objectModelPaths; }
     private Dictionary<TileState, string> _objectModelPaths;
 
-    public override Vector3 Size { get => new Vector3(Width, Height, Depth); }
+    public override Vector3 MaxSize { get => _maxSize; }
+    private static Vector3 _maxSize = new Vector3(1f, 1f, 1f);
 
     public const float Width = 1f;
     public const float Height = 1f;
     public const float Depth = 1f;
 
-    public Tile(Game game, Vector3 position) : base(game, position)
+    public Tile(Game game, Vector3 position) : base(game, position + _maxSize / 2)
     {
         // make update and draw called by monogame
         Enabled = true;

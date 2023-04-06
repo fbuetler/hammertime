@@ -11,21 +11,20 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
 {
     private string _objectId;
     private Dictionary<GameObjectState, ScaledModel> _models;
-    private Vector3 _boundingSize;
+
+    public Vector3 Size { get => _size; }
+    private Vector3 _size;
 
     public GameMain GameMain { get => _game; }
     private GameMain _game;
 
-    // TODO: (lmeinen) goal is to eventually make this private
-    public Vector3 Position { get => _pos; set => _pos = new Vector3((float)Math.Round(value.X, 2), (float)Math.Round(value.Y, 2), (float)Math.Round(value.Z, 2)); }
-    private Vector3 _pos;
-
     public Vector3 Direction { get => _dir; set => _dir = value; }
     private Vector3 _dir = Vector3.Zero;
 
-    public Vector3 Center { get => Position + _boundingSize / 2; set => Position = value - _boundingSize / 2; }
+    public Vector3 Center { get => _center; set => _center = value; }
+    private Vector3 _center;
 
-    public abstract Vector3 Size
+    public abstract Vector3 MaxSize
     {
         get;
     }
@@ -40,15 +39,11 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
         get;
     }
 
-    // TODO (fbuetler) Bounding box should rotate with object
     public BoundingBox BoundingBox
     {
         get
         {
-            return new BoundingBox(
-                new Vector3(Position.X, Position.Y, Position.Z),
-                new Vector3(Position.X + _boundingSize.X, Position.Y + _boundingSize.Y, Position.Z + _boundingSize.Z)
-            );
+            return new BoundingBox(Center - Size / 2, Center + Size / 2);
         }
     }
 
@@ -63,18 +58,18 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
         _objectId = Guid.NewGuid().ToString();
     }
 
-    public GameObject(Game game, Vector3 position) : this(game)
+    public GameObject(Game game, Vector3 center) : this(game)
     {
-        Position = position;
+        Center = center;
     }
 
     public float Move(GameTime gameTime, Vector3 velocity)
     {
         float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
         Vector3 displacement = velocity * elapsed;
-        Vector3 tmpPos = Position;
+        Vector3 tmpPos = Center;
         tmpPos += displacement;
-        Position = tmpPos;
+        Center = tmpPos;
         return displacement.Length();
     }
 
@@ -88,13 +83,13 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
 
             // compute scaling required to fit model to its BoundingBox
             BoundingBox size = GetModelSize(model);
-            float xScale = Size.X / (size.Max.X - size.Min.X);
-            float yScale = Size.Y / (size.Max.Y - size.Min.Y);
-            float zScale = Size.Z / (size.Max.Z - size.Min.Z);
+            float xScale = MaxSize.X / (size.Max.X - size.Min.X);
+            float yScale = MaxSize.Y / (size.Max.Y - size.Min.Y);
+            float zScale = MaxSize.Z / (size.Max.Z - size.Min.Z);
 
             // take the minimum to preserve model proportions
             float actualScalingFactor = Math.Min(xScale, Math.Min(yScale, zScale));
-            _boundingSize = (size.Max - size.Min) * actualScalingFactor;
+            _size = (size.Max - size.Min) * actualScalingFactor;
             Matrix modelScale = Matrix.CreateScale(actualScalingFactor);
 
             _models[state] = new ScaledModel(model, modelScale);
@@ -110,19 +105,11 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
         Matrix view = GameMain.Map.Camera.View;
         Matrix projection = GameMain.Map.Camera.Projection;
 
-        // as the model is rotate we have to
-        // * move it into the origin
-        // * rotate
-        // * move it into it designated positions and also compensate for the move into the origin
-        // Matrix translateIntoOrigin = Matrix.CreateTranslation(-Size / 2);
-
         // TODO (fbuetler) fix angle
-        float angle = MathF.Atan2(-_dir.Z, _dir.X);
-        Matrix rotate = Matrix.CreateFromAxisAngle(Vector3.UnitY, angle);
+        Matrix rotate = ComputeRotation();
 
         Matrix translateIntoPosition = Matrix.CreateTranslation(Center);
 
-        // Matrix world = _models[State].modelScale * translateIntoOrigin * rotate * translateIntoPosition;
         Matrix world = _models[State].modelScale * rotate * translateIntoPosition;
 
         DrawModel(_models[State].model, world, view, projection);
@@ -132,6 +119,13 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
         GameMain.Map.DebugDraw.DrawWireBox(BoundingBox, GetDebugColor());
         GameMain.Map.DebugDraw.End();
 #endif
+    }
+
+    private Matrix ComputeRotation()
+    {
+        float angle = MathF.Atan2(-Direction.Z, Direction.X);
+        Matrix rotate = Matrix.CreateFromAxisAngle(Vector3.UnitY, angle);
+        return rotate;
     }
 
     private void DrawModel(Model model, Matrix world, Matrix view, Matrix projection)
@@ -223,26 +217,26 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
         // resolve the collision along the shallow axis
         if (absDepthX < absDepthY && absDepthX < absDepthZ)
         {
-            Position = new Vector3(
-                Position.X + depth.X,
-                Position.Y,
-                Position.Z
+            Center = new Vector3(
+                Center.X + depth.X,
+                Center.Y,
+                Center.Z
             );
         }
         else if (absDepthY < absDepthX && absDepthY < absDepthZ)
         {
-            Position = new Vector3(
-                Position.X,
-                Position.Y + depth.Y,
-                Position.Z
+            Center = new Vector3(
+                Center.X,
+                Center.Y + depth.Y,
+                Center.Z
             );
         }
         else
         {
-            Position = new Vector3(
-                Position.X,
-                Position.Y,
-                Position.Z + depth.Z
+            Center = new Vector3(
+                Center.X,
+                Center.Y,
+                Center.Z + depth.Z
             );
         }
     }
@@ -278,6 +272,16 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
         float depthY = distanceY > 0 ? minDistanceY - distanceY : -minDistanceY - distanceY;
         float depthZ = distanceZ > 0 ? minDistanceZ - distanceZ : -minDistanceZ - distanceZ;
         return new Vector3(depthX, depthY, depthZ);
+    }
+
+    private BoundingBox ComputeBoundingBox()
+    {
+        // FIXME: (lmeinen) Compute oriented bounding box based on center and direction
+        Vector3 offset = Vector3.Transform(Size / 2, ComputeRotation());
+        Vector3 min = Center - offset;
+        Vector3 max = Center + offset;
+
+        return new BoundingBox(min, max);
     }
 
 }

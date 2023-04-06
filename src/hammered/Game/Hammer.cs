@@ -23,7 +23,8 @@ public class Hammer : GameObject<HammerState>
 
     private float _velocity;
 
-    public override Vector3 Size { get => new Vector3(0.5f, 0.5f, 0.5f); }
+    public override Vector3 MaxSize { get => _maxSize; }
+    private static Vector3 _maxSize = new Vector3(0.5f, 0.5f, 0.5f);
 
     private HammerState _state;
     public override HammerState State { get => _state; }
@@ -42,7 +43,7 @@ public class Hammer : GameObject<HammerState>
     // input configuration
     private const float AimStickScale = 1.0f;
 
-    public Hammer(Game game, Vector3 position, int ownerId) : base(game, position)
+    public Hammer(Game game, Vector3 position, int ownerId) : base(game, position + _maxSize / 2)
     {
         // make update and draw called by monogame
         Enabled = true;
@@ -171,7 +172,7 @@ public class Hammer : GameObject<HammerState>
         this.Visible = true;
 
         _origin = GameMain.Map.Players[_ownerId].Center;
-        Position = GameMain.Map.Players[_ownerId].Center - Size / 2;
+        Center = GameMain.Map.Players[_ownerId].Center;
     }
 
     private void FollowOwner()

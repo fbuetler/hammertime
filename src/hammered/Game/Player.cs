@@ -44,7 +44,8 @@ public class Player : GameObject<PlayerState>
     private Vector3 _velocity;
 
     // TODO (fbuetler) if a player is smaller than a tile it is immediately falling upon start
-    public override Vector3 Size { get => new Vector3(1f, 1f, 1f); }
+    public override Vector3 MaxSize { get => _maxSize; }
+    private static Vector3 _maxSize = new Vector3(1f, 1f, 1f);
 
     private PlayerState _state;
     public override PlayerState State => _state;
@@ -76,7 +77,7 @@ public class Player : GameObject<PlayerState>
     private const float MoveStickScale = 1.0f;
     private const Buttons ThrowButton = Buttons.RightShoulder;
 
-    public Player(Game game, Vector3 position, int playerId) : base(game, position)
+    public Player(Game game, Vector3 position, int playerId) : base(game, position + _maxSize / 2)
     {
         // make update and draw called by monogame
         Enabled = true;
@@ -112,7 +113,9 @@ public class Player : GameObject<PlayerState>
         KeyboardState keyboardState = Keyboard.GetState();
         GamePadState gamePadState = GamePad.GetState(_playerId);
         Vector3 moveInput = ReadMovementInput(keyboardState, gamePadState);
-        Vector3 prevPos = Position;
+        Vector3 prevCenter = Center;
+
+        BoundingBox prevBBox = BoundingBox;
 
         switch (State)
         {
@@ -142,8 +145,8 @@ public class Player : GameObject<PlayerState>
                 _velocity = ComputeVelocity(_velocity, _pushback.Direction, PushbackVelocity, GroundDragFactor, gameTime);
                 _pushback.Distance -= Move(gameTime, _velocity);
                 break;
-            case PlayerState.FALLING when Position.Y < KillPlaneLevel:
-            case PlayerState.FALLING_NO_HAMMER when Position.Y < KillPlaneLevel:
+            case PlayerState.FALLING when Center.Y < KillPlaneLevel:
+            case PlayerState.FALLING_NO_HAMMER when Center.Y < KillPlaneLevel:
                 _state = PlayerState.DEAD;
                 OnKilled();
                 break;
@@ -163,6 +166,7 @@ public class Player : GameObject<PlayerState>
         HandlePlayerCollisions();
         HandleTileCollisions();
 
+
         Pushback pushback = CheckHammerCollisions();
         if (pushback != null && _pushback == null)
         {
@@ -174,11 +178,11 @@ public class Player : GameObject<PlayerState>
         }
 
         // if collision prevented us from moving, reset velocity
-        if (prevPos.X == Position.X)
+        if (prevCenter.X == Center.X)
             _velocity.X = 0;
-        if (prevPos.Y == Position.Y)
+        if (prevCenter.Y == Center.Y)
             _velocity.Y = 0;
-        if (prevPos.Z == Position.Z)
+        if (prevCenter.Z == Center.Z)
             _velocity.Z = 0;
 
         if (_velocity.Y != 0)
@@ -187,6 +191,8 @@ public class Player : GameObject<PlayerState>
             if (_state == PlayerState.ALIVE || _state == PlayerState.PUSHBACK)
             {
                 _state = PlayerState.FALLING;
+                Console.WriteLine($"Player {_playerId} old: {prevBBox} ");
+                Console.WriteLine($"Player {_playerId} new: {BoundingBox} ");
                 OnFalling();
             }
             else if (State == PlayerState.ALIVE_NO_HAMMER || State == PlayerState.PUSHBACK_NO_HAMMER)
