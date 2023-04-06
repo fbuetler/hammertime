@@ -17,8 +17,8 @@ public class Arrow : GameObject<ArrowState>
     private int _ownerId;
     public int OwnerId { get => _ownerId; }
 
-    float throwDistance = 10f;
-    public override Vector3 Size { get => new Vector3(throwDistance/(float) 2, 0.1f, 0.5f); }
+    float _throwDistance = 10f;
+    public override Vector3 Size { get => new Vector3(_throwDistance/(float) 2, 0.1f, 0.5f); }
 
     private ArrowState _state;
     public override ArrowState State { get => _state; }
@@ -72,5 +72,10 @@ public class Arrow : GameObject<ArrowState>
                 // do nothing
                 break;
         }
+    }
+
+    public void Charge(float throwDistance)
+    {
+        _throwDistance = throwDistance;
     }
 }

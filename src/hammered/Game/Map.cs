@@ -36,6 +36,10 @@ public class Map
     public Dictionary<int, Hammer> Hammers { get => _hammers; }
     private Dictionary<int, Hammer> _hammers = new Dictionary<int, Hammer>();
 
+    public Dictionary<int, Arrow> Arrows { get => _arrows; }
+    private Dictionary<int, Arrow> _arrows = new Dictionary<int, Arrow>();
+
+
     public Map(Game game, IServiceProvider serviceProvider, Stream fileStream)
     {
         if (game == null)
@@ -153,6 +157,7 @@ public class Map
             Arrow arrow = new Arrow(_game, new Vector3(x, 1, z), playerId);
             _players.Add(playerId, player);
             _hammers.Add(playerId, hammer);
+            _arrows.Add(playerId, arrow);
 
             // enable player component
             player.UpdateOrder = PLAYER_UPDATE_ORDER;

@@ -138,6 +138,7 @@ public class Player : GameObject<PlayerState>
             case PlayerState.ALIVE when IsTryingToThrow(keyboardState, gamePadState):
                 _chargeDuration = (float)gameTime.ElapsedGameTime.TotalMilliseconds;
                 _state = PlayerState.CHARGING;
+                GameMain.Map.Arrows[_playerId].Charge(_chargeDuration);
                 break;
             case PlayerState.ALIVE when moveInput != Vector3.Zero:
             case PlayerState.ALIVE_NO_HAMMER when moveInput != Vector3.Zero:
@@ -152,10 +153,12 @@ public class Player : GameObject<PlayerState>
             case PlayerState.CHARGING:
                 _chargeDuration += (float)gameTime.ElapsedGameTime.TotalMilliseconds;
                 ChargeCounter++;
+                GameMain.Map.Arrows[_playerId].Charge(_chargeDuration);
                 break;
             case PlayerState.THROWING:
                 GameMain.Map.Hammers[_playerId].Throw(_chargeDuration * ChargeUnit);
                 _state = PlayerState.ALIVE_NO_HAMMER;
+                GameMain.Map.Arrows[_playerId].Charge(0f);
                 break;
             case PlayerState.PUSHBACK when _pushback.Distance <= 0:
                 _pushback = null;
