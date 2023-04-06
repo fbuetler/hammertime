@@ -11,18 +11,19 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
 {
     private string _objectId;
     private Dictionary<GameObjectState, ScaledModel> _models;
+    private Vector3 _boundingSize;
 
     public GameMain GameMain { get => _game; }
     private GameMain _game;
 
     // TODO: (lmeinen) goal is to eventually make this private
-    public Vector3 Position { get => _pos; set => _pos = value; }
+    public Vector3 Position { get => _pos; set => _pos = new Vector3((float)Math.Round(value.X, 2), (float)Math.Round(value.Y, 2), (float)Math.Round(value.Z, 2)); }
     private Vector3 _pos;
 
     public Vector3 Direction { get => _dir; set => _dir = value; }
     private Vector3 _dir = Vector3.Zero;
 
-    public Vector3 Center { get => Position + Size / 2; }
+    public Vector3 Center { get => Position + _boundingSize / 2; set => Position = value - _boundingSize / 2; }
 
     public abstract Vector3 Size
     {
@@ -46,7 +47,7 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
         {
             return new BoundingBox(
                 new Vector3(Position.X, Position.Y, Position.Z),
-                new Vector3(Position.X + Size.X, Position.Y + Size.Y, Position.Z + Size.Z)
+                new Vector3(Position.X + _boundingSize.X, Position.Y + _boundingSize.Y, Position.Z + _boundingSize.Z)
             );
         }
     }
@@ -64,7 +65,7 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
 
     public GameObject(Game game, Vector3 position) : this(game)
     {
-        _pos = position;
+        Position = position;
     }
 
     public float Move(GameTime gameTime, Vector3 velocity)
@@ -72,7 +73,9 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
         // TODO: (lmeinen) handle collisions
         float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
         Vector3 displacement = velocity * elapsed;
-        _pos += displacement;
+        Vector3 tmpPos = Position;
+        tmpPos += displacement;
+        Position = tmpPos;
         return displacement.Length();
     }
 
@@ -89,7 +92,11 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
             float xScale = Size.X / (size.Max.X - size.Min.X);
             float yScale = Size.Y / (size.Max.Y - size.Min.Y);
             float zScale = Size.Z / (size.Max.Z - size.Min.Z);
-            Matrix modelScale = Matrix.CreateScale(xScale, yScale, zScale);
+
+            // take the minimum to preserve model proportions
+            float actualScalingFactor = Math.Min(xScale, Math.Min(yScale, zScale));
+            _boundingSize = (size.Max - size.Min) * actualScalingFactor;
+            Matrix modelScale = Matrix.CreateScale(actualScalingFactor);
 
             _models[state] = new ScaledModel(model, modelScale);
         }
@@ -108,17 +115,17 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
         // * move it into the origin
         // * rotate
         // * move it into it designated positions and also compensate for the move into the origin
-        Matrix translateIntoOrigin = Matrix.CreateTranslation(-Size / 2);
+        // Matrix translateIntoOrigin = Matrix.CreateTranslation(-Size / 2);
 
         // TODO (fbuetler) fix angle
-        float angle = MathF.Atan2(_dir.Z, _dir.X);
+        float angle = MathF.Atan2(-_dir.Z, _dir.X);
         Matrix rotate = Matrix.CreateFromAxisAngle(Vector3.UnitY, angle);
 
         Matrix translateIntoPosition = Matrix.CreateTranslation(Center);
 
-        Matrix world = _models[State].modelScale * translateIntoOrigin * rotate * translateIntoPosition;
+        // Matrix world = _models[State].modelScale * translateIntoOrigin * rotate * translateIntoPosition;
+        Matrix world = _models[State].modelScale * rotate * translateIntoPosition;
 
-        // change tile model based on current object state
         DrawModel(_models[State].model, world, view, projection);
 
 #if DEBUG

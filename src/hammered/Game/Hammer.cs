@@ -50,9 +50,9 @@ public class Hammer : GameObject<HammerState>
         _state = HammerState.IS_HELD;
 
         _objectModelPaths = new Dictionary<HammerState, string>();
-        _objectModelPaths[HammerState.IS_FLYING] = "Hammer/hammerFly";
-        _objectModelPaths[HammerState.IS_RETURNING] = "Hammer/hammerFly";
-        _objectModelPaths[HammerState.IS_HELD] = "Hammer/hammerFly";
+        _objectModelPaths[HammerState.IS_FLYING] = "Hammer/hammerCube";
+        _objectModelPaths[HammerState.IS_RETURNING] = "Hammer/hammerCube";
+        _objectModelPaths[HammerState.IS_HELD] = "Hammer/hammerCube";
 
         _speed = ThrowSpeed;
     }
@@ -150,7 +150,7 @@ public class Hammer : GameObject<HammerState>
             this.Visible = true;
 
             _origin = GameMain.Map.Players[_ownerId].Center;
-            Position = GameMain.Map.Players[_ownerId].Center - Size / 2;
+            Center = GameMain.Map.Players[_ownerId].Center;
         }
     }
 
