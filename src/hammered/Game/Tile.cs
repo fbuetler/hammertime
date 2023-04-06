@@ -25,7 +25,8 @@ public class Tile : GameObject<TileState>
     public override Dictionary<TileState, string> ObjectModelPaths { get => _objectModelPaths; }
     private Dictionary<TileState, string> _objectModelPaths;
 
-    public override Vector3 Size { get => new Vector3(Width, Height, Depth); }
+    public override Vector3 Size { get => _sizeVec; set => _sizeVec = value;}
+    private Vector3 _sizeVec = new Vector3(Width, Height, Depth);
 
     public const float Width = 1f;
     public const float Height = 1f;

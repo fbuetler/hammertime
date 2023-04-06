@@ -26,7 +26,8 @@ public class Hammer : GameObject<HammerState>
     // charging speed
     private float _throwDistance;
 
-    public override Vector3 Size { get => new Vector3(0.5f, 0.5f, 0.5f); }
+    public override Vector3 Size { get => _sizeVec; set => _sizeVec = value;}
+    private Vector3 _sizeVec = new Vector3(0.5f, 0.5f, 0.5f);
 
     private HammerState _state;
     public override HammerState State { get => _state; }

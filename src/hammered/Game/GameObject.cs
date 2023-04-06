@@ -30,6 +30,7 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
     public abstract Vector3 Size
     {
         get;
+        set;
     }
 
     public abstract GameObjectState State
