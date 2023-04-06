@@ -70,7 +70,7 @@ public class Hammer : GameObject<HammerState>
                 break;
             case HammerState.IS_FLYING:
                 Move(gameTime, Direction * ThrowSpeed);
-                if ((Center - _origin).LengthSquared() > MaxThrowDistance * MaxThrowDistance)
+                if ((Center - _origin).LengthSquared() > _throwDistance * _throwDistance || (Center - _origin).LengthSquared() > MaxThrowDistance * MaxThrowDistance)
                 {
                     // if max distance is reached, make it return
                     _state = HammerState.IS_RETURNING;

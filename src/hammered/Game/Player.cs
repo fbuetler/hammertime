@@ -68,7 +68,7 @@ public class Player : GameObject<PlayerState>
 
     // charge/throw
     // TODO (fbuetler) tweak unit
-    private const float ChargeUnit = 0.005f;
+    private const float ChargeUnit = 0.05f;
 
     // constants for controlling horizontal movement
     private const float MoveAcceleration = 1300f;
