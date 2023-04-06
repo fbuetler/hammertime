@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
-using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 
 namespace hammered;
@@ -81,18 +80,18 @@ public class Map
             }
         }
         int depth = lines.Count;
-        int height = 1; // floor TODO (fbuetler) and walls 
-        _tiles = new Tile[width, height, lines.Count];
+        int height = 2; // floor and walls
 
+        _tiles = new Tile[width, height, depth];
         for (int z = 0; z < depth; z++)
         {
-            for (int x = 0; x < width; x++)
+            for (int y = 0; y < height; y++)
             {
-                char tileType = lines[z][x];
-                Tile tile = LoadTile(tileType, x, z);
-                _tiles[x, 0, z] = tile; // for now we only load floor tiles
-                tile.UpdateOrder = TILE_UPDATE_ORDER;
-                _game.Components.Add(tile);
+                for (int x = 0; x < width; x++)
+                {
+                    char tileType = lines[z][x];
+                    _tiles[x, y, z] = LoadTile(tileType, x, y, z);
+                }
             }
         }
 
@@ -102,54 +101,61 @@ public class Map
         }
     }
 
-    private Tile LoadTile(char tileType, int x, int z)
+    private Tile LoadTile(char tileType, int x, int y, int z)
     {
         // TODO (fbuetler) introduce different tile types
+        Tile tile;
         switch (tileType)
         {
-            case '.':
-                return LoadAbyssTile(x, z);
-            case '-':
-                return LoadBreakableFloorTile(x, z);
-            case '#':
-                return LoadNonBreakableFloorTile(x, z);
-            case 'X':
-                return LoadWallTile(x, z);
-            case 'P':
-                LoadPlayer(x, z);
-                return LoadBreakableFloorTile(x, z);
+            case '.' when y == 0:
+                return null;
+            case '-' when y == 0:
+                tile = LoadBreakableFloorTile(x, y, z);
+                break;
+            case '#' when y == 0:
+                tile = LoadNonBreakableFloorTile(x, y, z);
+                break;
+            case 'P' when y == 0:
+                LoadPlayer(x, 1, z);
+                tile = LoadBreakableFloorTile(x, y, z);
+                break;
+            case 'W' when y == 0:
+                tile = LoadBreakableFloorTile(x, y, z);
+                break;
+            case 'W' when y == 1:
+                tile = LoadWallTile(x, y, z);
+                break;
             default:
-                throw new NotSupportedException(String.Format("Unsupported tile type character '{0}' at position {1}, {2}.", tileType, x, z));
+                return null;
         }
+        tile.UpdateOrder = TILE_UPDATE_ORDER;
+        _game.Components.Add(tile);
+        return tile;
     }
 
-    private Tile LoadAbyssTile(int x, int z)
+    private Tile LoadBreakableFloorTile(int x, int y, int z)
     {
-        return new Tile(_game, new Vector3(x, 0, z), true);
+        return new Tile(_game, new Vector3(x, y, z));
     }
 
-    private Tile LoadBreakableFloorTile(int x, int z)
-    {
-        return new Tile(_game, new Vector3(x, 0, z), false);
-    }
-
-    private Tile LoadNonBreakableFloorTile(int x, int z)
+    private Tile LoadNonBreakableFloorTile(int x, int y, int z)
     {
         throw new NotSupportedException(String.Format("Tile type 'non breakable floor' is not yet supported"));
     }
-    private Tile LoadWallTile(int x, int z)
+
+    private Tile LoadWallTile(int x, int y, int z)
     {
-        throw new NotSupportedException(String.Format("Tile type 'wall' is not yet supported"));
+        return new Tile(_game, new Vector3(x, y, z));
     }
 
-    private void LoadPlayer(int x, int z)
+    private void LoadPlayer(int x, int y, int z)
     {
         // ignore starting tiles if already all players are loaded
         if (_players.Count < _game.NumberOfPlayers)
         {
             int playerId = _players.Count;
-            Player player = new Player(_game, new Vector3(x, 1, z), playerId);
-            Hammer hammer = new Hammer(_game, new Vector3(x, 1, z), playerId);
+            Player player = new Player(_game, new Vector3(x, y, z), playerId);
+            Hammer hammer = new Hammer(_game, new Vector3(x, y, z), playerId);
             _players.Add(playerId, player);
             _hammers.Add(playerId, hammer);
 
@@ -165,8 +171,15 @@ public class Map
 
     private void LoadMusic()
     {
-        MediaPlayer.Play(_content.Load<Song>("Audio/Stormfront"));
-        MediaPlayer.IsRepeating = true;
+        // game crashes sometimes with:
+        // Unhandled exception. System.NullReferenceException: Object reference not set to an instance of an object.
+        // are we loading not fast enough?
+        try
+        {
+            MediaPlayer.Play(_content.Load<Song>("Audio/Stormfront"));
+            MediaPlayer.IsRepeating = true;
+        }
+        catch { }
     }
 
     public void Dispose()
@@ -176,7 +189,10 @@ public class Map
 
     public BoundingBox? TryGetTileBounds(int x, int y, int z)
     {
-        if (x < 0 || y < 0 || z < 0 || x >= Width || y >= Height || z >= Depth || _tiles[x, y, z].State == TileState.HP0)
+        if (x < 0 || y < 0 || z < 0 ||
+            x >= Width || y >= Height || z >= Depth ||
+            _tiles[x, y, z] == null ||
+            _tiles[x, y, z].State == TileState.HP0)
         {
             return null;
         }

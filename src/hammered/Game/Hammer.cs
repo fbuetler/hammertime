@@ -20,8 +20,8 @@ public class Hammer : GameObject<HammerState>
 
     // hammer position
     private Vector3 _origin;
-    public float Speed { get => _speed; }
-    private float _speed;
+
+    private float _velocity;
 
     public override Vector3 Size { get => new Vector3(0.5f, 0.5f, 0.5f); }
 
@@ -32,12 +32,15 @@ public class Hammer : GameObject<HammerState>
     public override Dictionary<HammerState, string> ObjectModelPaths { get => _objectModelPaths; }
 
     // constants for controlling throwing
-    private const float ThrowSpeed = 20f;
+    private const float ThrowAcceleration = 10f;
+    private const float MaxThrowVelocity = 20f;
     private const float MaxThrowDistance = 10f;
-    private const float AimStickScale = 1.0f;
+
+    // constants for controlling pickup
     private const float PickupDistance = 1f;
 
-    // TODO (fbuetler) deacclerate when close to player on return/before hit
+    // input configuration
+    private const float AimStickScale = 1.0f;
 
     public Hammer(Game game, Vector3 position, int ownerId) : base(game, position)
     {
@@ -53,8 +56,6 @@ public class Hammer : GameObject<HammerState>
         _objectModelPaths[HammerState.IS_FLYING] = "Hammer/hammerCube";
         _objectModelPaths[HammerState.IS_RETURNING] = "Hammer/hammerCube";
         _objectModelPaths[HammerState.IS_HELD] = "Hammer/hammerCube";
-
-        _speed = ThrowSpeed;
     }
 
     public override void Update(GameTime gameTime)
@@ -63,14 +64,22 @@ public class Hammer : GameObject<HammerState>
         switch (_state)
         {
             case HammerState.IS_HELD:
-                HandleInput();
+                Vector3 aimInput = ReadAimingInput();
+                Direction = aimInput;
                 break;
             case HammerState.IS_FLYING:
-                Move(gameTime, Direction * ThrowSpeed);
+                _velocity = ComputeVelocity(gameTime, _velocity, ThrowAcceleration);
+                Move(gameTime, Direction * _velocity);
+
+                bool collided = HandleTileCollisions();
+                if (collided)
+                {
+                    Return();
+                }
                 if ((Center - _origin).LengthSquared() > MaxThrowDistance * MaxThrowDistance)
                 {
                     // if max distance is reached, make it return
-                    _state = HammerState.IS_RETURNING;
+                    Return();
                 }
                 break;
             case HammerState.IS_RETURNING when (Center - GameMain.Map.Players[_ownerId].Center).LengthSquared() < PickupDistance * PickupDistance || GameMain.Map.Players[_ownerId].State == PlayerState.DEAD:
@@ -79,13 +88,17 @@ public class Hammer : GameObject<HammerState>
                 GameMain.Map.Players[_ownerId].OnHammerReturn();
                 break;
             case HammerState.IS_RETURNING:
+                HandleTileCollisions();
                 FollowOwner();
-                Move(gameTime, Direction * ThrowSpeed);
+
+                _velocity = ComputeVelocity(gameTime, _velocity, ThrowAcceleration);
+                Move(gameTime, Direction * _velocity);
+                Move(gameTime, Direction * _velocity);
                 break;
         }
     }
 
-    private void HandleInput()
+    private Vector3 ReadAimingInput()
     {
         KeyboardState keyboardState = Keyboard.GetState();
         GamePadState gamePadState = GamePad.GetState(_ownerId);
@@ -98,7 +111,9 @@ public class Hammer : GameObject<HammerState>
         // flip y: on the thumbsticks, down is -1, but on the screen, down is bigger numbers
         aimingDirection.Z *= -1;
 
-        // TODO (fbuetler) should we ignore small aiming inputs like the movement input
+        // ignore small aiming input
+        if (aimingDirection.LengthSquared() < 0.5f)
+            aimingDirection = Vector3.Zero;
 
         // if any digital horizontal aiming input is found, override the analog aiming
         if (keyboardState.IsKeyDown(Keys.W))
@@ -119,39 +134,44 @@ public class Hammer : GameObject<HammerState>
             aimingDirection.X += 1.0f;
         }
 
-        Direction = aimingDirection;
+        return aimingDirection;
     }
 
     public void Throw()
     {
-        if (_state == HammerState.IS_HELD)
+        if (_state != HammerState.IS_HELD)
         {
-            if (Direction == Vector3.Zero)
-            {
-                if (GameMain.Map.Players[_ownerId].Direction != Vector3.Zero)
-                {
-                    Direction = GameMain.Map.Players[_ownerId].Direction;
-                }
-                else
-                {
-                    Direction = new Vector3(0, 0, 1);
-                }
-            }
-
-            // aiming is a unit vector
-            float angle = MathF.Atan2(Direction.Z, Direction.X);
-            Direction = new Vector3(
-                MathF.Cos(angle),
-                Direction.Y,
-                MathF.Sin(angle)
-            );
-
-            _state = HammerState.IS_FLYING;
-            this.Visible = true;
-
-            _origin = GameMain.Map.Players[_ownerId].Center;
-            Center = GameMain.Map.Players[_ownerId].Center;
+            return;
         }
+
+        // if there is no aiming input, use walking direction or default
+        if (Direction == Vector3.Zero)
+        {
+            if (GameMain.Map.Players[_ownerId].Direction != Vector3.Zero)
+            {
+                Direction = GameMain.Map.Players[_ownerId].Direction;
+            }
+            else
+            {
+                Direction = new Vector3(0, 0, 1);
+            }
+        }
+
+        // aiming is a unit vector (all in or nothing)
+        float angle = MathF.Atan2(Direction.Z, Direction.X);
+        Direction = new Vector3(
+            MathF.Cos(angle),
+            0,
+            MathF.Sin(angle)
+        );
+
+        _velocity = MaxThrowVelocity;
+
+        _state = HammerState.IS_FLYING;
+        this.Visible = true;
+
+        _origin = GameMain.Map.Players[_ownerId].Center;
+        Position = GameMain.Map.Players[_ownerId].Center - Size / 2;
     }
 
     private void FollowOwner()
@@ -170,7 +190,21 @@ public class Hammer : GameObject<HammerState>
 
     public void Hit()
     {
+        Return();
+    }
+
+    public void Return()
+    {
         _state = HammerState.IS_RETURNING;
+        _velocity = 0;
+    }
+
+    private float ComputeVelocity(GameTime gameTime, float currentVelocity, float acceleration)
+    {
+        float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
+        float velocity = MathHelper.Clamp(currentVelocity + acceleration * elapsed, 0, MaxThrowVelocity);
+
+        return velocity;
     }
 
 }
