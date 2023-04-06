@@ -21,7 +21,7 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
     public Vector3 Direction { get => _dir; set => _dir = value; }
     private Vector3 _dir = Vector3.Zero;
 
-    public Vector3 Center { get => _center; set => _center = value; }
+    public Vector3 Center { get => _center; set => _center = RoundVector(value, 2); }
     private Vector3 _center;
 
     public abstract Vector3 MaxSize
@@ -282,6 +282,11 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
         Vector3 max = Center + offset;
 
         return new BoundingBox(min, max);
+    }
+
+    private Vector3 RoundVector(Vector3 vec, int numDigits)
+    {
+        return new Vector3((float)Math.Round(vec.X, numDigits), (float)Math.Round(vec.Y, numDigits), (float)Math.Round(vec.Z, numDigits));
     }
 
 }

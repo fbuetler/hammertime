@@ -185,14 +185,12 @@ public class Player : GameObject<PlayerState>
         if (prevCenter.Z == Center.Z)
             _velocity.Z = 0;
 
-        if (_velocity.Y != 0)
+        if (IsFalling())
         {
             // Vertical velocity means we're falling :(
             if (_state == PlayerState.ALIVE || _state == PlayerState.PUSHBACK)
             {
                 _state = PlayerState.FALLING;
-                Console.WriteLine($"Player {_playerId} old: {prevBBox} ");
-                Console.WriteLine($"Player {_playerId} new: {BoundingBox} ");
                 OnFalling();
             }
             else if (State == PlayerState.ALIVE_NO_HAMMER || State == PlayerState.PUSHBACK_NO_HAMMER)
@@ -286,6 +284,35 @@ public class Player : GameObject<PlayerState>
             }
         }
         return null;
+    }
+
+    /// <summary>
+    /// Determines whether this player is falling by checking if there's a tile anywhere below it
+    /// </summary>
+    /// <returns>boolean value indicating whether this player is falling</returns>
+    private bool IsFalling()
+    {
+        int x_low = (int)Math.Floor((float)BoundingBox.Min.X / Tile.Width);
+        int x_high = (int)Math.Ceiling(((float)BoundingBox.Max.X / Tile.Width)) - 1;
+        int z_low = (int)Math.Floor(((float)BoundingBox.Min.Z / Tile.Depth));
+        int z_high = (int)Math.Ceiling((float)BoundingBox.Max.Z / Tile.Depth) - 1;
+
+        for (int z = z_low; z <= z_high; z++)
+        {
+            for (int y = 0; y <= GameMain.Map.Height; y++)
+            {
+                for (int x = x_low; x <= x_high; x++)
+                {
+                    // check if there's a tile below us
+                    BoundingBox? neighbour = GameMain.Map.TryGetTileBounds(x, y, z);
+                    if (neighbour != null && ((BoundingBox)neighbour).Max.Y < BoundingBox.Min.Y)
+                    {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
     }
 
     private void OnHit(Hammer hammer)
