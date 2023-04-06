@@ -82,7 +82,11 @@ public class Player : GameObject<PlayerState>
 
     // input configuration
     private const float MoveStickScale = 1.0f;
-    private const Buttons ThrowButton = Buttons.RightShoulder;
+    //private const Buttons ThrowButton = Buttons.RightShoulder;
+    private const Buttons ThrowButton = Buttons.RightStick;
+    private GamePadState PreviousPadState;
+    private int ChargeCounter = 0;
+    private int GameStateCounter = 0;
 
     public Player(Game game, Vector3 position, int playerId) : base(game, position)
     {
@@ -124,7 +128,11 @@ public class Player : GameObject<PlayerState>
         GamePadState gamePadState = GamePad.GetState(_playerId);
         Vector3 moveInput = ReadMovementInput(keyboardState, gamePadState);
         Vector3 currPos = Position;
+        if (GameStateCounter == 0) {
 
+        }
+
+        GameStateCounter++;
         switch (State)
         {
             case PlayerState.ALIVE when IsTryingToThrow(keyboardState, gamePadState):
@@ -139,9 +147,11 @@ public class Player : GameObject<PlayerState>
                 break;
             case PlayerState.CHARGING when !IsTryingToThrow(keyboardState, gamePadState):
                 _state = PlayerState.THROWING;
+                ChargeCounter = 0;
                 break;
             case PlayerState.CHARGING:
                 _chargeDuration += (float)gameTime.ElapsedGameTime.TotalMilliseconds;
+                ChargeCounter++;
                 break;
             case PlayerState.THROWING:
                 GameMain.Map.Hammers[_playerId].Throw(_chargeDuration * ChargeUnit);
@@ -176,6 +186,7 @@ public class Player : GameObject<PlayerState>
             default:
                 // do nothing
                 break;
+           
         }
 
         Pushback pushback = CheckHammerCollisions();
