@@ -43,7 +43,7 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
     {
         get
         {
-            return OrientedBoundingBox();
+            return new BoundingBox(Center - Size / 2, Center + Size / 2);
         }
     }
 
@@ -274,7 +274,7 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
         return new Vector3(depthX, depthY, depthZ);
     }
 
-    private BoundingBox OrientedBoundingBox()
+    private BoundingBox ComputeBoundingBox()
     {
         // FIXME: (lmeinen) Compute oriented bounding box based on center and direction
         Vector3 offset = Vector3.Transform(Size / 2, ComputeRotation());
