@@ -5,12 +5,11 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace hammered;
 
-public record ScaledModel(Model model, Matrix modelScale);
+public record ScaledModel(Model model, Matrix modelScale, Vector3 size);
 
 public abstract class GameObject<GameObjectState> : DrawableGameComponent where GameObjectState : Enum
 {
     private string _objectId;
-    private Dictionary<GameObjectState, ScaledModel> _models;
 
     public Vector3 Size { get => _size; }
     private Vector3 _size;
@@ -75,24 +74,31 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
 
     protected override void LoadContent()
     {
-        _models = new Dictionary<GameObjectState, ScaledModel>();
+        // _models = new Dictionary<GameObjectState, ScaledModel>();
         foreach (GameObjectState state in Enum.GetValues(typeof(GameObjectState)))
         {
-            // load model
-            Model model = GameMain.Map.Content.Load<Model>(ObjectModelPaths[state]);
+            if (!GameMain.Models.ContainsKey(state.ToString()))
+            {
+                // load model
+                Model model = GameMain.Map.Content.Load<Model>(ObjectModelPaths[state]);
 
-            // compute scaling required to fit model to its BoundingBox
-            BoundingBox size = GetModelSize(model);
-            float xScale = MaxSize.X / (size.Max.X - size.Min.X);
-            float yScale = MaxSize.Y / (size.Max.Y - size.Min.Y);
-            float zScale = MaxSize.Z / (size.Max.Z - size.Min.Z);
+                // compute scaling required to fit model to its BoundingBox
+                BoundingBox size = GetModelSize(model);
+                float xScale = MaxSize.X / (size.Max.X - size.Min.X);
+                float yScale = MaxSize.Y / (size.Max.Y - size.Min.Y);
+                float zScale = MaxSize.Z / (size.Max.Z - size.Min.Z);
 
-            // take the minimum to preserve model proportions
-            float actualScalingFactor = Math.Min(xScale, Math.Min(yScale, zScale));
-            _size = (size.Max - size.Min) * actualScalingFactor;
-            Matrix modelScale = Matrix.CreateScale(actualScalingFactor);
+                // take the minimum to preserve model proportions
+                float actualScalingFactor = Math.Min(xScale, Math.Min(yScale, zScale));
+                _size = (size.Max - size.Min) * actualScalingFactor;
+                Matrix modelScale = Matrix.CreateScale(actualScalingFactor);
 
-            _models[state] = new ScaledModel(model, modelScale);
+                GameMain.Models.Add(state.ToString(), new ScaledModel(model, modelScale, Size));
+            }
+            else
+            {
+                _size = GameMain.Models[state.ToString()].size;
+            }
         }
 
         LoadAudioContent();
@@ -110,9 +116,9 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
 
         Matrix translateIntoPosition = Matrix.CreateTranslation(Center);
 
-        Matrix world = _models[State].modelScale * rotate * translateIntoPosition;
+        Matrix world = GameMain.Models[State.ToString()].modelScale * rotate * translateIntoPosition;
 
-        DrawModel(_models[State].model, world, view, projection);
+        DrawModel(GameMain.Models[State.ToString()].model, world, view, projection);
 
 #if DEBUG
         GameMain.Map.DebugDraw.Begin(Matrix.Identity, view, projection);
