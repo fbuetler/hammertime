@@ -71,9 +71,9 @@ public class Arrow : GameObject<ArrowState>
                 break;
             case ArrowState.IS_CHARGING:
                 Direction = GameMain.Map.Hammers[OwnerId].Direction;
-                pos = GameMain.Map.Players[OwnerId].Center;
                 throwDistance = GameMain.Map.Players[OwnerId].Charge();
                 _chargeArrow = new Vector3(throwDistance/(float) 2, 0.1f, 0.5f);
+                pos = GameMain.Map.Players[OwnerId].Center;
                 pos.Y = 1f; // arrow should be on the floor
                 Position = pos;
                 break;
