@@ -247,7 +247,7 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
         }
     }
 
-    private Vector3 IntersectionDepth(BoundingBox a, BoundingBox b)
+    protected Vector3 IntersectionDepth(BoundingBox a, BoundingBox b)
     {
         // calculate half sizes
         float halfWidthA = (a.Max.X - a.Min.X) * 0.5f;

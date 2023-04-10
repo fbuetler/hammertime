@@ -78,7 +78,9 @@ public class Tile : GameObject<TileState>
         foreach (Hammer h in GameMain.Map.Hammers.Values)
         {
             // wall collisions
-            if (h.BoundingBox.Intersects(BoundingBox) && h.State != HammerState.IS_HELD)
+            if (h.BoundingBox.Intersects(BoundingBox) &&
+                IntersectionDepth(h.BoundingBox, BoundingBox) != Vector3.Zero &&
+                (h.State == HammerState.IS_FLYING || h.State == HammerState.IS_RETURNING))
             {
                 _state = NextState(_state);
             }

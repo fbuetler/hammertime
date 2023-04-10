@@ -69,9 +69,6 @@ public class Hammer : GameObject<HammerState>
                 Direction = aimInput;
                 break;
             case HammerState.IS_FLYING:
-                _velocity = ComputeVelocity(gameTime, _velocity, ThrowAcceleration);
-                Move(gameTime, Direction * _velocity);
-
                 bool collided = HandleTileCollisions();
                 if (collided)
                 {
@@ -82,6 +79,9 @@ public class Hammer : GameObject<HammerState>
                     // if max distance is reached, make it return
                     Return();
                 }
+
+                _velocity = ComputeVelocity(gameTime, _velocity, ThrowAcceleration);
+                Move(gameTime, Direction * _velocity);
                 break;
             case HammerState.IS_RETURNING when (Center - GameMain.Map.Players[_ownerId].Center).LengthSquared() < PickupDistance * PickupDistance || GameMain.Map.Players[_ownerId].State == PlayerState.DEAD:
                 // if hammer is close to the player or the player is dead, it is picked up
@@ -93,7 +93,6 @@ public class Hammer : GameObject<HammerState>
                 FollowOwner();
 
                 _velocity = ComputeVelocity(gameTime, _velocity, ThrowAcceleration);
-                Move(gameTime, Direction * _velocity);
                 Move(gameTime, Direction * _velocity);
                 break;
         }
@@ -196,6 +195,10 @@ public class Hammer : GameObject<HammerState>
 
     public void Return()
     {
+        if (_state == HammerState.IS_RETURNING)
+        {
+            return;
+        }
         _state = HammerState.IS_RETURNING;
         _velocity = 0;
     }
