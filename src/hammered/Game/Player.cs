@@ -115,8 +115,6 @@ public class Player : GameObject<PlayerState>
         Vector3 moveInput = ReadMovementInput(keyboardState, gamePadState);
         Vector3 prevCenter = Center;
 
-        BoundingBox prevBBox = BoundingBox;
-
         switch (State)
         {
             case PlayerState.THROWING:
@@ -165,7 +163,6 @@ public class Player : GameObject<PlayerState>
 
         HandlePlayerCollisions();
         HandleTileCollisions();
-
 
         Pushback pushback = CheckHammerCollisions();
         if (pushback != null && _pushback == null)

@@ -56,7 +56,10 @@ public class Tile : GameObject<TileState>
         foreach (Player p in GameMain.Map.Players.Values)
         {
             // is player standing on tile
-            if (BoundingBox.Min.X <= p.Center.X && p.Center.X <= BoundingBox.Max.X && BoundingBox.Min.Z <= p.Center.Z & p.Center.Z <= BoundingBox.Max.Z && p.State != PlayerState.FALLING && p.State != PlayerState.FALLING_NO_HAMMER)
+            if (BoundingBox.Min.X <= p.Center.X && p.Center.X <= BoundingBox.Max.X &&
+                BoundingBox.Min.Z <= p.Center.Z && p.Center.Z <= BoundingBox.Max.Z &&
+                p.State != PlayerState.FALLING &&
+                p.State != PlayerState.FALLING_NO_HAMMER)
             {
                 if (!_visitors.Contains(p.PlayerId))
                 {

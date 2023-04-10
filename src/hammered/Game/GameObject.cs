@@ -280,19 +280,13 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
         return new Vector3(depthX, depthY, depthZ);
     }
 
-    private BoundingBox ComputeBoundingBox()
-    {
-        // FIXME: (lmeinen) Compute oriented bounding box based on center and direction
-        Vector3 offset = Vector3.Transform(Size / 2, ComputeRotation());
-        Vector3 min = Center - offset;
-        Vector3 max = Center + offset;
-
-        return new BoundingBox(min, max);
-    }
-
     private Vector3 RoundVector(Vector3 vec, int numDigits)
     {
-        return new Vector3((float)Math.Round(vec.X, numDigits), (float)Math.Round(vec.Y, numDigits), (float)Math.Round(vec.Z, numDigits));
+        return new Vector3(
+            (float)Math.Round(vec.X, numDigits),
+            (float)Math.Round(vec.Y, numDigits),
+            (float)Math.Round(vec.Z, numDigits)
+        );
     }
 
 }
