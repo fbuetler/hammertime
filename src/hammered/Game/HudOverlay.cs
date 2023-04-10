@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using hammered;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
