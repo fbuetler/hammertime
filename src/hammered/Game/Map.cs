@@ -26,6 +26,7 @@ public class Map : DrawableGameComponent
     public int Width { get => _tiles.GetLength(0); }
     public int Height { get => _tiles.GetLength(1); }
     public int Depth { get => _tiles.GetLength(2); }
+    public Tile[,,] Tiles { get => _tiles; }
     private Tile[,,] _tiles;
 
     public Dictionary<int, Player> Players { get => _players; }

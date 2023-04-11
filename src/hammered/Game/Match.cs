@@ -88,6 +88,23 @@ public class Match : DrawableGameComponent
             _mapIndex = (_mapIndex + 1) % numberOfMaps;
             LoadMap();
         }
+
+        if (Controls.Pause.Pressed())
+        {
+            foreach (Player p in Map.Players.Values)
+            {
+                p.Enabled = !p.Enabled;
+            }
+            foreach (Hammer h in Map.Hammers.Values)
+            {
+                h.Enabled = !h.Enabled;
+            }
+            foreach (Tile t in Map.Tiles)
+            {
+                if (t != null)
+                    t.Enabled = !t.Enabled;
+            }
+        }
     }
 
     private void UpdateGameState()

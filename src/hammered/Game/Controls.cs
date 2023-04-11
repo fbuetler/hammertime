@@ -70,13 +70,19 @@ public static class Controls
     public static ICondition ReloadMap { get; } =
         new AnyCondition(
             new KeyboardCondition(Keys.R),
-            new GamePadCondition(GamePadButton.Start, PrimaryPlayerIndex)
+            new GamePadCondition(GamePadButton.X, PrimaryPlayerIndex)
         );
 
     public static ICondition NextMap { get; } =
         new AnyCondition(
             new KeyboardCondition(Keys.N),
             new GamePadCondition(GamePadButton.Y, PrimaryPlayerIndex)
+        );
+
+    public static ICondition Pause { get; } =
+        new AnyCondition(
+            new KeyboardCondition(Keys.P),
+            new GamePadCondition(GamePadButton.Start, PrimaryPlayerIndex)
         );
 
     public static ICondition Throw(int playerIndex)
