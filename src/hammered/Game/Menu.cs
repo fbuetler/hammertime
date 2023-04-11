@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
-using Apos.Input;
 using hammered;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
 
 enum MenuState
 {
@@ -35,62 +33,6 @@ public class Menu : DrawableGameComponent
 
     public Dictionary<string, Texture2D> Menus { get => _menus; }
     private Dictionary<string, Texture2D> _menus;
-
-    public static int PlayerIndex = 0;
-
-    public static ICondition Start { get; set; } =
-        new AnyCondition(
-            new KeyboardCondition(Keys.Space),
-            new KeyboardCondition(Keys.Enter),
-            new GamePadCondition(GamePadButton.A, PlayerIndex),
-            new GamePadCondition(GamePadButton.Start, PlayerIndex)
-        );
-
-    public static ICondition Back { get; set; } =
-        new AnyCondition(
-            new KeyboardCondition(Keys.Escape),
-            new GamePadCondition(GamePadButton.B, PlayerIndex),
-            new GamePadCondition(GamePadButton.Back, PlayerIndex)
-        );
-
-    public static ICondition Interact { get; set; } =
-        new AnyCondition(
-            new KeyboardCondition(Keys.Space),
-            new KeyboardCondition(Keys.Enter),
-            new GamePadCondition(GamePadButton.A, PlayerIndex)
-        );
-
-    public static ICondition FocusPrev { get; set; } =
-        new AnyCondition(
-            new KeyboardCondition(Keys.Up),
-            new AllCondition(
-                new AnyCondition(
-                    new KeyboardCondition(Keys.LeftShift),
-                    new KeyboardCondition(Keys.RightShift)
-                ),
-                new KeyboardCondition(Keys.Tab)
-            ),
-            new GamePadCondition(GamePadButton.Up, PlayerIndex)
-        );
-
-    public static ICondition FocusNext { get; set; } =
-        new AnyCondition(
-            new KeyboardCondition(Keys.Down),
-            new KeyboardCondition(Keys.Tab),
-            new GamePadCondition(GamePadButton.Down, PlayerIndex)
-        );
-
-    public static ICondition MoveLeft { get; set; } =
-    new AnyCondition(
-        new KeyboardCondition(Keys.Left),
-        new GamePadCondition(GamePadButton.Left, PlayerIndex)
-    );
-
-    public static ICondition MoveRight { get; set; } =
-        new AnyCondition(
-            new KeyboardCondition(Keys.Right),
-            new GamePadCondition(GamePadButton.Right, PlayerIndex)
-        );
 
     public Menu(Game game) : base(game)
     {
@@ -129,65 +71,65 @@ public class Menu : DrawableGameComponent
         {
             // title
             case MenuState.TITLE:
-                if (Start.Pressed())
+                if (Controls.Start.Pressed())
                     _state = MenuState.MAIN_START;
                 break;
 
             // main
             case MenuState.MAIN_START:
-                if (FocusPrev.Pressed())
+                if (Controls.FocusPrev.Pressed())
                     _state = MenuState.MAIN_QUIT;
-                else if (FocusNext.Pressed())
+                else if (Controls.FocusNext.Pressed())
                     _state = MenuState.MAIN_SETTINGS;
-                else if (Interact.Pressed())
+                else if (Controls.Interact.Pressed())
                     _state = MenuState.PLAYERS_2;
                 break;
             case MenuState.MAIN_SETTINGS:
-                if (FocusPrev.Pressed())
+                if (Controls.FocusPrev.Pressed())
                     _state = MenuState.MAIN_START;
-                else if (FocusNext.Pressed())
+                else if (Controls.FocusNext.Pressed())
                     _state = MenuState.MAIN_QUIT;
-                else if (Interact.Pressed())
+                else if (Controls.Interact.Pressed())
                     _state = MenuState.SETTINGS;
                 break;
             case MenuState.MAIN_QUIT:
-                if (FocusPrev.Pressed())
+                if (Controls.FocusPrev.Pressed())
                     _state = MenuState.MAIN_SETTINGS;
-                else if (FocusNext.Pressed())
+                else if (Controls.FocusNext.Pressed())
                     _state = MenuState.MAIN_START;
-                else if (Interact.Pressed())
+                else if (Controls.Interact.Pressed())
                     _state = MenuState.QUIT_YES;
                 break;
 
             // players
             case MenuState.PLAYERS_2:
-                if (FocusPrev.Pressed())
+                if (Controls.FocusPrev.Pressed())
                     _state = MenuState.PLAYERS_4;
-                else if (FocusNext.Pressed())
+                else if (Controls.FocusNext.Pressed())
                     _state = MenuState.PLAYERS_3;
-                else if (Interact.Pressed())
+                else if (Controls.Interact.Pressed())
                 {
                     _state = MenuState.MAIN_START;
                     StartMap(2);
                 }
                 break;
             case MenuState.PLAYERS_3:
-                if (FocusPrev.Pressed())
+                if (Controls.FocusPrev.Pressed())
                     _state = MenuState.PLAYERS_2;
-                else if (FocusNext.Pressed())
+                else if (Controls.FocusNext.Pressed())
                     _state = MenuState.PLAYERS_4;
-                else if (Interact.Pressed())
+                else if (Controls.Interact.Pressed())
                 {
                     _state = MenuState.MAIN_START;
                     StartMap(3);
                 }
                 break;
             case MenuState.PLAYERS_4:
-                if (FocusPrev.Pressed())
+                if (Controls.FocusPrev.Pressed())
                     _state = MenuState.PLAYERS_3;
-                else if (FocusNext.Pressed())
+                else if (Controls.FocusNext.Pressed())
                     _state = MenuState.PLAYERS_2;
-                else if (Interact.Pressed())
+                else if (Controls.Interact.Pressed())
                 {
                     _state = MenuState.MAIN_START;
                     StartMap(4);
@@ -200,22 +142,22 @@ public class Menu : DrawableGameComponent
 
             // quit
             case MenuState.QUIT_YES:
-                if (FocusPrev.Pressed() || FocusNext.Pressed())
+                if (Controls.FocusPrev.Pressed() || Controls.FocusNext.Pressed())
                     _state = MenuState.QUIT_NO;
-                else if (Interact.Pressed())
+                else if (Controls.Interact.Pressed())
                     GameMain.Exit();
                 break;
             case MenuState.QUIT_NO:
-                if (FocusPrev.Pressed() || FocusNext.Pressed())
+                if (Controls.FocusPrev.Pressed() || Controls.FocusNext.Pressed())
                     _state = MenuState.QUIT_YES;
-                else if (Interact.Pressed())
+                else if (Controls.Interact.Pressed())
                     _state = MenuState.MAIN_START;
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(_state), $"Unexpected menu state: {_state}");
         }
 
-        if (Back.Pressed())
+        if (Controls.Back.Pressed())
         {
             if (_state == MenuState.MAIN_START)
             {
