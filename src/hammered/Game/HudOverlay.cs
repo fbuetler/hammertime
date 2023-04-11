@@ -23,7 +23,7 @@ public class HudOverlay : DrawableGameComponent
 
     protected override void LoadContent()
     {
-        _font = _game.Content.Load<SpriteFont>("Fonts/font");
+        _font = _game.Content.Load<SpriteFont>("Fonts/arial");
     }
 
     public override void Draw(GameTime gameTime)

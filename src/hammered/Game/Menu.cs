@@ -37,7 +37,7 @@ public class Menu : DrawableGameComponent
     private static float BUTTON_GRID_ACTIVE_COL = 1;
 
     private static Vector2 BUTTON_SIZE = new Vector2(176, 55);
-    private static float BUTTON_GAP = 2f;
+    private static float MARGIN = 2f;
 
     private static int MAIN_START_ROW = 0;
     private static int MAIN_SETTINGS_ROW = 1;
@@ -48,16 +48,19 @@ public class Menu : DrawableGameComponent
     private static int PLAYERS_3_ROW = 6;
     private static int PLAYERS_4_ROW = 7;
 
+    private static Color TEXT_COLOR = Color.Black;
+
+    // TODO (fbuetler) text grid
+
     public GameMain GameMain { get => _game; }
     private GameMain _game;
 
     private MenuState _state = MenuState.TITLE;
 
-    private string _titlePath;
     private Texture2D _title;
-
-    private string _menuItemsPath;
     private Texture2D _menuItems;
+
+    private SpriteFont _impactFont;
 
     private MenuGroup _startMenu;
     private MenuGroup _quitMenu;
@@ -66,9 +69,6 @@ public class Menu : DrawableGameComponent
     public Menu(Game game) : base(game)
     {
         _game = (GameMain)game;
-
-        _titlePath = "Menu/title";
-        _menuItemsPath = "Menu/items";
 
         // make update and draw called by monogame
         Enabled = true;
@@ -79,8 +79,9 @@ public class Menu : DrawableGameComponent
 
     protected override void LoadContent()
     {
-        _title = GameMain.Content.Load<Texture2D>(_titlePath);
-        _menuItems = GameMain.Content.Load<Texture2D>(_menuItemsPath);
+        _title = GameMain.Content.Load<Texture2D>("Menu/title");
+        _menuItems = GameMain.Content.Load<Texture2D>("Menu/items");
+        _impactFont = _game.Content.Load<SpriteFont>("Fonts/impact");
 
         LoadStartMenuGroup();
         LoadQuitMenuGroup();
@@ -122,8 +123,9 @@ public class Menu : DrawableGameComponent
             GameMain.GetBackBufferWidth() * 0.5f,
             GameMain.GetBackBufferHeight() * 0.5f
         );
-        float totalHeight = numberOfButons * BUTTON_SIZE.Y + (numberOfButons - 1) * BUTTON_GAP;
-        Vector2 anchor = screenCenter - BUTTON_SIZE * 0.5f;
+        // TODO (fbuetler) distinguish even (center is between buttons) and odd number of buttons (center is on a button)
+        float totalHeight = numberOfButons * BUTTON_SIZE.Y + (numberOfButons - 1) * MARGIN;
+        Vector2 anchor = screenCenter;
         anchor.Y -= totalHeight * 0.5f;
 
         return anchor;
@@ -225,10 +227,11 @@ public class Menu : DrawableGameComponent
         {
             if (_state == MenuState.MAIN_START)
             {
-                _state = MenuState.MAIN_QUIT;
+                _state = MenuState.QUIT_YES;
             }
             else
             {
+                // TODO (fbuetler) go back up to parent state (not simply MAIN_START)
                 _state = MenuState.MAIN_START;
             }
         }
@@ -257,12 +260,18 @@ public class Menu : DrawableGameComponent
             case MenuState.PLAYERS_2:
             case MenuState.PLAYERS_3:
             case MenuState.PLAYERS_4:
+                DrawString(_impactFont, "HOW MANY PLAYERS?", _playersMenu.anchor);
                 DrawMenuGroup(GameMain.SpriteBatch, _playersMenu);
                 break;
             case MenuState.SETTINGS:
+                DrawString(_impactFont, "Settings", new Vector2(
+                    GameMain.GetBackBufferWidth() * 0.5f,
+                    GameMain.GetBackBufferHeight() * 0.5f
+                ));
                 break;
             case MenuState.QUIT_YES:
             case MenuState.QUIT_NO:
+                DrawString(_impactFont, "QUIT?", _quitMenu.anchor);
                 DrawMenuGroup(GameMain.SpriteBatch, _quitMenu);
                 break;
             default:
@@ -297,11 +306,11 @@ public class Menu : DrawableGameComponent
                 BUTTON_SIZE.ToPoint()
             );
 
-            Vector2 startPosition = group.anchor;
-            startPosition.Y += (BUTTON_SIZE.Y + BUTTON_GAP) * i;
+            Vector2 position = group.anchor - BUTTON_SIZE * 0.5f;
+            position.Y += (BUTTON_SIZE.Y + MARGIN) * i;
             GameMain.SpriteBatch.Draw(
                 _menuItems,
-                position: startPosition,
+                position: position,
                 sourceRectangle: area,
                 color: Color.White,
                 rotation: 0f,
@@ -310,5 +319,14 @@ public class Menu : DrawableGameComponent
                 effects: SpriteEffects.None,
             0f);
         }
+    }
+
+    private void DrawString(SpriteFont font, string text, Vector2 anchor)
+    {
+        Vector2 textSize = font.MeasureString(text);
+        Vector2 position = anchor - textSize * 0.5f;
+        position.Y = position.Y - BUTTON_SIZE.Y * 0.5f - MARGIN - textSize.Y * 0.5f;
+
+        GameMain.SpriteBatch.DrawString(font, text, position, TEXT_COLOR);
     }
 }
