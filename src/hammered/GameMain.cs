@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Apos.Input;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -96,8 +96,17 @@ public class GameMain : Game
     protected override void Update(GameTime gameTime)
     {
         InputHelper.UpdateSetup();
+        HandleInput();
         base.Update(gameTime);
         InputHelper.UpdateCleanup();
+    }
+
+    private void HandleInput()
+    {
+        if (Controls.Back.Pressed())
+        {
+            Exit();
+        }
     }
 
     protected override void Draw(GameTime gameTime)

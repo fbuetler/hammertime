@@ -72,17 +72,12 @@ public class Match : DrawableGameComponent
 
     public override void Update(GameTime gameTime)
     {
-        HandleInput(gameTime);
+        HandleInput();
         UpdateGameState();
     }
 
-    private void HandleInput(GameTime gameTime)
+    private void HandleInput()
     {
-        if (Controls.Back.Pressed())
-        {
-            GameMain.Exit();
-        }
-
         if (Controls.ReloadMap.Pressed())
         {
             LoadMap();
