@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Apos.Input;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -47,12 +47,20 @@ public class GameMain : Game
 
     public int GetBackBufferWidth()
     {
-        return _graphics.PreferredBackBufferWidth;
+#if DEBUG
+        return 1280;
+#else
+        return 1920;
+#endif
     }
 
     public int GetBackBufferHeight()
     {
-        return _graphics.PreferredBackBufferHeight;
+#if DEBUG
+        return 720;
+#else
+        return 1080;
+#endif
     }
 
     protected override void Initialize()
@@ -65,13 +73,9 @@ public class GameMain : Game
 
         base.Initialize();
 
-#if DEBUG
-        _graphics.PreferredBackBufferWidth = 1280;
-        _graphics.PreferredBackBufferHeight = 720;
-#else
-        _graphics.PreferredBackBufferWidth = 1920;
-        _graphics.PreferredBackBufferHeight = 1080;
-#endif
+        _graphics.PreferredBackBufferWidth = GetBackBufferWidth();
+        _graphics.PreferredBackBufferHeight = GetBackBufferHeight(); ;
+
         _graphics.IsFullScreen = false;
         _graphics.ApplyChanges();
 
