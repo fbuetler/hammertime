@@ -129,7 +129,6 @@ public class Match : DrawableGameComponent
             GameMain.Components.Clear();
             GameMain.Components.Add(this);
             Models.Clear();
-            Map.Dispose();
         }
 
         // initialize game overlay

@@ -176,7 +176,7 @@ public class Map : DrawableGameComponent
         // are we loading not fast enough?
         try
         {
-            MediaPlayer.Play(_content.Load<Song>("Audio/Stormfront"));
+            MediaPlayer.Play(Content.Load<Song>("Audio/Stormfront"));
             MediaPlayer.IsRepeating = true;
         }
         catch { }
