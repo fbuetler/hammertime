@@ -121,7 +121,7 @@ public static class Controls
 
     public static Vector2 Move(int playerIndex)
     {
-        return GamePad.GetState(playerIndex).ThumbSticks.Left * MoveStickScale;
+        return InputHelper.NewGamePad[playerIndex].ThumbSticks.Left * MoveStickScale;
     }
 
     public static ICondition AimUp(int playerIndex)
@@ -154,6 +154,6 @@ public static class Controls
 
     public static Vector2 Aim(int playerIndex)
     {
-        return GamePad.GetState(playerIndex).ThumbSticks.Right * AimStickScale;
+        return InputHelper.NewGamePad[playerIndex].ThumbSticks.Right * AimStickScale;
     }
 }
