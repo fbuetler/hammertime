@@ -1,22 +1,30 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+using Apos.Input;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
 
 namespace hammered;
 
-public enum ScoreState
-{
-    None = 0,
-    Winner = 1,
-    Draw = 2,
-}
-
 public class GameMain : Game
 {
+    // update order from high to low (default is 0)
+    public const int MENU_UPDATE_ORDER = 0;
+    public const int MATCH_UPDATE_ORDER = 0;
+    public const int MAP_UPDATE_ORDER = 0;
+    public const int HUD_UPDATE_ORDER = 0;
+    public const int TILE_UPDATE_ORDER = 1;
+    public const int HAMMER_UPDATE_ORDER = 2;
+    public const int PLAYER_UPDATE_ORDER = 3;
+
+    // draw order from high to low (default is 0)
+    public const int MENU_DRAW_ORDER = 0; // clears screen
+    public const int MAP_DRAW_ORDER = 0; // clears screen
+    public const int MATCH_DRAW_ORDER = 1;
+    public const int HUD_DRAW_ORDER = 1;
+    public const int HAMMER_DRAW_ORDER = 2;
+    public const int PLAYER_DRAW_ORDER = 3;
+    public const int TILE_DRAW_ORDER = 4;
+
     // drawing
     private GraphicsDeviceManager _graphics;
 
@@ -26,43 +34,14 @@ public class GameMain : Game
     public DebugDraw DebugDraw { get => _debugDraw; }
     private DebugDraw _debugDraw;
 
-    /// <summary>
-    /// We persist loaded models at the top level to ensure we only load them once #flyweight
-    /// </summary>
-    public Dictionary<string, ScaledModel> Models { get => _models; }
-    private Dictionary<string, ScaledModel> _models;
+    private Menu _menu;
 
-    private Map _map;
-    public Map Map { get => _map; }
-
-    // game state
-    public int MapIndex { get => _mapIndex; }
-    private int _mapIndex = 0;
-
-    private bool _wasReloadPressed;
-    private bool _wasNextPressed;
-    private ScoreState _scoreState;
-    public ScoreState ScoreState { get => _scoreState; }
-    private List<int> _playersAlive;
-    public List<int> PlayersAlive { get => _playersAlive; }
-
-    public int? WinnerId { get => _winnerId; }
-    private int? _winnerId = null;
-
-    private int _numberOfPlayers = 4;
-    public int NumberOfPlayers { get => _numberOfPlayers; }
-
-    private const int maxNumberOfPlayers = 4;
-    // The number of levels in the Levels directory of our content. We assume that
-    // levels in our content are 0-based and that all numbers under this constant
-    // have a level file present. This allows us to not need to check for the file
-    // or handle exceptions, both of which can add unnecessary time to level loading.
-    private const int numberOfMaps = 4;
+    public Match Match { get => _match; }
+    private Match _match;
 
     public GameMain()
     {
         _graphics = new GraphicsDeviceManager(this);
-        _models = new Dictionary<string, ScaledModel>();
         Content.RootDirectory = "Content";
     }
 
@@ -81,7 +60,8 @@ public class GameMain : Game
         TargetElapsedTime = TimeSpan.FromSeconds(1.0 / 144.0); // set frame rate to 144 fps
         IsFixedTimeStep = true; // decouple draw from update
 
-        InitializeComponents();
+        _menu = new Menu(this);
+        Components.Add(_menu);
 
         base.Initialize();
 
@@ -98,103 +78,30 @@ public class GameMain : Game
         _debugDraw = new DebugDraw(GraphicsDevice);
     }
 
-    private void InitializeComponents()
-    {
-        // initialize game objects
-        LoadMap(_mapIndex);
-
-        // initialize game overlay
-        Components.Add(new HudOverlay(this));
-    }
-
     protected override void LoadContent()
     {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
+        InputHelper.Setup(this);
+    }
+
+    public void StartMatch(int NumberOfPlayers)
+    {
+        _match = new Match(this, NumberOfPlayers);
+        Components.Add(_match);
+
+        _menu.Visible = false;
+        Components.Remove(_menu);
     }
 
     protected override void Update(GameTime gameTime)
     {
-        HandleInput(gameTime);
-        UpdateGameState();
+        InputHelper.UpdateSetup();
         base.Update(gameTime);
-    }
-
-    private void HandleInput(GameTime gameTime)
-    {
-        // TODO (fbuetler) proper input handling instead of just taking the input of the first player
-        KeyboardState keyboardState = Keyboard.GetState();
-        GamePadState gamePadState = GamePad.GetState(0);
-
-        if (keyboardState.IsKeyDown(Keys.Escape) || gamePadState.IsButtonDown(Buttons.Back))
-        {
-            this.Exit();
-        }
-
-        bool reloadPressed = keyboardState.IsKeyDown(Keys.R) || gamePadState.IsButtonDown(Buttons.Start);
-        if (!_wasReloadPressed && reloadPressed)
-        {
-            InitializeComponents();
-        }
-        _wasReloadPressed = reloadPressed;
-
-        bool nextPressed = keyboardState.IsKeyDown(Keys.N) || gamePadState.IsButtonDown(Buttons.Y);
-        if (!_wasNextPressed && nextPressed)
-        {
-            _mapIndex = (_mapIndex + 1) % numberOfMaps;
-            InitializeComponents();
-        }
-        _wasNextPressed = nextPressed;
-    }
-
-    private void UpdateGameState()
-    {
-        foreach (Player p in Map.Players.Values)
-        {
-            // TODO: (lmeinen) Wait with decreasing playsAlive until player hits ground below (could make for fun animation or items that allow one to come back from falling)
-            if (p.State == PlayerState.DEAD || p.State == PlayerState.FALLING)
-            {
-                _playersAlive.Remove(p.PlayerId);
-            }
-        }
-
-        if (_scoreState == ScoreState.None)
-        {
-            if (_playersAlive.Count == 1)
-            {
-                _scoreState = ScoreState.Winner;
-                _winnerId = _playersAlive[0];
-            }
-            else if (_playersAlive.Count == 0)
-            {
-                _scoreState = ScoreState.Draw;
-            }
-        }
-    }
-
-    private void LoadMap(int i)
-    {
-        // unloads the content for the current map before loading the next one
-        if (Map != null)
-        {
-            // just reload all components
-            Components.Clear();
-            Models.Clear();
-            Map.Dispose();
-        }
-
-        _scoreState = ScoreState.None;
-
-        string mapPath = string.Format("Content/Maps/{0}.txt", _mapIndex);
-        using (Stream fileStream = TitleContainer.OpenStream(mapPath))
-            _map = new Map(this, Services, fileStream);
-
-        _playersAlive = Map.Players.Keys.ToList();
+        InputHelper.UpdateCleanup();
     }
 
     protected override void Draw(GameTime gameTime)
     {
-        GraphicsDevice.Clear(Color.CornflowerBlue);
-        Map.Draw(gameTime);
         base.Draw(gameTime);
     }
 }

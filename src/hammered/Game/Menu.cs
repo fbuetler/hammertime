@@ -51,6 +51,12 @@ public class Menu : DrawableGameComponent
         _menuPaths[MenuState.QUIT_NO] = "Menu/Quit/quit_no";
 
         _menus = new Dictionary<string, Texture2D>();
+
+        // make update and draw called by monogame
+        Enabled = true;
+        UpdateOrder = GameMain.MENU_UPDATE_ORDER;
+        Visible = true;
+        DrawOrder = GameMain.MENU_DRAW_ORDER;
     }
 
     protected override void LoadContent()
@@ -110,7 +116,7 @@ public class Menu : DrawableGameComponent
                 else if (Controls.Interact.Pressed())
                 {
                     _state = MenuState.MAIN_START;
-                    StartMap(2);
+                    GameMain.StartMatch(2);
                 }
                 break;
             case MenuState.PLAYERS_3:
@@ -121,7 +127,7 @@ public class Menu : DrawableGameComponent
                 else if (Controls.Interact.Pressed())
                 {
                     _state = MenuState.MAIN_START;
-                    StartMap(3);
+                    GameMain.StartMatch(3);
                 }
                 break;
             case MenuState.PLAYERS_4:
@@ -132,7 +138,7 @@ public class Menu : DrawableGameComponent
                 else if (Controls.Interact.Pressed())
                 {
                     _state = MenuState.MAIN_START;
-                    StartMap(4);
+                    GameMain.StartMatch(4);
                 }
                 break;
 
@@ -172,18 +178,13 @@ public class Menu : DrawableGameComponent
         base.Update(gameTime);
     }
 
-    private void StartMap(int NumberOfPlayers)
-    {
-
-    }
-
     public override void Draw(GameTime gameTime)
     {
         GraphicsDevice.Clear(Color.Black);
 
         // _spriteBatch.Begin alters the state of the graphics pipeline
         // therefore we have to reenable the depth buffer here
-        _game.SpriteBatch.Begin(depthStencilState: DepthStencilState.Default);
+        GameMain.SpriteBatch.Begin(depthStencilState: DepthStencilState.Default);
 
         var texture = Menus[_state.ToString()];
         Vector2 scale = new Vector2(
@@ -192,7 +193,7 @@ public class Menu : DrawableGameComponent
         );
         GameMain.SpriteBatch.Draw(texture, Vector2.Zero, null, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
 
-        _game.SpriteBatch.End();
+        GameMain.SpriteBatch.End();
 
         base.Draw(gameTime);
     }

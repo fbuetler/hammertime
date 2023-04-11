@@ -7,22 +7,21 @@ using Microsoft.Xna.Framework.Media;
 
 namespace hammered;
 
-public class Map
+public class Map : DrawableGameComponent
 {
-
-    private const int TILE_UPDATE_ORDER = 0;
-    private const int HAMMER_UPDATE_ORDER = 1;
-    private const int PLAYER_UPDATE_ORDER = 2;
 
     public ContentManager Content { get => _content; }
     ContentManager _content;
 
     public DebugDraw DebugDraw { get => _game.DebugDraw; }
 
+    public GameMain GameMain { get => _game; }
     private GameMain _game;
 
     public Camera Camera { get => _camera; }
     private Camera _camera;
+
+    private String _mapPath;
 
     public int Width { get => _tiles.GetLength(0); }
     public int Height { get => _tiles.GetLength(1); }
@@ -35,7 +34,7 @@ public class Map
     public Dictionary<int, Hammer> Hammers { get => _hammers; }
     private Dictionary<int, Hammer> _hammers = new Dictionary<int, Hammer>();
 
-    public Map(Game game, IServiceProvider serviceProvider, Stream fileStream)
+    public Map(Game game, IServiceProvider serviceProvider, String mapPath) : base(game)
     {
         if (game == null)
             throw new ArgumentNullException("game");
@@ -48,16 +47,20 @@ public class Map
         // create a new content manager to load content used just by this map 
         _content = new ContentManager(serviceProvider, "Content");
 
-        // load tiles and players
-        LoadMap(fileStream);
+        _mapPath = mapPath;
 
-        // setup camera
-        _camera = new Camera(
-            new Vector3(Width / 2, 0f, Depth / 2),
-            (float)_game.GetBackBufferWidth() / _game.GetBackBufferHeight(),
-            Width
-        );
+        // make update and draw called by monogame
+        Enabled = true;
+        UpdateOrder = GameMain.MAP_UPDATE_ORDER;
+        Visible = true;
+        DrawOrder = GameMain.MAP_DRAW_ORDER;
+    }
 
+    protected override void LoadContent()
+    {
+        using (Stream fileStream = TitleContainer.OpenStream(_mapPath))
+            LoadMap(fileStream);
+        LoadCamera();
         LoadMusic();
     }
 
@@ -95,7 +98,7 @@ public class Map
             }
         }
 
-        if (_players.Count < _game.NumberOfPlayers)
+        if (_players.Count < GameMain.Match.NumberOfPlayers)
         {
             throw new NotSupportedException("A map must have starting points for all players");
         }
@@ -128,14 +131,13 @@ public class Map
             default:
                 return null;
         }
-        tile.UpdateOrder = TILE_UPDATE_ORDER;
-        _game.Components.Add(tile);
+        GameMain.Components.Add(tile);
         return tile;
     }
 
     private Tile LoadBreakableFloorTile(int x, int y, int z)
     {
-        return new Tile(_game, new Vector3(x, y, z));
+        return new Tile(GameMain, new Vector3(x, y, z));
     }
 
     private Tile LoadNonBreakableFloorTile(int x, int y, int z)
@@ -145,27 +147,25 @@ public class Map
 
     private Tile LoadWallTile(int x, int y, int z)
     {
-        return new Tile(_game, new Vector3(x, y, z));
+        return new Tile(GameMain, new Vector3(x, y, z));
     }
 
     private void LoadPlayer(int x, int y, int z)
     {
         // ignore starting tiles if already all players are loaded
-        if (_players.Count < _game.NumberOfPlayers)
+        if (_players.Count < GameMain.Match.NumberOfPlayers)
         {
             int playerId = _players.Count;
-            Player player = new Player(_game, new Vector3(x, y, z), playerId);
-            Hammer hammer = new Hammer(_game, new Vector3(x, y, z), playerId);
+            Player player = new Player(GameMain, new Vector3(x, y, z), playerId);
+            Hammer hammer = new Hammer(GameMain, new Vector3(x, y, z), playerId);
             _players.Add(playerId, player);
             _hammers.Add(playerId, hammer);
 
             // enable player component
-            player.UpdateOrder = PLAYER_UPDATE_ORDER;
-            _game.Components.Add(player);
+            GameMain.Components.Add(player);
 
             // enable hammer compohent
-            hammer.UpdateOrder = HAMMER_UPDATE_ORDER;
-            _game.Components.Add(hammer);
+            GameMain.Components.Add(hammer);
         }
     }
 
@@ -182,9 +182,13 @@ public class Map
         catch { }
     }
 
-    public void Dispose()
+    private void LoadCamera()
     {
-        _content.Unload();
+        _camera = new Camera(
+            new Vector3(Width / 2, 0f, Depth / 2),
+            (float)GameMain.GetBackBufferWidth() / GameMain.GetBackBufferHeight(),
+            Width
+        );
     }
 
     public BoundingBox? TryGetTileBounds(int x, int y, int z)
@@ -202,8 +206,9 @@ public class Map
         }
     }
 
-    public void Draw(GameTime gameTime)
+    public override void Draw(GameTime gameTime)
     {
+        GraphicsDevice.Clear(Color.CornflowerBlue);
 
         Matrix view = Camera.View;
         Matrix projection = Camera.Projection;

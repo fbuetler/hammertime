@@ -73,15 +73,13 @@ public class Player : GameObject<PlayerState>
     private const float GravityAcceleration = 960f;
     private const float MaxFallVelocity = 340f;
 
-    // input configuration
-    private const float MoveStickScale = 1.0f;
-    private const Buttons ThrowButton = Buttons.RightShoulder;
-
     public Player(Game game, Vector3 position, int playerId) : base(game, position + _maxSize / 2)
     {
         // make update and draw called by monogame
         Enabled = true;
+        UpdateOrder = GameMain.PLAYER_UPDATE_ORDER;
         Visible = true;
+        DrawOrder = GameMain.PLAYER_DRAW_ORDER;
 
         _playerId = playerId;
 
@@ -103,25 +101,23 @@ public class Player : GameObject<PlayerState>
 
     protected override void LoadAudioContent()
     {
-        _fallingSound = GameMain.Map.Content.Load<SoundEffect>("Audio/falling");
-        _hammerHitSound = GameMain.Map.Content.Load<SoundEffect>("Audio/hammerBong");
+        _fallingSound = GameMain.Match.Map.Content.Load<SoundEffect>("Audio/falling");
+        _hammerHitSound = GameMain.Match.Map.Content.Load<SoundEffect>("Audio/hammerBong");
     }
 
     public override void Update(GameTime gameTime)
     {
         // TODO: (lmeinen) Both Hammer and Player now have Hammer.is_held type states - only one needs to store that info (buzzword: concurrent state machines)
-        KeyboardState keyboardState = Keyboard.GetState();
-        GamePadState gamePadState = GamePad.GetState(_playerId);
-        Vector3 moveInput = ReadMovementInput(keyboardState, gamePadState);
+        Vector3 moveInput = ReadMovementInput();
         Vector3 prevCenter = Center;
 
         switch (State)
         {
             case PlayerState.THROWING:
-                GameMain.Map.Hammers[_playerId].Throw();
+                GameMain.Match.Map.Hammers[_playerId].Throw();
                 _state = PlayerState.ALIVE_NO_HAMMER;
                 break;
-            case PlayerState.ALIVE when IsTryingToThrow(keyboardState, gamePadState):
+            case PlayerState.ALIVE when Controls.Throw(_playerId).Pressed():
                 _state = PlayerState.THROWING;
                 break;
             case PlayerState.ALIVE when moveInput != Vector3.Zero:
@@ -198,13 +194,14 @@ public class Player : GameObject<PlayerState>
         }
     }
 
-    private Vector3 ReadMovementInput(KeyboardState keyboardState, GamePadState gamePadState)
+    private Vector3 ReadMovementInput()
     {
         Vector3 movement = Vector3.Zero;
 
         // get analog movement
-        movement.X = gamePadState.ThumbSticks.Left.X * MoveStickScale;
-        movement.Z = gamePadState.ThumbSticks.Left.Y * MoveStickScale;
+        Vector2 m = Controls.Move(_playerId);
+        movement.X = m.X;
+        movement.Z = m.Y;
 
         // flip y: on the thumbsticks, down is -1, but on the screen, down is bigger numbers
         movement.Z *= -1;
@@ -214,24 +211,20 @@ public class Player : GameObject<PlayerState>
             movement = Vector3.Zero;
 
         // if any digital horizontal movement input is found, override the analog movement
-        if (gamePadState.IsButtonDown(Buttons.DPadUp) ||
-            keyboardState.IsKeyDown(Keys.Up))
+        if (Controls.MoveUp(_playerId).Held())
         {
             movement.Z -= 1.0f;
         }
-        else if (gamePadState.IsButtonDown(Buttons.DPadDown) ||
-                 keyboardState.IsKeyDown(Keys.Down))
+        else if (Controls.MoveDown(_playerId).Held())
         {
             movement.Z += 1.0f;
         }
 
-        if (gamePadState.IsButtonDown(Buttons.DPadLeft) ||
-            keyboardState.IsKeyDown(Keys.Left))
+        if (Controls.MoveLeft(_playerId).Held())
         {
             movement.X -= 1.0f;
         }
-        else if (gamePadState.IsButtonDown(Buttons.DPadRight) ||
-                 keyboardState.IsKeyDown(Keys.Right))
+        else if (Controls.MoveRight(_playerId).Held())
         {
             movement.X += 1.0f;
         }
@@ -244,8 +237,6 @@ public class Player : GameObject<PlayerState>
 
         return movement;
     }
-
-    private bool IsTryingToThrow(KeyboardState keyboardState, GamePadState gamePadState) => keyboardState.IsKeyDown(Keys.Space) || gamePadState.IsButtonDown(ThrowButton);
 
     private Vector3 ComputeVelocity(Vector3 currentVelocity, Vector3 direction, float acceleration, float dragFactor, GameTime gameTime)
     {
@@ -262,7 +253,7 @@ public class Player : GameObject<PlayerState>
 
     private void HandlePlayerCollisions()
     {
-        foreach (Player opponent in GameMain.Map.Players.Values.Where(p => p.PlayerId != _playerId))
+        foreach (Player opponent in GameMain.Match.Map.Players.Values.Where(p => p.PlayerId != _playerId))
         {
             ResolveCollision(BoundingBox, opponent.BoundingBox);
         }
@@ -270,7 +261,7 @@ public class Player : GameObject<PlayerState>
 
     private Pushback CheckHammerCollisions()
     {
-        foreach (Hammer hammer in GameMain.Map.Hammers.Values.Where(h => h.OwnerId != _playerId && h.State != HammerState.IS_HELD))
+        foreach (Hammer hammer in GameMain.Match.Map.Hammers.Values.Where(h => h.OwnerId != _playerId && h.State != HammerState.IS_HELD))
         {
             // detect collision
             if (BoundingBox.Intersects(hammer.BoundingBox))
@@ -296,12 +287,12 @@ public class Player : GameObject<PlayerState>
 
         for (int z = z_low; z <= z_high; z++)
         {
-            for (int y = 0; y <= GameMain.Map.Height; y++)
+            for (int y = 0; y <= GameMain.Match.Map.Height; y++)
             {
                 for (int x = x_low; x <= x_high; x++)
                 {
                     // check if there's a tile below us
-                    BoundingBox? neighbour = GameMain.Map.TryGetTileBounds(x, y, z);
+                    BoundingBox? neighbour = GameMain.Match.Map.TryGetTileBounds(x, y, z);
                     if (neighbour != null && ((BoundingBox)neighbour).Max.Y < BoundingBox.Min.Y)
                     {
                         return false;

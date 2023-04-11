@@ -36,7 +36,9 @@ public class Tile : GameObject<TileState>
     {
         // make update and draw called by monogame
         Enabled = true;
+        UpdateOrder = GameMain.TILE_UPDATE_ORDER;
         Visible = true;
+        DrawOrder = GameMain.TILE_DRAW_ORDER;
 
         _state = TileState.HP100;
 
@@ -53,7 +55,7 @@ public class Tile : GameObject<TileState>
 
     public override void Update(GameTime gameTime)
     {
-        foreach (Player p in GameMain.Map.Players.Values)
+        foreach (Player p in GameMain.Match.Map.Players.Values)
         {
             // is player standing on tile
             if (BoundingBox.Min.X <= p.Center.X && p.Center.X <= BoundingBox.Max.X &&
@@ -75,7 +77,7 @@ public class Tile : GameObject<TileState>
             }
         }
 
-        foreach (Hammer h in GameMain.Map.Hammers.Values)
+        foreach (Hammer h in GameMain.Match.Map.Hammers.Values)
         {
             // wall collisions
             if (h.BoundingBox.Intersects(BoundingBox) &&
