@@ -36,7 +36,7 @@ public class Player : GameObject<PlayerState>
 
     // sound
     private SoundEffect _hammerHitSound;
-    private SoundEffect _killedSound;
+    private SoundEffect _fallingSound;
 
     // player attributes
     public int PlayerId { get => _playerId; }
@@ -44,6 +44,7 @@ public class Player : GameObject<PlayerState>
 
     private Vector3 _velocity;
 
+    // TODO (fbuetler) if a player is smaller than a tile it is immediately falling upon start
     public override Vector3 Size { get => _sizeVec; set => _sizeVec = value;}
     private Vector3 _sizeVec = new Vector3(1f, 1f, 1f);
 
@@ -62,7 +63,7 @@ public class Player : GameObject<PlayerState>
 
     // how far one gets pushed back by a hammer
     private const float PushbackDistance = 3f;
-    private const float PushbackSpeed = 2000f;
+    private const float PushbackVelocity = 2000f;
 
     // if a player is below the kill plane, it disappears
     private const float KillPlaneLevel = -10f;
@@ -73,13 +74,13 @@ public class Player : GameObject<PlayerState>
 
     // constants for controlling horizontal movement
     private const float MoveAcceleration = 1300f;
-    private const float MaxMoveSpeed = 175f;
+    private const float MaxMoveVelocity = 175f;
     private const float GroundDragFactor = 0.48f;
     private const float AirDragFactor = 0.58f;
 
     // constants for controlling vertical movement
     private const float GravityAcceleration = 960f;
-    private const float MaxFallSpeed = 340f;
+    private const float MaxFallVelocity = 340f;
 
     // input configuration
     private const float MoveStickScale = 1.0f;
@@ -117,21 +118,17 @@ public class Player : GameObject<PlayerState>
 
     protected override void LoadAudioContent()
     {
-        _killedSound = GameMain.Map.Content.Load<SoundEffect>("Audio/Willhelm");
+        _fallingSound = GameMain.Map.Content.Load<SoundEffect>("Audio/falling");
         _hammerHitSound = GameMain.Map.Content.Load<SoundEffect>("Audio/hammerBong");
     }
 
     public override void Update(GameTime gameTime)
     {
-        // TODO: (lmeinen) Introduce switch statements with appropriate behavior
-        // TODO: (lmeinen) Both Hammer and Player now have Hammer.is_held type states - only one needs to store that info
+        // TODO: (lmeinen) Both Hammer and Player now have Hammer.is_held type states - only one needs to store that info (buzzword: concurrent state machines)
         KeyboardState keyboardState = Keyboard.GetState();
         GamePadState gamePadState = GamePad.GetState(_playerId);
         Vector3 moveInput = ReadMovementInput(keyboardState, gamePadState);
-        Vector3 currPos = Position;
-        if (GameStateCounter == 0) {
-
-        }
+        Vector3 prevPos = Position;
 
         GameStateCounter++;
         switch (State)
@@ -171,7 +168,7 @@ public class Player : GameObject<PlayerState>
                 break;
             case PlayerState.PUSHBACK:
             case PlayerState.PUSHBACK_NO_HAMMER:
-                _velocity = ComputeVelocity(_velocity, _pushback.Direction, PushbackSpeed, GroundDragFactor, gameTime);
+                _velocity = ComputeVelocity(_velocity, _pushback.Direction, PushbackVelocity, GroundDragFactor, gameTime);
                 _pushback.Distance -= Move(gameTime, _velocity);
                 break;
             case PlayerState.FALLING when Position.Y < KillPlaneLevel:
@@ -181,7 +178,7 @@ public class Player : GameObject<PlayerState>
                 break;
             case PlayerState.FALLING:
             case PlayerState.FALLING_NO_HAMMER:
-                // FIXME: (lmeinen) there's currently a bug where a player transitions into a FALLING state when they manage to cross a gap
+                // TODO: (lmeinen) there's currently a bug where a player transitions into a FALLING state when they manage to cross a gap
                 if (moveInput != Vector3.Zero)
                     Direction = moveInput;
                 _velocity = ComputeVelocity(_velocity, Direction, MoveAcceleration, AirDragFactor, gameTime);
@@ -193,25 +190,25 @@ public class Player : GameObject<PlayerState>
            
         }
 
+        HandlePlayerCollisions();
+        HandleTileCollisions();
+
         Pushback pushback = CheckHammerCollisions();
-        if (pushback != null)
+        if (pushback != null && _pushback == null)
         {
             _pushback = (Pushback)pushback;
-            if (_state == PlayerState.FALLING || State == PlayerState.ALIVE)
+            if (State == PlayerState.FALLING || State == PlayerState.ALIVE)
                 _state = PlayerState.PUSHBACK;
             else if (State == PlayerState.FALLING_NO_HAMMER || State == PlayerState.ALIVE_NO_HAMMER)
                 _state = PlayerState.PUSHBACK_NO_HAMMER;
         }
 
-        HandlePlayerCollisions();
-        HandleTileCollisions();
-
         // if collision prevented us from moving, reset velocity
-        if (currPos.X == Position.X)
+        if (prevPos.X == Position.X)
             _velocity.X = 0;
-        if (currPos.Y == Position.Y)
+        if (prevPos.Y == Position.Y)
             _velocity.Y = 0;
-        if (currPos.Z == Position.Z)
+        if (prevPos.Z == Position.Z)
             _velocity.Z = 0;
 
         if (_velocity.Y != 0)
@@ -290,34 +287,11 @@ public class Player : GameObject<PlayerState>
         Vector3 velocity = currentVelocity + direction * acceleration * elapsed;
 
         // always apply gravity forces, and resolve collisions with tiles later
-        velocity.Y = MathHelper.Clamp(currentVelocity.Y - GravityAcceleration * elapsed, -MaxFallSpeed, MaxFallSpeed);
+        velocity.Y = MathHelper.Clamp(currentVelocity.Y - GravityAcceleration * elapsed, -MaxFallVelocity, MaxFallVelocity);
 
         velocity *= dragFactor;
 
         return velocity;
-    }
-
-    private void HandleTileCollisions()
-    {
-        BoundingBox bounds = BoundingBox;
-        int x_low = (int)Math.Floor((float)bounds.Min.X / Tile.Width);
-        int x_high = (int)Math.Ceiling(((float)bounds.Max.X / Tile.Width)) - 1;
-        int z_low = (int)Math.Floor(((float)bounds.Min.Z / Tile.Depth));
-        int z_high = (int)Math.Ceiling((float)bounds.Max.Z / Tile.Depth) - 1;
-
-        // TODO (fbuetler) iterate over y as well to respect walls (only positive)
-        for (int z = z_low; z <= z_high; z++)
-        {
-            for (int x = x_low; x <= x_high; x++)
-            {
-                // determine collision depth (with direction) and magnitude
-                BoundingBox? neighbour = GameMain.Map.TryGetTileBounds(x, 0, z);
-                if (neighbour != null)
-                {
-                    ResolveCollision(BoundingBox, (BoundingBox)neighbour);
-                }
-            }
-        }
     }
 
     private void HandlePlayerCollisions()
@@ -335,10 +309,7 @@ public class Player : GameObject<PlayerState>
             // detect collision
             if (BoundingBox.Intersects(hammer.BoundingBox))
             {
-                hammer.Hit();
-                _hammerHitSound.Play();
-                GamePad.SetVibration(_playerId, 0.2f, 0.2f, 0.2f, 0.2f);
-
+                OnHit(hammer);
                 // Pushback distance could be modifiable based on charge
                 return new Pushback(hammer.Direction, PushbackDistance);
             }
@@ -346,9 +317,16 @@ public class Player : GameObject<PlayerState>
         return null;
     }
 
+    private void OnHit(Hammer hammer)
+    {
+        hammer.Hit();
+        _hammerHitSound.Play();
+        GamePad.SetVibration(_playerId, 0.2f, 0.2f, 0.2f, 0.2f);
+    }
+
     public void OnHammerReturn()
     {
-        if (_state == PlayerState.ALIVE_NO_HAMMER)
+        if (State == PlayerState.ALIVE_NO_HAMMER)
         {
             _state = PlayerState.ALIVE;
         }
@@ -357,7 +335,7 @@ public class Player : GameObject<PlayerState>
 
     public void OnFalling()
     {
-        _killedSound.Play();
+        _fallingSound.Play();
         GamePad.SetVibration(_playerId, 0.2f, 0.2f, 0.2f, 0.2f);
     }
 

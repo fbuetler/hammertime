@@ -32,13 +32,13 @@ public class Tile : GameObject<TileState>
     public const float Height = 1f;
     public const float Depth = 1f;
 
-    public Tile(Game game, Vector3 position, Boolean isBroken) : base(game, position)
+    public Tile(Game game, Vector3 position) : base(game, position)
     {
         // make update and draw called by monogame
         Enabled = true;
-        Visible = !isBroken;
+        Visible = true;
 
-        _state = isBroken ? TileState.HP0 : TileState.HP100;
+        _state = TileState.HP100;
 
         _objectModelPaths = new Dictionary<TileState, string>();
         _objectModelPaths[TileState.HP100] = "Tile/tileCube4";
@@ -77,8 +77,7 @@ public class Tile : GameObject<TileState>
             // wall collisions
             if (h.BoundingBox.Intersects(BoundingBox) && h.State != HammerState.IS_HELD)
             {
-                // TODO (fbuetler) maybe decrease health instead of directly destroying it
-                _state = TileState.HP0;
+                _state = NextState(_state);
             }
         }
 
@@ -116,7 +115,6 @@ public class Tile : GameObject<TileState>
 
     public void OnBreak()
     {
-        // TODO (fbuetler) make invisible i.e. change/remove texture
         this.Visible = false;
         this.Enabled = false;
     }
