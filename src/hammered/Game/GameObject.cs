@@ -21,7 +21,9 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
     public Vector3 Direction { get => _dir; set => _dir = value; }
     private Vector3 _dir = Vector3.Zero;
 
-    public Vector3 Center { get => Position + Size / 2; }
+    public Vector3 Center { get => _center; set => _center = RoundVector(value, 2); }
+    private Vector3 _center;
+
 
     // rotation center isn't necessarily equal to center for all models
     public virtual Vector3 RotCenter { get => Center; }
@@ -276,4 +278,12 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
         return new Vector3(depthX, depthY, depthZ);
     }
 
+        private Vector3 RoundVector(Vector3 vec, int numDigits)
+    {
+        return new Vector3(
+            (float)Math.Round(vec.X, numDigits),
+            (float)Math.Round(vec.Y, numDigits),
+            (float)Math.Round(vec.Z, numDigits)
+        );
+    }
 }
