@@ -26,6 +26,12 @@ public class GameMain : Game
     public DebugDraw DebugDraw { get => _debugDraw; }
     private DebugDraw _debugDraw;
 
+    /// <summary>
+    /// We persist loaded models at the top level to ensure we only load them once #flyweight
+    /// </summary>
+    public Dictionary<string, ScaledModel> Models { get => _models; }
+    private Dictionary<string, ScaledModel> _models;
+
     private Map _map;
     public Map Map { get => _map; }
 
@@ -56,6 +62,7 @@ public class GameMain : Game
     public GameMain()
     {
         _graphics = new GraphicsDeviceManager(this);
+        _models = new Dictionary<string, ScaledModel>();
         Content.RootDirectory = "Content";
     }
 
@@ -171,6 +178,7 @@ public class GameMain : Game
         {
             // just reload all components
             Components.Clear();
+            Models.Clear();
             Map.Dispose();
         }
 

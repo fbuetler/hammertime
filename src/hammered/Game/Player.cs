@@ -45,8 +45,10 @@ public class Player : GameObject<PlayerState>
     private Vector3 _velocity;
 
     // TODO (fbuetler) if a player is smaller than a tile it is immediately falling upon start
-    public override Vector3 Size { get => _sizeVec; set => _sizeVec = value;}
-    private Vector3 _sizeVec = new Vector3(1f, 1f, 1f);
+    public override Vector3 MaxSize { get => _maxSize;  set => _maxSize = value;}
+    private static Vector3 _maxSize = new Vector3(1f, 1f, 1f);
+    //public override Vector3 Size { get => _sizeVec; set => _sizeVec = value;}
+    //private Vector3 _sizeVec = new Vector3(1f, 1f, 1f);
 
     private PlayerState _state;
     public override PlayerState State => _state;
@@ -90,7 +92,7 @@ public class Player : GameObject<PlayerState>
     private int ChargeCounter = 0;
     private int GameStateCounter = 0;
 
-    public Player(Game game, Vector3 position, int playerId) : base(game, position)
+    public Player(Game game, Vector3 position, int playerId) : base(game, position + _maxSize / 2)
     {
         // make update and draw called by monogame
         Enabled = true;
@@ -101,15 +103,14 @@ public class Player : GameObject<PlayerState>
         _state = PlayerState.ALIVE;
 
         _objectModelPaths = new Dictionary<PlayerState, string>();
-        _objectModelPaths[PlayerState.ALIVE] = "Player/playerCube";
-        _objectModelPaths[PlayerState.ALIVE_NO_HAMMER] = "Player/playerCube";
-        _objectModelPaths[PlayerState.PUSHBACK] = "Player/playerCube";
-        _objectModelPaths[PlayerState.PUSHBACK_NO_HAMMER] = "Player/playerCube";
-        _objectModelPaths[PlayerState.THROWING] = "Player/playerCube";
-        _objectModelPaths[PlayerState.CHARGING] = "Player/playerCube";
-        _objectModelPaths[PlayerState.FALLING] = "Player/playerCube";
-        _objectModelPaths[PlayerState.FALLING_NO_HAMMER] = "Player/playerCube";
-        _objectModelPaths[PlayerState.DEAD] = "Player/playerCube";
+        _objectModelPaths[PlayerState.ALIVE] = "Player/playerNoHammer";
+        _objectModelPaths[PlayerState.ALIVE_NO_HAMMER] = "Player/playerNoHammer";
+        _objectModelPaths[PlayerState.PUSHBACK] = "Player/playerNoHammer";
+        _objectModelPaths[PlayerState.PUSHBACK_NO_HAMMER] = "Player/playerNoHammer";
+        _objectModelPaths[PlayerState.THROWING] = "Player/playerNoHammer";
+        _objectModelPaths[PlayerState.FALLING] = "Player/playerNoHammer";
+        _objectModelPaths[PlayerState.FALLING_NO_HAMMER] = "Player/playerNoHammer";
+        _objectModelPaths[PlayerState.DEAD] = "Player/playerNoHammer";
         // TODO: (lmeinen) Add models for other states
 
         _velocity = Vector3.Zero;
@@ -128,7 +129,7 @@ public class Player : GameObject<PlayerState>
         KeyboardState keyboardState = Keyboard.GetState();
         GamePadState gamePadState = GamePad.GetState(_playerId);
         Vector3 moveInput = ReadMovementInput(keyboardState, gamePadState);
-        Vector3 prevPos = Position;
+        Vector3 prevCenter = Center;
 
         GameStateCounter++;
         switch (State)
@@ -171,8 +172,8 @@ public class Player : GameObject<PlayerState>
                 _velocity = ComputeVelocity(_velocity, _pushback.Direction, PushbackVelocity, GroundDragFactor, gameTime);
                 _pushback.Distance -= Move(gameTime, _velocity);
                 break;
-            case PlayerState.FALLING when Position.Y < KillPlaneLevel:
-            case PlayerState.FALLING_NO_HAMMER when Position.Y < KillPlaneLevel:
+            case PlayerState.FALLING when Center.Y < KillPlaneLevel:
+            case PlayerState.FALLING_NO_HAMMER when Center.Y < KillPlaneLevel:
                 _state = PlayerState.DEAD;
                 OnKilled();
                 break;
@@ -204,14 +205,14 @@ public class Player : GameObject<PlayerState>
         }
 
         // if collision prevented us from moving, reset velocity
-        if (prevPos.X == Position.X)
+        if (prevCenter.X == Center.X)
             _velocity.X = 0;
-        if (prevPos.Y == Position.Y)
+        if (prevCenter.Y == Center.Y)
             _velocity.Y = 0;
-        if (prevPos.Z == Position.Z)
+        if (prevCenter.Z == Center.Z)
             _velocity.Z = 0;
 
-        if (_velocity.Y != 0)
+        if (IsFalling())
         {
             // Vertical velocity means we're falling :(
             if (_state == PlayerState.ALIVE || _state == PlayerState.PUSHBACK)
@@ -315,6 +316,35 @@ public class Player : GameObject<PlayerState>
             }
         }
         return null;
+    }
+
+    /// <summary>
+    /// Determines whether this player is falling by checking if there's a tile anywhere below it
+    /// </summary>
+    /// <returns>boolean value indicating whether this player is falling</returns>
+    private bool IsFalling()
+    {
+        int x_low = (int)Math.Floor((float)BoundingBox.Min.X / Tile.Width);
+        int x_high = (int)Math.Ceiling(((float)BoundingBox.Max.X / Tile.Width)) - 1;
+        int z_low = (int)Math.Floor(((float)BoundingBox.Min.Z / Tile.Depth));
+        int z_high = (int)Math.Ceiling((float)BoundingBox.Max.Z / Tile.Depth) - 1;
+
+        for (int z = z_low; z <= z_high; z++)
+        {
+            for (int y = 0; y <= GameMain.Map.Height; y++)
+            {
+                for (int x = x_low; x <= x_high; x++)
+                {
+                    // check if there's a tile below us
+                    BoundingBox? neighbour = GameMain.Map.TryGetTileBounds(x, y, z);
+                    if (neighbour != null && ((BoundingBox)neighbour).Max.Y < BoundingBox.Min.Y)
+                    {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
     }
 
     private void OnHit(Hammer hammer)

@@ -25,14 +25,14 @@ public class Tile : GameObject<TileState>
     public override Dictionary<TileState, string> ObjectModelPaths { get => _objectModelPaths; }
     private Dictionary<TileState, string> _objectModelPaths;
 
-    public override Vector3 Size { get => _sizeVec; set => _sizeVec = value;}
-    private Vector3 _sizeVec = new Vector3(Width, Height, Depth);
+    public override Vector3 MaxSize { get => _maxSize; set => _maxSize = value;}
+    private static Vector3 _maxSize = new Vector3(1f, 1f, 1f);
 
     public const float Width = 1f;
     public const float Height = 1f;
     public const float Depth = 1f;
 
-    public Tile(Game game, Vector3 position) : base(game, position)
+    public Tile(Game game, Vector3 position) : base(game, position + _maxSize / 2)
     {
         // make update and draw called by monogame
         Enabled = true;
@@ -56,7 +56,10 @@ public class Tile : GameObject<TileState>
         foreach (Player p in GameMain.Map.Players.Values)
         {
             // is player standing on tile
-            if (BoundingBox.Contains(p.Center - Vector3.UnitY).Equals(ContainmentType.Contains) && p.State != PlayerState.FALLING)
+            if (BoundingBox.Min.X <= p.Center.X && p.Center.X <= BoundingBox.Max.X &&
+                BoundingBox.Min.Z <= p.Center.Z && p.Center.Z <= BoundingBox.Max.Z &&
+                p.State != PlayerState.FALLING &&
+                p.State != PlayerState.FALLING_NO_HAMMER)
             {
                 if (!_visitors.Contains(p.PlayerId))
                 {
@@ -75,7 +78,9 @@ public class Tile : GameObject<TileState>
         foreach (Hammer h in GameMain.Map.Hammers.Values)
         {
             // wall collisions
-            if (h.BoundingBox.Intersects(BoundingBox) && h.State != HammerState.IS_HELD)
+            if (h.BoundingBox.Intersects(BoundingBox) &&
+                IntersectionDepth(h.BoundingBox, BoundingBox) != Vector3.Zero &&
+                (h.State == HammerState.IS_FLYING || h.State == HammerState.IS_RETURNING))
             {
                 _state = NextState(_state);
             }

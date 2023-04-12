@@ -28,8 +28,8 @@ public class Hammer : GameObject<HammerState>
     // charging distance
     private float _throwDistance;
 
-    public override Vector3 Size { get => _sizeVec; set => _sizeVec = value;}
-    private Vector3 _sizeVec = new Vector3(0.5f, 0.5f, 0.5f);
+    public override Vector3 MaxSize { get => _maxSize; set => _maxSize = value;}
+    private static Vector3 _maxSize = new Vector3(0.5f, 0.5f, 0.5f);
 
     private HammerState _state;
     public override HammerState State { get => _state; }
@@ -49,7 +49,7 @@ public class Hammer : GameObject<HammerState>
     // input configuration
     private const float AimStickScale = 1.0f;
 
-    public Hammer(Game game, Vector3 position, int ownerId) : base(game, position)
+    public Hammer(Game game, Vector3 position, int ownerId) : base(game, position + _maxSize / 2)
     {
         // make update and draw called by monogame
         Enabled = true;
@@ -60,11 +60,9 @@ public class Hammer : GameObject<HammerState>
         _state = HammerState.IS_HELD;
 
         _objectModelPaths = new Dictionary<HammerState, string>();
-        _objectModelPaths[HammerState.IS_FLYING] = "Hammer/hammerCube";
-        _objectModelPaths[HammerState.IS_RETURNING] = "Hammer/hammerCube";
-        _objectModelPaths[HammerState.IS_HELD] = "Hammer/hammerCube";
-
-        //_speed = ThrowSpeed;
+        _objectModelPaths[HammerState.IS_FLYING] = "Hammer/hammer";
+        _objectModelPaths[HammerState.IS_RETURNING] = "Hammer/hammer";
+        _objectModelPaths[HammerState.IS_HELD] = "Hammer/hammer";
     }
 
     public override void Update(GameTime gameTime)
@@ -77,10 +75,6 @@ public class Hammer : GameObject<HammerState>
                 Direction = aimInput;
                 break;
             case HammerState.IS_FLYING:
-                _velocity = ComputeVelocity(gameTime, _velocity, ThrowAcceleration);
-                Move(gameTime, Direction * _velocity);
-                
-                //Move(gameTime, Direction * ThrowSpeed);
 
                 bool collided = HandleTileCollisions();
                 if (collided)
@@ -93,6 +87,10 @@ public class Hammer : GameObject<HammerState>
                     // if max distance is reached, make it return
                     Return();
                 }
+
+                _velocity = ComputeVelocity(gameTime, _velocity, ThrowAcceleration);
+                Move(gameTime, Direction * _velocity);
+                //Move(gameTime, Direction * ThrowSpeed);
                 break;
             case HammerState.IS_RETURNING when (Center - GameMain.Map.Players[_ownerId].Center).LengthSquared() < PickupDistance * PickupDistance || GameMain.Map.Players[_ownerId].State == PlayerState.DEAD:
                 // if hammer is close to the player or the player is dead, it is picked up
@@ -104,7 +102,6 @@ public class Hammer : GameObject<HammerState>
                 FollowOwner();
 
                 _velocity = ComputeVelocity(gameTime, _velocity, ThrowAcceleration);
-                Move(gameTime, Direction * _velocity);
                 Move(gameTime, Direction * _velocity);
                 break;
         }
@@ -184,7 +181,7 @@ public class Hammer : GameObject<HammerState>
 
         _origin = GameMain.Map.Players[_ownerId].Center;
         _throwDistance = throwDistance;
-        Position = GameMain.Map.Players[_ownerId].Center - Size / 2;
+        Center = GameMain.Map.Players[_ownerId].Center;
     }
 
     private void FollowOwner()
@@ -209,6 +206,10 @@ public class Hammer : GameObject<HammerState>
 
     public void Return()
     {
+        if (_state == HammerState.IS_RETURNING)
+        {
+            return;
+        }
         _state = HammerState.IS_RETURNING;
         _velocity = 0;
     }
