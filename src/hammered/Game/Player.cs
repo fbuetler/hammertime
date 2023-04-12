@@ -88,7 +88,7 @@ public class Player : GameObject<PlayerState>
     private const float MoveStickScale = 1.0f;
     //private const Buttons ThrowButton = Buttons.RightShoulder;
     private const Buttons ThrowButton = Buttons.RightStick;
-    private GamePadState PreviousPadState;
+    //private GamePadState PreviousPadState;
     private int ChargeCounter = 0;
     private int GameStateCounter = 0;
 
