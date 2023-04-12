@@ -21,13 +21,13 @@ public class Arrow : GameObject<ArrowState>
     //public int PlayerId { get => _playerId; }
     
     public Vector3 _chargeArrow;
-    public override Vector3 Size { get => _chargeArrow; set => _chargeArrow = value;}
+    public override Vector3 MaxSize { get => _chargeArrow; set => _chargeArrow = value;}
 
     private ArrowState _state;
     public override ArrowState State { get => _state; }
 
     // TODO: (lmeinen) why isn't this working?
-    public override Vector3 RotCenter { get => Position; }
+    public override Vector3 RotCenter { get => Center; }
 
     private Dictionary<ArrowState, string> _objectModelPaths;
     public override Dictionary<ArrowState, string> ObjectModelPaths { get => _objectModelPaths; }
@@ -62,7 +62,7 @@ public class Arrow : GameObject<ArrowState>
                 throwDistance = GameMain.Map.Players[OwnerId].Charge();
                 _chargeArrow = new Vector3(throwDistance/(float) 2, 0.1f, 0.5f);
                 pos.Y = 1f; // arrow should be on the floor
-                Position = pos;
+                Center = pos;
                 Visible = true;
                 break;
             case ArrowState.IS_CHARGING when GameMain.Map.Players[OwnerId].State != PlayerState.CHARGING:
@@ -75,7 +75,7 @@ public class Arrow : GameObject<ArrowState>
                 _chargeArrow = new Vector3(throwDistance/(float) 2, 0.1f, 0.5f);
                 pos = GameMain.Map.Players[OwnerId].Center;
                 pos.Y = 1f; // arrow should be on the floor
-                Position = pos;
+                Center = pos;
                 break;
             default:
                 // do nothing
