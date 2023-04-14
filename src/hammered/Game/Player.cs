@@ -11,11 +11,8 @@ public enum PlayerState
 {
     DEAD,
     FALLING,
-    FALLING_NO_HAMMER,
     ALIVE,
-    ALIVE_NO_HAMMER,
     PUSHBACK,
-    PUSHBACK_NO_HAMMER,
     THROWING,
 }
 
@@ -87,12 +84,9 @@ public class Player : GameObject<PlayerState>
 
         _objectModelPaths = new Dictionary<PlayerState, string>();
         _objectModelPaths[PlayerState.ALIVE] = "Player/playerNoHammer";
-        _objectModelPaths[PlayerState.ALIVE_NO_HAMMER] = "Player/playerNoHammer";
         _objectModelPaths[PlayerState.PUSHBACK] = "Player/playerNoHammer";
-        _objectModelPaths[PlayerState.PUSHBACK_NO_HAMMER] = "Player/playerNoHammer";
         _objectModelPaths[PlayerState.THROWING] = "Player/playerNoHammer";
         _objectModelPaths[PlayerState.FALLING] = "Player/playerNoHammer";
-        _objectModelPaths[PlayerState.FALLING_NO_HAMMER] = "Player/playerNoHammer";
         _objectModelPaths[PlayerState.DEAD] = "Player/playerNoHammer";
         // TODO: (lmeinen) Add models for other states
 
@@ -115,13 +109,12 @@ public class Player : GameObject<PlayerState>
         {
             case PlayerState.THROWING:
                 GameMain.Match.Map.Hammers[_playerId].Throw();
-                _state = PlayerState.ALIVE_NO_HAMMER;
+                _state = PlayerState.ALIVE;
                 break;
             case PlayerState.ALIVE when Controls.Throw(_playerId).Pressed():
                 _state = PlayerState.THROWING;
                 break;
             case PlayerState.ALIVE when moveInput != Vector3.Zero:
-            case PlayerState.ALIVE_NO_HAMMER when moveInput != Vector3.Zero:
                 Direction = moveInput;
                 _velocity = ComputeVelocity(_velocity, Direction, MoveAcceleration, GroundDragFactor, gameTime);
                 Move(gameTime, _velocity);
@@ -130,22 +123,15 @@ public class Player : GameObject<PlayerState>
                 _pushback = null;
                 _state = PlayerState.ALIVE;
                 break;
-            case PlayerState.PUSHBACK_NO_HAMMER when _pushback.Distance <= 0:
-                _pushback = null;
-                _state = PlayerState.ALIVE_NO_HAMMER;
-                break;
             case PlayerState.PUSHBACK:
-            case PlayerState.PUSHBACK_NO_HAMMER:
                 _velocity = ComputeVelocity(_velocity, _pushback.Direction, PushbackVelocity, GroundDragFactor, gameTime);
                 _pushback.Distance -= Move(gameTime, _velocity);
                 break;
             case PlayerState.FALLING when Center.Y < KillPlaneLevel:
-            case PlayerState.FALLING_NO_HAMMER when Center.Y < KillPlaneLevel:
                 _state = PlayerState.DEAD;
                 OnKilled();
                 break;
             case PlayerState.FALLING:
-            case PlayerState.FALLING_NO_HAMMER:
                 // TODO: (lmeinen) there's currently a bug where a player transitions into a FALLING state when they manage to cross a gap
                 if (moveInput != Vector3.Zero)
                     Direction = moveInput;
@@ -166,8 +152,6 @@ public class Player : GameObject<PlayerState>
             _pushback = (Pushback)pushback;
             if (State == PlayerState.FALLING || State == PlayerState.ALIVE)
                 _state = PlayerState.PUSHBACK;
-            else if (State == PlayerState.FALLING_NO_HAMMER || State == PlayerState.ALIVE_NO_HAMMER)
-                _state = PlayerState.PUSHBACK_NO_HAMMER;
         }
 
         // if collision prevented us from moving, reset velocity
@@ -184,11 +168,6 @@ public class Player : GameObject<PlayerState>
             if (_state == PlayerState.ALIVE || _state == PlayerState.PUSHBACK)
             {
                 _state = PlayerState.FALLING;
-                OnFalling();
-            }
-            else if (State == PlayerState.ALIVE_NO_HAMMER || State == PlayerState.PUSHBACK_NO_HAMMER)
-            {
-                _state = PlayerState.FALLING_NO_HAMMER;
                 OnFalling();
             }
         }
@@ -312,10 +291,6 @@ public class Player : GameObject<PlayerState>
 
     public void OnHammerReturn()
     {
-        if (State == PlayerState.ALIVE_NO_HAMMER)
-        {
-            _state = PlayerState.ALIVE;
-        }
         // TODO (fbuetler) update texture
     }
 
