@@ -1,8 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.IO;
 using Microsoft.Xna.Framework;
-using System;
 
 namespace hammered;
 
@@ -32,13 +30,19 @@ public class Match : DrawableGameComponent
     public int MapIndex { get => _mapIndex; }
     private int _mapIndex = 0;
 
-    private ScoreState _scoreState;
     public ScoreState ScoreState { get => _scoreState; }
-    private List<int> _playersAlive;
+    private ScoreState _scoreState;
+
+    public int[] Scores { get => _scores; }
+    private int[] _scores;
+
     public List<int> PlayersAlive { get => _playersAlive; }
+    private List<int> _playersAlive;
 
     public int? WinnerId { get => _winnerId; }
     private int? _winnerId = null;
+
+    private float _roundFinishedAt = 0;
 
     public int NumberOfPlayers { get => _numberOfPlayers; }
     private int _numberOfPlayers;
@@ -50,6 +54,8 @@ public class Match : DrawableGameComponent
     // or handle exceptions, both of which can add unnecessary time to level loading.
     private const int numberOfMaps = 4;
 
+    private const int timeoutBetweenMaps = 3;
+
     public Match(Game game, int NumberOfPlayers) : base(game)
     {
         _game = (GameMain)game;
@@ -58,11 +64,12 @@ public class Match : DrawableGameComponent
 
         _models = new Dictionary<string, ScaledModel>();
 
+        _scores = new int[_numberOfPlayers];
+
         // make update and draw called by monogame
         Enabled = true;
         UpdateOrder = GameMain.MATCH_UPDATE_ORDER;
-        Visible = true;
-        DrawOrder = GameMain.MATCH_DRAW_ORDER;
+        Visible = false;
     }
 
     protected override void LoadContent()
@@ -73,7 +80,7 @@ public class Match : DrawableGameComponent
     public override void Update(GameTime gameTime)
     {
         HandleInput();
-        UpdateGameState();
+        UpdateGameState(gameTime);
     }
 
     private void HandleInput()
@@ -85,8 +92,7 @@ public class Match : DrawableGameComponent
 
         if (Controls.NextMap.Pressed())
         {
-            _mapIndex = (_mapIndex + 1) % numberOfMaps;
-            LoadMap();
+            LoadNextMap();
         }
 
         if (Controls.Pause.Pressed())
@@ -107,7 +113,7 @@ public class Match : DrawableGameComponent
         }
     }
 
-    private void UpdateGameState()
+    private void UpdateGameState(GameTime gameTime)
     {
         foreach (Player p in Map.Players.Values)
         {
@@ -120,16 +126,35 @@ public class Match : DrawableGameComponent
 
         if (_scoreState == ScoreState.None)
         {
+            if (_playersAlive.Count > 1)
+            {
+                return;
+            }
+
+            _roundFinishedAt = (float)gameTime.TotalGameTime.TotalSeconds;
             if (_playersAlive.Count == 1)
             {
                 _scoreState = ScoreState.Winner;
                 _winnerId = _playersAlive[0];
+                _scores[(int)_winnerId]++;
             }
             else if (_playersAlive.Count == 0)
             {
                 _scoreState = ScoreState.Draw;
             }
         }
+
+
+        if (gameTime.TotalGameTime.TotalSeconds - _roundFinishedAt > timeoutBetweenMaps)
+        {
+            LoadNextMap();
+        }
+    }
+
+    private void LoadNextMap()
+    {
+        _mapIndex = (_mapIndex + 1) % numberOfMaps;
+        LoadMap();
     }
 
     private void LoadMap()
@@ -154,9 +179,6 @@ public class Match : DrawableGameComponent
         GameMain.Components.Add(_map);
 
         _playersAlive = Map.Players.Keys.ToList();
-    }
-
-    public override void Draw(GameTime gameTime)
-    {
+        _roundFinishedAt = 0;
     }
 }
