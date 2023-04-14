@@ -107,7 +107,6 @@ public class Map : DrawableGameComponent
 
     private Tile LoadTile(char tileType, int x, int y, int z)
     {
-        // TODO (fbuetler) introduce different tile types
         Tile tile;
         switch (tileType)
         {

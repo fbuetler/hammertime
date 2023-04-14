@@ -50,8 +50,6 @@ public class Menu : DrawableGameComponent
 
     private static Color TEXT_COLOR = Color.Black;
 
-    // TODO (fbuetler) text grid
-
     public GameMain GameMain { get => _game; }
     private GameMain _game;
 
