@@ -60,8 +60,7 @@ public class Tile : GameObject<TileState>
             // is player standing on tile
             if (BoundingBox.Min.X <= p.Center.X && p.Center.X <= BoundingBox.Max.X &&
                 BoundingBox.Min.Z <= p.Center.Z && p.Center.Z <= BoundingBox.Max.Z &&
-                p.State != PlayerState.FALLING &&
-                p.State != PlayerState.FALLING_NO_HAMMER)
+                p.State != PlayerState.FALLING)
             {
                 if (!_visitors.Contains(p.PlayerId))
                 {
