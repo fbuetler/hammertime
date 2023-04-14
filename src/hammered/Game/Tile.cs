@@ -92,8 +92,6 @@ public class Tile : GameObject<TileState>
             // only called once
             OnBreak();
         }
-
-        // TODO (fbuetler) update breaking animation based on health points
     }
 
     public void OnEnter(Player player)

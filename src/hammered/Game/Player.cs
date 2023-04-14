@@ -90,7 +90,6 @@ public class Player : GameObject<PlayerState>
         _objectModelPaths[PlayerState.THROWING] = "Player/playerNoHammer";
         _objectModelPaths[PlayerState.FALLING] = "Player/playerNoHammer";
         _objectModelPaths[PlayerState.DEAD] = "Player/playerNoHammer";
-        // TODO: (lmeinen) Add models for other states
 
         _velocity = Vector3.Zero;
     }
@@ -104,7 +103,6 @@ public class Player : GameObject<PlayerState>
 
     public override void Update(GameTime gameTime)
     {
-        // TODO: (lmeinen) Both Hammer and Player now have Hammer.is_held type states - only one needs to store that info (buzzword: concurrent state machines)
         Vector3 moveInput = ReadMovementInput();
         Vector3 prevCenter = Center;
 
@@ -294,7 +292,7 @@ public class Player : GameObject<PlayerState>
 
     public void OnHammerReturn()
     {
-        // TODO (fbuetler) update texture
+
     }
 
     public void OnFalling()

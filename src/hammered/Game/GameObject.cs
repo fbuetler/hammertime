@@ -111,7 +111,6 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
         Matrix view = GameMain.Match.Map.Camera.View;
         Matrix projection = GameMain.Match.Map.Camera.Projection;
 
-        // TODO (fbuetler) fix angle
         Matrix rotate = ComputeRotation();
 
         Matrix translateIntoPosition = Matrix.CreateTranslation(Center);

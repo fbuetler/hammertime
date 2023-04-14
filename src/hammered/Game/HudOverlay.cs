@@ -37,7 +37,6 @@ public class HudOverlay : DrawableGameComponent
         // therefore we have to reenable the depth buffer here
         GameMain.SpriteBatch.Begin(depthStencilState: DepthStencilState.Default);
 
-        // TODO (fbuetler) create start screen
         DrawHud();
 
         GameMain.SpriteBatch.End();
