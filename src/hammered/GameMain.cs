@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Apos.Input;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -19,8 +19,7 @@ public class GameMain : Game
     // draw order from high to low (default is 0)
     public const int MENU_DRAW_ORDER = 0; // clears screen
     public const int MAP_DRAW_ORDER = 0; // clears screen
-    public const int MATCH_DRAW_ORDER = 1;
-    public const int HUD_DRAW_ORDER = 1;
+    public const int OVERLAY_DRAW_ORDER = 1;
     public const int HAMMER_DRAW_ORDER = 2;
     public const int PLAYER_DRAW_ORDER = 3;
     public const int TILE_DRAW_ORDER = 4;
