@@ -97,7 +97,6 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
                 float actualScalingFactor = Math.Min(xScale, Math.Min(yScale, zScale));
                 _size = (size.Max - size.Min) * actualScalingFactor;
                 Matrix modelScale = Matrix.CreateScale(actualScalingFactor);
-
                 GameMain.Models.Add(state.ToString(), new ScaledModel(model, modelScale, Size));
             }
             else

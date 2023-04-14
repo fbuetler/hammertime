@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace hammered;
 
@@ -19,9 +20,9 @@ public class Arrow : GameObject<ArrowState>
 
     //private int _playerId;
     //public int PlayerId { get => _playerId; }
-    
-    public Vector3 _chargeArrow;
-    public override Vector3 MaxSize { get => _chargeArrow; set => _chargeArrow = value;}
+
+    public override Vector3 MaxSize { get => _maxSize; set => _maxSize= value;}
+    public Vector3 _maxSize = new Vector3(5f, 0.1f, 0.5f);
 
     private ArrowState _state;
     public override ArrowState State { get => _state; }
@@ -41,7 +42,6 @@ public class Arrow : GameObject<ArrowState>
         _ownerId = ownerId;
 
         _state = ArrowState.IS_NOT_CHARGING;
-        _chargeArrow = new Vector3(5f, 0.1f, 0.5f);
 
         _objectModelPaths = new Dictionary<ArrowState, string>();
         _objectModelPaths[ArrowState.IS_CHARGING] = "Hammer/hammerCube";
@@ -60,7 +60,7 @@ public class Arrow : GameObject<ArrowState>
                 Direction = GameMain.Map.Hammers[OwnerId].Direction;
                 pos = GameMain.Map.Players[OwnerId].Center;
                 throwDistance = GameMain.Map.Players[OwnerId].Charge();
-                _chargeArrow = new Vector3(throwDistance/(float) 2, 0.1f, 0.5f);
+                _maxSize = new Vector3(throwDistance/(float) 2, 0.1f, 0.5f);
                 pos.Y = 1f; // arrow should be on the floor
                 Center = pos;
                 Visible = true;
@@ -72,7 +72,7 @@ public class Arrow : GameObject<ArrowState>
             case ArrowState.IS_CHARGING:
                 Direction = GameMain.Map.Hammers[OwnerId].Direction;
                 throwDistance = GameMain.Map.Players[OwnerId].Charge();
-                _chargeArrow = new Vector3(throwDistance/(float) 2, 0.1f, 0.5f);
+                _maxSize = new Vector3(throwDistance/(float) 2, 0.1f, 0.5f);
                 pos = GameMain.Map.Players[OwnerId].Center;
                 pos.Y = 1f; // arrow should be on the floor
                 Center = pos;
@@ -80,6 +80,49 @@ public class Arrow : GameObject<ArrowState>
             default:
                 // do nothing
                 break;
+        }
+    }
+    
+    public override void Draw(GameTime gameTime)
+    {
+        Matrix view = GameMain.Map.Camera.View;
+        Matrix projection = GameMain.Map.Camera.Projection;
+
+        Matrix rotate = ComputeRotation();
+
+        Matrix translateIntoPosition = Matrix.CreateTranslation(RotCenter);
+
+        Matrix world =  Matrix.CreateScale(5f) * GameMain.Models[State.ToString()].modelScale * rotate * translateIntoPosition;
+
+        DrawModel(GameMain.Models[State.ToString()].model, world, view, projection);
+
+#if DEBUG
+        GameMain.Map.DebugDraw.Begin(Matrix.Identity, view, projection);
+        GameMain.Map.DebugDraw.DrawWireBox(BoundingBox, GetDebugColor());
+        GameMain.Map.DebugDraw.End();
+#endif
+    }
+
+    private Matrix ComputeRotation()
+    {
+        float angle = MathF.Atan2(-Direction.Z, Direction.X);
+        Matrix rotate = Matrix.CreateFromAxisAngle(Vector3.UnitY, angle);
+        return rotate;
+    }
+
+    private void DrawModel(Model model, Matrix world, Matrix view, Matrix projection)
+    {
+        foreach (ModelMesh mesh in model.Meshes)
+        {
+            foreach (BasicEffect effect in mesh.Effects)
+            {
+                effect.EnableDefaultLighting();
+                effect.World = world;
+                effect.View = view;
+                effect.Projection = projection;
+            }
+
+            mesh.Draw();
         }
     }
 
