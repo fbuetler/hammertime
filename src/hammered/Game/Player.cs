@@ -45,7 +45,7 @@ public class Player : GameObject<PlayerState>
     private Vector3 _velocity;
 
     // TODO (fbuetler) if a player is smaller than a tile it is immediately falling upon start
-    public override Vector3 MaxSize { get => _maxSize;  set => _maxSize = value;}
+    public override Vector3 MaxSize { get => _maxSize; set => _maxSize = value; }
     private static Vector3 _maxSize = new Vector3(1f, 1f, 1f);
     //public override Vector3 Size { get => _sizeVec; set => _sizeVec = value;}
     //private Vector3 _sizeVec = new Vector3(1f, 1f, 1f);
@@ -108,6 +108,7 @@ public class Player : GameObject<PlayerState>
         _objectModelPaths[PlayerState.PUSHBACK] = "Player/playerNoHammer";
         _objectModelPaths[PlayerState.PUSHBACK_NO_HAMMER] = "Player/playerNoHammer";
         _objectModelPaths[PlayerState.THROWING] = "Player/playerNoHammer";
+        _objectModelPaths[PlayerState.CHARGING] = "Player/playerNoHammer";
         _objectModelPaths[PlayerState.FALLING] = "Player/playerNoHammer";
         _objectModelPaths[PlayerState.FALLING_NO_HAMMER] = "Player/playerNoHammer";
         _objectModelPaths[PlayerState.DEAD] = "Player/playerNoHammer";
@@ -137,7 +138,7 @@ public class Player : GameObject<PlayerState>
             case PlayerState.ALIVE when IsTryingToThrow(keyboardState, gamePadState):
                 _chargeDuration = (float)gameTime.ElapsedGameTime.TotalMilliseconds;
                 _state = PlayerState.CHARGING;
-               
+
                 break;
             case PlayerState.ALIVE when moveInput != Vector3.Zero:
             case PlayerState.ALIVE_NO_HAMMER when moveInput != Vector3.Zero:
@@ -188,7 +189,7 @@ public class Player : GameObject<PlayerState>
             default:
                 // do nothing
                 break;
-           
+
         }
 
         HandlePlayerCollisions();
@@ -277,7 +278,7 @@ public class Player : GameObject<PlayerState>
 
     public float Charge()
     {
-       return _chargeDuration;
+        return _chargeDuration;
     }
 
     private bool IsTryingToThrow(KeyboardState keyboardState, GamePadState gamePadState) => keyboardState.IsKeyDown(Keys.Space) || gamePadState.IsButtonDown(ThrowButton);
