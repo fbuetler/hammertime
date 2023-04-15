@@ -258,18 +258,18 @@ public class Menu : DrawableGameComponent
             case MenuState.PLAYERS_2:
             case MenuState.PLAYERS_3:
             case MenuState.PLAYERS_4:
-                DrawString(_impactFont, "HOW MANY PLAYERS?", _playersMenu.anchor);
+                DrawString(GameMain.SpriteBatch, _impactFont, "HOW MANY PLAYERS?", _playersMenu.anchor);
                 DrawMenuGroup(GameMain.SpriteBatch, _playersMenu);
                 break;
             case MenuState.SETTINGS:
-                DrawString(_impactFont, "Settings", new Vector2(
+                DrawString(GameMain.SpriteBatch, _impactFont, "Settings", new Vector2(
                     GameMain.GetBackBufferWidth() * 0.5f,
                     GameMain.GetBackBufferHeight() * 0.5f
                 ));
                 break;
             case MenuState.QUIT_YES:
             case MenuState.QUIT_NO:
-                DrawString(_impactFont, "QUIT?", _quitMenu.anchor);
+                DrawString(GameMain.SpriteBatch, _impactFont, "QUIT?", _quitMenu.anchor);
                 DrawMenuGroup(GameMain.SpriteBatch, _quitMenu);
                 break;
             default:
@@ -287,7 +287,7 @@ public class Menu : DrawableGameComponent
                     GameMain.GetBackBufferWidth() / (float)texture.Width,
                     GameMain.GetBackBufferHeight() / (float)texture.Height
                 );
-        GameMain.SpriteBatch.Draw(texture, Vector2.Zero, null, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+        spriteBatch.Draw(texture, Vector2.Zero, null, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
     }
 
     private void DrawMenuGroup(SpriteBatch spriteBatch, MenuGroup group)
@@ -306,7 +306,7 @@ public class Menu : DrawableGameComponent
 
             Vector2 position = group.anchor - BUTTON_SIZE * 0.5f;
             position.Y += (BUTTON_SIZE.Y + MARGIN) * i;
-            GameMain.SpriteBatch.Draw(
+            spriteBatch.Draw(
                 _menuItems,
                 position: position,
                 sourceRectangle: area,
@@ -315,16 +315,17 @@ public class Menu : DrawableGameComponent
                 origin: Vector2.Zero,
                 scale: 1f,
                 effects: SpriteEffects.None,
-            0f);
+                layerDepth: 0f
+            );
         }
     }
 
-    private void DrawString(SpriteFont font, string text, Vector2 anchor)
+    private void DrawString(SpriteBatch spriteBatch, SpriteFont font, string text, Vector2 anchor)
     {
         Vector2 textSize = font.MeasureString(text);
         Vector2 position = anchor - textSize * 0.5f;
         position.Y = position.Y - BUTTON_SIZE.Y * 0.5f - MARGIN - textSize.Y * 0.5f;
 
-        GameMain.SpriteBatch.DrawString(font, text, position, TEXT_COLOR);
+        spriteBatch.DrawString(font, text, position, TEXT_COLOR);
     }
 }

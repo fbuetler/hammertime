@@ -50,12 +50,15 @@ public class Match : DrawableGameComponent
     public int NumberOfPlayers { get => _numberOfPlayers; }
     private int _numberOfPlayers;
 
-    private const int maxNumberOfPlayers = 4;
+    public const int MaxNumberOfPlayers = 4;
     // The number of levels in the Levels directory of our content. We assume that
     // levels in our content are 0-based and that all numbers under this constant
     // have a level file present. This allows us to not need to check for the file
     // or handle exceptions, both of which can add unnecessary time to level loading.
     private const int numberOfMaps = 4;
+
+    // TODO (fbuetler) handle reaching max score
+    public const int MaxPoints = 10;
 
     private const int timeoutBetweenMaps = 3;
 
@@ -174,6 +177,7 @@ public class Match : DrawableGameComponent
 
         // initialize game overlay
         GameMain.Components.Add(new HudOverlay(GameMain));
+        GameMain.Components.Add(new ScoreboardOverlay(GameMain));
 
         _scoreState = ScoreState.None;
 
