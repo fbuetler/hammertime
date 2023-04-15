@@ -72,6 +72,21 @@ public class HudOverlay : DrawableGameComponent
             );
         }
 
+        float screenHeight = GameMain.GetBackBufferHeight();
+        if (GameMain.Match.Paused)
+        {
+            string paused = "PAUSED";
+            Vector2 textSize = _font.MeasureString(paused);
+            DrawShadowedString(
+                _font, paused,
+                new Vector2(
+                    screenWidth / 2 - textSize.X / 2,
+                    screenHeight / 2 - textSize.Y / 2
+                ),
+                Color.White
+            );
+        }
+
         switch (GameMain.Match.ScoreState)
         {
             case ScoreState.None:
