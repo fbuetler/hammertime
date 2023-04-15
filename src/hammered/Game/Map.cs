@@ -35,6 +35,7 @@ public class Map : DrawableGameComponent
     public Dictionary<int, Hammer> Hammers { get => _hammers; }
     private Dictionary<int, Hammer> _hammers = new Dictionary<int, Hammer>();
 
+
     public Map(Game game, IServiceProvider serviceProvider, String mapPath) : base(game)
     {
         if (game == null)
@@ -176,11 +177,8 @@ public class Map : DrawableGameComponent
         // Unhandled exception. System.NullReferenceException: Object reference not set to an instance of an object.
         // are we loading not fast enough?
         try
-        {
-            Song storm = Content.Load<Song>("Audio/MusicMapSlow");
-            MediaPlayer.Play(storm);
-            MediaPlayer.IsRepeating = true;
-           
+        {   
+            
             
         }
         catch { }

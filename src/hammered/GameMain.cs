@@ -1,6 +1,7 @@
 ﻿using System;
 using Apos.Input;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 
 namespace hammered;
@@ -38,6 +39,10 @@ public class GameMain : Game
 
     public Match Match { get => _match; }
     private Match _match;
+
+    private AudioManager AudioManager { get => _audio; }
+    private AudioManager _audio;
+
 
     public GameMain()
     {
@@ -80,6 +85,7 @@ public class GameMain : Game
         _graphics.ApplyChanges();
 
         _debugDraw = new DebugDraw(GraphicsDevice);
+        _audio = new AudioManager(this);
     }
 
     protected override void LoadContent()
@@ -87,7 +93,6 @@ public class GameMain : Game
         _spriteBatch = new SpriteBatch(GraphicsDevice);
         InputHelper.Setup(this);
     }
-
     public void StartMatch(int NumberOfPlayers)
     {
         _match = new Match(this, NumberOfPlayers);
