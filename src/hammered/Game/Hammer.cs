@@ -85,7 +85,6 @@ public class Hammer : GameObject<HammerState>
             case HammerState.IS_RETURNING when (Center - GameMain.Match.Map.Players[_ownerId].Center).LengthSquared() < PickupDistance * PickupDistance || GameMain.Match.Map.Players[_ownerId].State == PlayerState.DEAD:
                 // if hammer is close to the player or the player is dead, it is picked up
                 PickUp();
-                GameMain.Match.Map.Players[_ownerId].OnHammerReturn();
                 break;
             case HammerState.IS_RETURNING:
                 HandleTileCollisions();
