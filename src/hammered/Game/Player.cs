@@ -324,11 +324,6 @@ public class Player : GameObject<PlayerState>
         GamePad.SetVibration(_playerId, 0.2f, 0.2f, 0.2f, 0.2f);
     }
 
-    public void OnHammerReturn()
-    {
-
-    }
-
     public void OnFalling()
     {
         _game.AudioManager.PlaySoundEffect("falling");
