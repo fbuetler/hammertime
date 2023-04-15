@@ -13,18 +13,45 @@ public enum PlayerState
     FALLING,
     ALIVE,
     PUSHBACK,
+    DASHING
 }
 
-public class Pushback
+public abstract class UnstoppableMove
 {
-    public Pushback(Vector3 direction, float distance)
+    public UnstoppableMove(Vector3 direction, float distance, float velocity)
     {
         Direction = direction;
         Distance = distance;
+        Velocity = velocity;
     }
-    public Vector3 Direction { get; set; }
+    public Vector3 Direction { get; }
     public float Distance { get; set; }
+    public float Velocity { get; }
 };
+
+public class Pushback : UnstoppableMove
+{
+    public Pushback(Vector3 direction, float distance, float velocity) : base(direction, distance, velocity)
+    {
+
+    }
+
+    // how far one gets pushed back by a hammer
+    public const float PushbackDistance = 3f;
+    public const float PushbackVelocity = 2000f;
+}
+
+public class Dash : UnstoppableMove
+{
+    public Dash(Vector3 direction, float distance, float velocity) : base(direction, distance, velocity)
+    {
+
+    }
+
+    // how far a player can dash
+    public const float DashDistance = 3f;
+    public const float DashVelocity = 8000f;
+}
 
 public class Player : GameObject<PlayerState>
 {
@@ -49,12 +76,11 @@ public class Player : GameObject<PlayerState>
     // note: this is null when we're not in a pushback state
     private Pushback _pushback;
 
+    // note: this is null when we're not in a dashing state
+    private Dash _dash;
+
     private Dictionary<PlayerState, string> _objectModelPaths;
     public override Dictionary<PlayerState, string> ObjectModelPaths => _objectModelPaths;
-
-    // how far one gets pushed back by a hammer
-    private const float PushbackDistance = 3f;
-    private const float PushbackVelocity = 2000f;
 
     // if a player is below the kill plane, it disappears
     private const float KillPlaneLevel = -10f;
@@ -86,6 +112,7 @@ public class Player : GameObject<PlayerState>
         _objectModelPaths[PlayerState.PUSHBACK] = "Player/playerNoHammer";
         _objectModelPaths[PlayerState.FALLING] = "Player/playerNoHammer";
         _objectModelPaths[PlayerState.DEAD] = "Player/playerNoHammer";
+        _objectModelPaths[PlayerState.DASHING] = "Player/playerNoHammer";
 
         _velocity = Vector3.Zero;
     }
@@ -106,17 +133,29 @@ public class Player : GameObject<PlayerState>
             case PlayerState.ALIVE when Controls.Throw(_playerId).Pressed():
                 GameMain.Match.Map.Hammers[_playerId].Throw();
                 break;
+            case PlayerState.ALIVE when Controls.Dash(_playerId).Pressed():
+                _dash = new Dash(Direction, Dash.DashDistance, Dash.DashVelocity);
+                _state = PlayerState.DASHING;
+                break;
             case PlayerState.ALIVE when moveInput != Vector3.Zero:
                 Direction = moveInput;
                 _velocity = ComputeVelocity(_velocity, Direction, MoveAcceleration, GroundDragFactor, gameTime);
                 Move(gameTime, _velocity);
+                break;
+            case PlayerState.DASHING when _dash.Distance <= 0:
+                _dash = null;
+                _state = PlayerState.ALIVE;
+                break;
+            case PlayerState.DASHING:
+                _velocity = ComputeVelocity(_velocity, _dash.Direction, _dash.Velocity, GroundDragFactor, gameTime);
+                _dash.Distance -= Move(gameTime, _velocity);
                 break;
             case PlayerState.PUSHBACK when _pushback.Distance <= 0:
                 _pushback = null;
                 _state = PlayerState.ALIVE;
                 break;
             case PlayerState.PUSHBACK:
-                _velocity = ComputeVelocity(_velocity, _pushback.Direction, PushbackVelocity, GroundDragFactor, gameTime);
+                _velocity = ComputeVelocity(_velocity, _pushback.Direction, _pushback.Velocity, GroundDragFactor, gameTime);
                 _pushback.Distance -= Move(gameTime, _velocity);
                 break;
             case PlayerState.FALLING when Center.Y < KillPlaneLevel:
@@ -138,10 +177,11 @@ public class Player : GameObject<PlayerState>
         HandlePlayerCollisions();
         HandleTileCollisions();
 
-        Pushback pushback = CheckHammerCollisions();
-        if (pushback != null && _pushback == null)
+        Pushback p = CheckHammerCollisions();
+        if (p != null && _pushback == null)
         {
-            _pushback = (Pushback)pushback;
+            // TODO (fbuetler) should we respect other hammer hits when already being pushed back?
+            _pushback = (Pushback)p;
             if (State == PlayerState.FALLING || State == PlayerState.ALIVE)
                 _state = PlayerState.PUSHBACK;
         }
@@ -239,7 +279,7 @@ public class Player : GameObject<PlayerState>
             {
                 OnHit(hammer);
                 // Pushback distance could be modifiable based on charge
-                return new Pushback(hammer.Direction, PushbackDistance);
+                return new Pushback(hammer.Direction, Pushback.PushbackDistance, Pushback.PushbackVelocity);
             }
         }
         return null;

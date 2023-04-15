@@ -93,6 +93,14 @@ public static class Controls
         );
     }
 
+    public static ICondition Dash(int playerIndex)
+    {
+        return new AnyCondition(
+            new KeyboardCondition(Keys.LeftShift),
+            new GamePadCondition(GamePadButton.LeftShoulder, playerIndex)
+        );
+    }
+
     public static ICondition MoveUp(int playerIndex)
     {
         return new AnyCondition(
