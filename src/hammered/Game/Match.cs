@@ -30,6 +30,9 @@ public class Match : DrawableGameComponent
     public int MapIndex { get => _mapIndex; }
     private int _mapIndex = 0;
 
+    public bool Paused { get => _paused; }
+    private bool _paused;
+
     public ScoreState ScoreState { get => _scoreState; }
     private ScoreState _scoreState;
 
@@ -97,6 +100,7 @@ public class Match : DrawableGameComponent
 
         if (Controls.Pause.Pressed())
         {
+            _paused = !_paused;
             foreach (Player p in Map.Players.Values)
             {
                 p.Enabled = !p.Enabled;
