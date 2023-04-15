@@ -13,7 +13,6 @@ public enum PlayerState
     FALLING,
     ALIVE,
     PUSHBACK,
-    THROWING,
 }
 
 public class Pushback
@@ -85,7 +84,6 @@ public class Player : GameObject<PlayerState>
         _objectModelPaths = new Dictionary<PlayerState, string>();
         _objectModelPaths[PlayerState.ALIVE] = "Player/playerNoHammer";
         _objectModelPaths[PlayerState.PUSHBACK] = "Player/playerNoHammer";
-        _objectModelPaths[PlayerState.THROWING] = "Player/playerNoHammer";
         _objectModelPaths[PlayerState.FALLING] = "Player/playerNoHammer";
         _objectModelPaths[PlayerState.DEAD] = "Player/playerNoHammer";
 
@@ -105,12 +103,8 @@ public class Player : GameObject<PlayerState>
 
         switch (State)
         {
-            case PlayerState.THROWING:
-                GameMain.Match.Map.Hammers[_playerId].Throw();
-                _state = PlayerState.ALIVE;
-                break;
             case PlayerState.ALIVE when Controls.Throw(_playerId).Pressed():
-                _state = PlayerState.THROWING;
+                GameMain.Match.Map.Hammers[_playerId].Throw();
                 break;
             case PlayerState.ALIVE when moveInput != Vector3.Zero:
                 Direction = moveInput;
