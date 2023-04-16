@@ -2,9 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Input;
-using Microsoft.Xna.Framework.Media;
 
 namespace hammered;
 
@@ -56,10 +54,6 @@ public class Dash : UnstoppableMove
 
 public class Player : GameObject<PlayerState>
 {
-    private GameMain _game;
-    // sound
-    private SoundEffect _hammerHitSound;
-    private SoundEffect _fallingSound;
 
     // player attributes
     public int PlayerId { get => _playerId; }
@@ -96,9 +90,12 @@ public class Player : GameObject<PlayerState>
     private const float GravityAcceleration = 960f;
     private const float MaxFallVelocity = 340f;
 
+    // sound effects
+    private const string HammerHitSoundEffect = "hammerBong";
+    private const string PlayerFallingSoundEffect = "falling";
+
     public Player(Game game, Vector3 position, int playerId) : base(game, position + _maxSize / 2)
     {
-        _game = (GameMain)game;
         // make update and draw called by monogame
         Enabled = true;
         UpdateOrder = GameMain.PLAYER_UPDATE_ORDER;
@@ -121,9 +118,8 @@ public class Player : GameObject<PlayerState>
 
     protected override void LoadAudioContent()
     {
-        _game.AudioManager.LoadSoundEffect("falling");
-        _game.AudioManager.LoadSoundEffect("hammerBong");
-        
+        GameMain.AudioManager.LoadSoundEffect(PlayerFallingSoundEffect);
+        GameMain.AudioManager.LoadSoundEffect(HammerHitSoundEffect);
     }
 
     public override void Update(GameTime gameTime)
@@ -320,15 +316,14 @@ public class Player : GameObject<PlayerState>
     private void OnHit(Hammer hammer)
     {
         hammer.Hit();
-        _game.AudioManager.PlaySoundEffect("hammerBong");
+        GameMain.AudioManager.PlaySoundEffect(HammerHitSoundEffect);
         GamePad.SetVibration(_playerId, 0.2f, 0.2f, 0.2f, 0.2f);
     }
 
     public void OnFalling()
     {
-        _game.AudioManager.PlaySoundEffect("falling");
+        GameMain.AudioManager.PlaySoundEffect(PlayerFallingSoundEffect);
         GamePad.SetVibration(_playerId, 0.2f, 0.2f, 0.2f, 0.2f);
-        
     }
 
     public void OnKilled()
@@ -336,19 +331,7 @@ public class Player : GameObject<PlayerState>
         Visible = false;
         Enabled = false;
         GamePad.SetVibration(_playerId, 0.0f, 0.0f, 0.0f, 0.0f);
-        //check the amount of player left
-        int playerAlivecount = 0;
-        foreach (Player opponent in GameMain.Match.Map.Players.Values.Where(p => p.Enabled == false))
-        {
-            playerAlivecount = playerAlivecount + 1;
-        }
-        if (playerAlivecount == 2)
-        {
-            TimeSpan stopPosition = MediaPlayer.PlayPosition;
-            TimeSpan startPosition = new TimeSpan(0, 0, stopPosition.Seconds);
-            _game.AudioManager.PlaySong("MusicMapFast", _game.AudioManager.Volume, 120*startPosition/135);
-        }
+        GameMain.Match.Map.AdjustSongSpeed();
     }
 
 }
-

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Media;
@@ -35,6 +36,9 @@ public class Map : DrawableGameComponent
     public Dictionary<int, Hammer> Hammers { get => _hammers; }
     private Dictionary<int, Hammer> _hammers = new Dictionary<int, Hammer>();
 
+    // song
+    private const string SlowMapSong = "MusicMapSlow";
+    private const string FastMapSong = "MusicMapFast";
 
     public Map(Game game, IServiceProvider serviceProvider, String mapPath) : base(game)
     {
@@ -172,14 +176,15 @@ public class Map : DrawableGameComponent
 
     private void LoadMusic()
     {
-        // game crashes sometimes with:
+        // TODO (fbuetler) game crashes sometimes with:
         // Unhandled exception. System.NullReferenceException: Object reference not set to an instance of an object.
         // are we loading not fast enough?
         try
         {
-            _game.AudioManager.LoadSong("MusicMapSlow");
-            _game.AudioManager.PlaySong("MusicMapSlow",_game.AudioManager.Volume);
-            _game.AudioManager.LoadSong("MusicMapFast");
+            GameMain.AudioManager.LoadSong(SlowMapSong);
+            GameMain.AudioManager.PlaySong(SlowMapSong, GameMain.AudioManager.Volume);
+
+            GameMain.AudioManager.LoadSong(FastMapSong);
         }
         catch { }
     }
@@ -205,6 +210,18 @@ public class Map : DrawableGameComponent
         else
         {
             return _tiles[x, y, z].BoundingBox;
+        }
+    }
+
+    public void AdjustSongSpeed()
+    {
+        int playersAlive = Players.Values.Where(p => p.Enabled).Count();
+        if (playersAlive == 2)
+        {
+            TimeSpan stopPosition = MediaPlayer.PlayPosition;
+            TimeSpan startPosition = TimeSpan.FromSeconds(stopPosition.Seconds);
+            // TODO (fbuetler) what is this math here?
+            GameMain.AudioManager.PlaySong(FastMapSong, GameMain.AudioManager.Volume, 120 * startPosition / 135);
         }
     }
 
