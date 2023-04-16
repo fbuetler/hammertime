@@ -38,6 +38,10 @@ public class GameMain : Game
     public Match Match { get => _match; }
     private Match _match;
 
+    public AudioManager AudioManager { get => _audio; }
+    private AudioManager _audio;
+
+
     public GameMain()
     {
         _graphics = new GraphicsDeviceManager(this);
@@ -79,6 +83,7 @@ public class GameMain : Game
         _graphics.ApplyChanges();
 
         _debugDraw = new DebugDraw(GraphicsDevice);
+        _audio = new AudioManager(this);
     }
 
     protected override void LoadContent()

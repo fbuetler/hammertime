@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Input;
 
 namespace hammered;
@@ -56,10 +55,6 @@ public class Dash : UnstoppableMove
 public class Player : GameObject<PlayerState>
 {
 
-    // sound
-    private SoundEffect _hammerHitSound;
-    private SoundEffect _fallingSound;
-
     // player attributes
     public int PlayerId { get => _playerId; }
     private int _playerId;
@@ -95,6 +90,10 @@ public class Player : GameObject<PlayerState>
     private const float GravityAcceleration = 960f;
     private const float MaxFallVelocity = 340f;
 
+    // sound effects
+    private const string HammerHitSoundEffect = "hammerBong";
+    private const string PlayerFallingSoundEffect = "falling";
+
     public Player(Game game, Vector3 position, int playerId) : base(game, position + _maxSize / 2)
     {
         // make update and draw called by monogame
@@ -119,8 +118,8 @@ public class Player : GameObject<PlayerState>
 
     protected override void LoadAudioContent()
     {
-        _fallingSound = GameMain.Match.Map.Content.Load<SoundEffect>("Audio/falling");
-        _hammerHitSound = GameMain.Match.Map.Content.Load<SoundEffect>("Audio/hammerBong");
+        GameMain.AudioManager.LoadSoundEffect(PlayerFallingSoundEffect);
+        GameMain.AudioManager.LoadSoundEffect(HammerHitSoundEffect);
     }
 
     public override void Update(GameTime gameTime)
@@ -317,13 +316,13 @@ public class Player : GameObject<PlayerState>
     private void OnHit(Hammer hammer)
     {
         hammer.Hit();
-        _hammerHitSound.Play();
+        GameMain.AudioManager.PlaySoundEffect(HammerHitSoundEffect);
         GamePad.SetVibration(_playerId, 0.2f, 0.2f, 0.2f, 0.2f);
     }
 
     public void OnFalling()
     {
-        _fallingSound.Play();
+        GameMain.AudioManager.PlaySoundEffect(PlayerFallingSoundEffect);
         GamePad.SetVibration(_playerId, 0.2f, 0.2f, 0.2f, 0.2f);
     }
 
@@ -332,6 +331,7 @@ public class Player : GameObject<PlayerState>
         Visible = false;
         Enabled = false;
         GamePad.SetVibration(_playerId, 0.0f, 0.0f, 0.0f, 0.0f);
+        GameMain.Match.Map.AdjustSongSpeed();
     }
 
 }
