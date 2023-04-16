@@ -32,7 +32,7 @@ public class Pushback
 
 public class Player : GameObject<PlayerState>
 {
-
+    private GameMain _game;
     // sound
     private SoundEffect _hammerHitSound;
     private SoundEffect _fallingSound;
@@ -75,6 +75,7 @@ public class Player : GameObject<PlayerState>
 
     public Player(Game game, Vector3 position, int playerId) : base(game, position + _maxSize / 2)
     {
+        _game = (GameMain)game;
         // make update and draw called by monogame
         Enabled = true;
         UpdateOrder = GameMain.PLAYER_UPDATE_ORDER;
@@ -101,8 +102,9 @@ public class Player : GameObject<PlayerState>
 
     protected override void LoadAudioContent()
     {
-        _fallingSound = GameMain.Match.Map.Content.Load<SoundEffect>("Audio/falling");
-        _hammerHitSound = GameMain.Match.Map.Content.Load<SoundEffect>("Audio/hammerBong");
+        _game.AudioManager.LoadSoundEffect("falling");
+        _game.AudioManager.LoadSoundEffect("hammerBong");
+        
     }
 
     public override void Update(GameTime gameTime)
@@ -306,7 +308,7 @@ public class Player : GameObject<PlayerState>
     private void OnHit(Hammer hammer)
     {
         hammer.Hit();
-        _hammerHitSound.Play();
+        _game.AudioManager.PlaySoundEffect("hammerBong");
         GamePad.SetVibration(_playerId, 0.2f, 0.2f, 0.2f, 0.2f);
     }
 
@@ -321,8 +323,15 @@ public class Player : GameObject<PlayerState>
 
     public void OnFalling()
     {
-        _fallingSound.Play();
+        _game.AudioManager.PlaySoundEffect("falling");
         GamePad.SetVibration(_playerId, 0.2f, 0.2f, 0.2f, 0.2f);
+        int playerAlivecount = 0;
+        foreach (Player opponent in GameMain.Match.Map.Players.Values.Where(p => p.Enabled == false)) {
+            playerAlivecount = playerAlivecount + 1;
+        }
+        if (playerAlivecount == 2) {
+            _game.AudioManager.PlaySong("MusicMapFast", _game.AudioManager.Volume);        
+        }
     }
 
     public void OnKilled()

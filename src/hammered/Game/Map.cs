@@ -177,9 +177,10 @@ public class Map : DrawableGameComponent
         // Unhandled exception. System.NullReferenceException: Object reference not set to an instance of an object.
         // are we loading not fast enough?
         try
-        {   
-            
-            
+        {
+            _game.AudioManager.LoadSong("MusicMapSlow");
+            _game.AudioManager.PlaySong("MusicMapSlow",_game.AudioManager.Volume);
+            _game.AudioManager.LoadSong("MusicMapFast");
         }
         catch { }
     }

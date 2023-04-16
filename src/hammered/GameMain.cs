@@ -40,7 +40,7 @@ public class GameMain : Game
     public Match Match { get => _match; }
     private Match _match;
 
-    private AudioManager AudioManager { get => _audio; }
+    public AudioManager AudioManager { get => _audio; }
     private AudioManager _audio;
 
 
