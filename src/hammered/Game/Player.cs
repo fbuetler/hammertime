@@ -4,6 +4,7 @@ using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Input;
+using Microsoft.Xna.Framework.Media;
 
 namespace hammered;
 
@@ -325,13 +326,7 @@ public class Player : GameObject<PlayerState>
     {
         _game.AudioManager.PlaySoundEffect("falling");
         GamePad.SetVibration(_playerId, 0.2f, 0.2f, 0.2f, 0.2f);
-        int playerAlivecount = 0;
-        foreach (Player opponent in GameMain.Match.Map.Players.Values.Where(p => p.Enabled == false)) {
-            playerAlivecount = playerAlivecount + 1;
-        }
-        if (playerAlivecount == 2) {
-            _game.AudioManager.PlaySong("MusicMapFast", _game.AudioManager.Volume);        
-        }
+        
     }
 
     public void OnKilled()
@@ -339,6 +334,19 @@ public class Player : GameObject<PlayerState>
         Visible = false;
         Enabled = false;
         GamePad.SetVibration(_playerId, 0.0f, 0.0f, 0.0f, 0.0f);
+        //check the amount of player left
+        int playerAlivecount = 0;
+        foreach (Player opponent in GameMain.Match.Map.Players.Values.Where(p => p.Enabled == false))
+        {
+            playerAlivecount = playerAlivecount + 1;
+        }
+        if (playerAlivecount == 2)
+        {
+            TimeSpan stopPosition = MediaPlayer.PlayPosition;
+            TimeSpan startPosition = new TimeSpan(0, 0, stopPosition.Seconds);
+            _game.AudioManager.PlaySong("MusicMapFast", _game.AudioManager.Volume, 120*startPosition/135);
+        }
     }
 
 }
+

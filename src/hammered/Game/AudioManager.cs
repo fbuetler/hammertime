@@ -64,7 +64,19 @@ public class AudioManager
             
         }
     }
+    public void PlaySong(string name, float volume, TimeSpan? startPosition)
+    {
+        Song loaded;
+        if (_songs.TryGetValue(name, out loaded))
+        {
+            MediaPlayer.Play(_songs[name], startPosition);
+            MediaPlayer.Volume = volume;
+        }
+        else
+        {
 
+        }
+    }
     public void PlaySoundEffect(string name)
     {
         SoundEffect loaded;
