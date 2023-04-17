@@ -182,7 +182,7 @@ public class Map : DrawableGameComponent
         try
         {
             GameMain.AudioManager.LoadSong(SlowMapSong);
-            GameMain.AudioManager.PlaySong(SlowMapSong, GameMain.AudioManager.Volume);
+            GameMain.AudioManager.PlaySong(SlowMapSong);
 
             GameMain.AudioManager.LoadSong(FastMapSong);
         }
@@ -221,7 +221,7 @@ public class Map : DrawableGameComponent
             TimeSpan stopPosition = MediaPlayer.PlayPosition;
             TimeSpan startPosition = TimeSpan.FromSeconds(stopPosition.Seconds);
             // TODO (fbuetler) what is this math here?
-            GameMain.AudioManager.PlaySong(FastMapSong, GameMain.AudioManager.Volume, 120 * startPosition / 135);
+            GameMain.AudioManager.PlaySong(FastMapSong, 120 * startPosition / 135);
         }
     }
 
