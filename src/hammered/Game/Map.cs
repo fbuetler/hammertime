@@ -36,6 +36,18 @@ public class Map : DrawableGameComponent
     public Dictionary<int, Hammer> Hammers { get => _hammers; }
     private Dictionary<int, Hammer> _hammers = new Dictionary<int, Hammer>();
 
+    // TODO: (lmeinen) Wait with decreasing playsAlive until player hits ground below (could make for fun animation or items that allow one to come back from falling)
+    public List<int> PlayersAlive
+    {
+        get => Players.Values
+            .Where(p => !(p.State == PlayerState.DEAD || p.State == PlayerState.FALLING))
+            .Select(p => p.PlayerId)
+            .ToList();
+    }
+
+    public bool Paused { get => _paused; }
+    private bool _paused;
+
     // song
     private const string SlowMapSong = "MusicMapSlow";
     private const string FastMapSong = "MusicMapFast";
@@ -198,6 +210,32 @@ public class Map : DrawableGameComponent
         );
     }
 
+    public override void Update(GameTime gameTime)
+    {
+        HandleInput();
+    }
+
+    private void HandleInput()
+    {
+        if (Controls.Pause.Pressed())
+        {
+            _paused = !_paused;
+            foreach (Player p in Players.Values)
+            {
+                p.Enabled = !p.Enabled;
+            }
+            foreach (Hammer h in Hammers.Values)
+            {
+                h.Enabled = !h.Enabled;
+            }
+            foreach (Tile t in Tiles)
+            {
+                if (t != null)
+                    t.Enabled = !t.Enabled;
+            }
+        }
+    }
+
     public BoundingBox? TryGetTileBounds(int x, int y, int z)
     {
         if (x < 0 || y < 0 || z < 0 ||
@@ -215,8 +253,7 @@ public class Map : DrawableGameComponent
 
     public void AdjustSongSpeed()
     {
-        int playersAlive = Players.Values.Where(p => p.Enabled).Count();
-        if (playersAlive == 2)
+        if (PlayersAlive.Count == 2)
         {
             TimeSpan stopPosition = MediaPlayer.PlayPosition;
             TimeSpan startPosition = TimeSpan.FromSeconds(stopPosition.Seconds);
@@ -229,12 +266,9 @@ public class Map : DrawableGameComponent
     {
         GraphicsDevice.Clear(Color.CornflowerBlue);
 
-        Matrix view = Camera.View;
-        Matrix projection = Camera.Projection;
-
 #if DEBUG
         // draw coordinate system
-        DebugDraw.Begin(Matrix.Identity, view, projection);
+        DebugDraw.Begin(Matrix.Identity, Camera.View, Camera.Projection);
         DebugDraw.DrawLine(Vector3.Zero, 30 * Vector3.UnitX, Color.Black);
         DebugDraw.DrawLine(Vector3.Zero, 30 * Vector3.UnitY, Color.Black);
         DebugDraw.DrawLine(Vector3.Zero, 30 * Vector3.UnitZ, Color.Black);

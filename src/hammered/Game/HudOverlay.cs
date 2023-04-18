@@ -50,7 +50,7 @@ public class HudOverlay : DrawableGameComponent
             Color.White
         );
         DrawShadowedString(
-            _font, $"Players alive: {GameMain.Match.PlayersAlive.Count}",
+            _font, $"Players alive: {GameMain.Match.Map.PlayersAlive.Count}",
             new Vector2(leftAlignedOffset, topAlignedOffset + nextLineOffset),
             Color.White
         );
@@ -73,15 +73,15 @@ public class HudOverlay : DrawableGameComponent
         }
 
         float screenHeight = GameMain.GetBackBufferHeight();
-        if (GameMain.Match.Finished || GameMain.Match.Paused)
+        if (GameMain.Match.MatchFinished || GameMain.Match.Map.Paused)
         {
             string text;
-            if (GameMain.Match.Finished)
+            if (GameMain.Match.MatchFinished)
             {
                 int winnerId = Array.IndexOf(GameMain.Match.Scores, Match.MaxPoints);
                 text = $"WINNER: P{winnerId + 1}";
             }
-            else if (GameMain.Match.Paused)
+            else if (GameMain.Match.Map.Paused)
             {
                 text = "PAUSED";
             }
@@ -109,7 +109,7 @@ public class HudOverlay : DrawableGameComponent
             case ScoreState.Winner:
                 DrawShadowedString(
                     _font,
-                    $"Winner: Player {GameMain.Match.WinnerId + 1}",
+                    $"Winner: Player {GameMain.Match.RoundWinnerId + 1}",
                     new Vector2(leftAlignedOffset, topAlignedOffset + 2 * nextLineOffset),
                     Color.White
                 );
