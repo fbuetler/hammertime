@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Apos.Input;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -97,8 +97,15 @@ public class GameMain : Game
         _match = new Match(this, NumberOfPlayers);
         Components.Add(_match);
 
-        _menu.Visible = false;
         Components.Remove(_menu);
+    }
+
+    public void EndMatch()
+    {
+        Components.Clear();
+        AudioManager.Stop();
+
+        Components.Add(_menu);
     }
 
     protected override void Update(GameTime gameTime)

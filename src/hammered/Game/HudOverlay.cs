@@ -44,6 +44,7 @@ public class HudOverlay : DrawableGameComponent
 
     private void DrawHud()
     {
+#if DEBUG
         DrawShadowedString(
             _font, $"Map: {GameMain.Match.MapIndex}",
             new Vector2(leftAlignedOffset, topAlignedOffset),
@@ -54,6 +55,7 @@ public class HudOverlay : DrawableGameComponent
             new Vector2(leftAlignedOffset, topAlignedOffset + nextLineOffset),
             Color.White
         );
+#endif
 
         float screenWidth = GameMain.GetBackBufferWidth();
         DrawShadowedString(
@@ -106,10 +108,10 @@ public class HudOverlay : DrawableGameComponent
             );
         }
 
+#if DEBUG
         switch (GameMain.Match.ScoreState)
         {
             case ScoreState.None:
-                // do nothing - game is still going on
                 break;
             case ScoreState.Winner:
                 DrawShadowedString(
@@ -131,6 +133,7 @@ public class HudOverlay : DrawableGameComponent
                 throw new NotSupportedException(String.Format("Scorestate type '{0}' is not supported", GameMain.Match.ScoreState));
         }
     }
+#endif
 
     private void DrawShadowedString(SpriteFont _font, string value, Vector2 position, Color color)
     {

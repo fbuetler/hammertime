@@ -26,6 +26,8 @@ public class Match : DrawableGameComponent
     public Dictionary<string, ScaledModel> Models { get => _models; }
     private Dictionary<string, ScaledModel> _models;
 
+    private HudOverlay _hud;
+
     // map
     private Map _map;
     public Map Map { get => _map; }
@@ -98,7 +100,8 @@ public class Match : DrawableGameComponent
         }
 
         // initialize game overlay
-        GameMain.Components.Add(new HudOverlay(GameMain));
+        _hud = new HudOverlay(GameMain);
+        GameMain.Components.Add(_hud);
         // GameMain.Components.Add(new ScoreboardOverlay(GameMain));
 
         _scoreState = ScoreState.None;
@@ -127,6 +130,14 @@ public class Match : DrawableGameComponent
         if (Controls.NextMap.Pressed())
         {
             LoadNextMap();
+        }
+
+        if (MatchFinished)
+        {
+            if (Controls.Interact.Pressed())
+            {
+                GameMain.EndMatch();
+            }
         }
     }
 

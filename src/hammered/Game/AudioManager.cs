@@ -77,4 +77,9 @@ public class AudioManager
             loaded.Play();
         }
     }
+
+    public void Stop()
+    {
+        MediaPlayer.Stop();
+    }
 }
