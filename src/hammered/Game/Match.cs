@@ -151,8 +151,8 @@ public class Match : DrawableGameComponent
             }
         }
 
-
-        if (gameTime.TotalGameTime.TotalSeconds - _roundFinishedAt > timeoutBetweenMaps)
+        if (gameTime.TotalGameTime.TotalSeconds - _roundFinishedAt > timeoutBetweenMaps
+            && _scores.Max() < MaxPoints)
         {
             LoadNextMap();
         }
