@@ -61,13 +61,18 @@ public class HudOverlay : DrawableGameComponent
             new Vector2(screenWidth - rightAlignedOffset, topAlignedOffset),
             Color.White
         );
+        DrawShadowedString(
+            _font, $"Goal: {Match.MaxPoints}",
+            new Vector2(screenWidth - rightAlignedOffset, topAlignedOffset + nextLineOffset),
+            Color.White
+        );
         for (int i = 0; i < GameMain.Match.Scores.Length; i++)
         {
             int score = GameMain.Match.Scores[i];
             DrawShadowedString(
                 _font,
                 $"P{i + 1}: {score}",
-                new Vector2(screenWidth - rightAlignedOffset, topAlignedOffset + nextLineOffset * (i + 1)),
+                new Vector2(screenWidth - rightAlignedOffset, topAlignedOffset + nextLineOffset * (i + 2)),
                 Color.White
             );
         }
