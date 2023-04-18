@@ -178,7 +178,7 @@ public class Match : DrawableGameComponent
 
         // initialize game overlay
         GameMain.Components.Add(new HudOverlay(GameMain));
-        GameMain.Components.Add(new ScoreboardOverlay(GameMain));
+        // GameMain.Components.Add(new ScoreboardOverlay(GameMain));
 
         _scoreState = ScoreState.None;
 
