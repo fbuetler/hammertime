@@ -33,6 +33,9 @@ public class Match : DrawableGameComponent
     public bool Paused { get => _paused; }
     private bool _paused;
 
+    public bool Finished { get => _finished; }
+    private bool _finished { get => _scores.Max() >= MaxPoints; }
+
     public ScoreState ScoreState { get => _scoreState; }
     private ScoreState _scoreState;
 
@@ -57,10 +60,9 @@ public class Match : DrawableGameComponent
     // or handle exceptions, both of which can add unnecessary time to level loading.
     private const int numberOfMaps = 4;
 
-    // TODO (fbuetler) handle reaching max score
     public const int MaxPoints = 10;
 
-    private const int timeoutBetweenMaps = 3;
+    private const int roundTimeoutSec = 3;
 
     public Match(Game game, int NumberOfPlayers) : base(game)
     {
@@ -151,8 +153,7 @@ public class Match : DrawableGameComponent
             }
         }
 
-        if (gameTime.TotalGameTime.TotalSeconds - _roundFinishedAt > timeoutBetweenMaps
-            && _scores.Max() < MaxPoints)
+        if (gameTime.TotalGameTime.TotalSeconds - _roundFinishedAt > roundTimeoutSec && !Finished)
         {
             LoadNextMap();
         }

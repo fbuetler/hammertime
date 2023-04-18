@@ -107,7 +107,6 @@ public class Tile : GameObject<TileState>
 
     private static TileState NextState(TileState tileState) => tileState switch
     {
-        // TODO: (lmeinen) Wouldn't it be cooler if we used this everywhere, using case guards and callable actions?
         TileState.HP100 => TileState.HP80,
         TileState.HP80 => TileState.HP60,
         TileState.HP60 => TileState.HP40,
