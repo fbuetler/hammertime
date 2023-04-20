@@ -22,13 +22,11 @@ public class Hammer : GameObject<HammerState>
     private Vector3 _origin;
 
     private float _velocity;
-    //public float Speed { get => _speed; }
-    //private float _speed;
 
     // charging distance
     private float _throwDistance;
 
-    public override Vector3 MaxSize { get => _maxSize; set => _maxSize = value; }
+    public override Vector3 MaxSize { get => _maxSize; }
     private static Vector3 _maxSize = new Vector3(0.5f, 0.5f, 0.5f);
 
     private HammerState _state;
@@ -36,12 +34,11 @@ public class Hammer : GameObject<HammerState>
 
     private Dictionary<HammerState, string> _objectModelPaths;
     public override Dictionary<HammerState, string> ObjectModelPaths { get => _objectModelPaths; }
-    private const float ThrowSpeed = 20f;
 
     // constants for controlling throwing
     private const float ThrowAcceleration = 10f;
     private const float MaxThrowVelocity = 20f;
-    private const float MaxThrowDistance = 10f;
+    public const float MaxThrowDistance = 10f;
 
     // constants for controlling pickup
     private const float PickupDistance = 1f;
@@ -74,14 +71,12 @@ public class Hammer : GameObject<HammerState>
                 Direction = aimInput;
                 break;
             case HammerState.IS_FLYING:
-
                 bool collided = HandleTileCollisions();
                 if (collided)
                 {
                     Return();
                 }
-
-                if ((Center - _origin).LengthSquared() > _throwDistance * _throwDistance || (Center - _origin).LengthSquared() > MaxThrowDistance * MaxThrowDistance)
+                if ((Center - _origin).Length() > _throwDistance)
                 {
                     // if max distance is reached, make it return
                     Return();
@@ -89,7 +84,6 @@ public class Hammer : GameObject<HammerState>
 
                 _velocity = ComputeVelocity(gameTime, _velocity, ThrowAcceleration);
                 Move(gameTime, Direction * _velocity);
-                //Move(gameTime, Direction * ThrowSpeed);
                 break;
             case HammerState.IS_RETURNING when (Center - GameMain.Match.Map.Players[_ownerId].Center).LengthSquared() < PickupDistance * PickupDistance || GameMain.Match.Map.Players[_ownerId].State == PlayerState.DEAD:
                 // if hammer is close to the player or the player is dead, it is picked up
@@ -179,7 +173,7 @@ public class Hammer : GameObject<HammerState>
         _origin = GameMain.Match.Map.Players[_ownerId].Center;
         Center = GameMain.Match.Map.Players[_ownerId].Center;
 
-        _throwDistance = throwDistance;
+        _throwDistance = MathF.Min(throwDistance, MaxThrowDistance);
     }
 
     private void FollowOwner()

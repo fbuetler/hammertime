@@ -12,6 +12,7 @@ public class GameMain : Game
     public const int MATCH_UPDATE_ORDER = 0;
     public const int MAP_UPDATE_ORDER = 0;
     public const int HUD_UPDATE_ORDER = 0;
+    public const int ARROW_UPDATE_ORDER = 1;
     public const int TILE_UPDATE_ORDER = 1;
     public const int HAMMER_UPDATE_ORDER = 2;
     public const int PLAYER_UPDATE_ORDER = 3;
@@ -22,7 +23,8 @@ public class GameMain : Game
     public const int OVERLAY_DRAW_ORDER = 1;
     public const int HAMMER_DRAW_ORDER = 2;
     public const int PLAYER_DRAW_ORDER = 3;
-    public const int TILE_DRAW_ORDER = 4;
+    public const int ARROW_DRAW_ORDER = 3;
+    public const int TILE_DRAW_ORDER = 5;
 
     // drawing
     private GraphicsDeviceManager _graphics;

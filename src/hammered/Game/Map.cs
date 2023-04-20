@@ -179,18 +179,15 @@ public class Map : DrawableGameComponent
             Player player = new Player(GameMain, new Vector3(x, y, z), playerId);
             Hammer hammer = new Hammer(GameMain, new Vector3(x, y, z), playerId);
             Arrow arrow = new Arrow(GameMain, new Vector3(x, 1, z), playerId);
+
             _players.Add(playerId, player);
             _hammers.Add(playerId, hammer);
             _arrows.Add(playerId, arrow);
 
-            // enable player component
+            // enable components
             GameMain.Components.Add(player);
-
-            // enable hammer compohent
             GameMain.Components.Add(hammer);
-
-            // enable arrow component
-            _game.Components.Add(arrow);
+            GameMain.Components.Add(arrow);
         }
     }
 

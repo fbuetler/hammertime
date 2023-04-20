@@ -25,7 +25,7 @@ public class Tile : GameObject<TileState>
     public override Dictionary<TileState, string> ObjectModelPaths { get => _objectModelPaths; }
     private Dictionary<TileState, string> _objectModelPaths;
 
-    public override Vector3 MaxSize { get => _maxSize; set => _maxSize = value;}
+    public override Vector3 MaxSize { get => _maxSize; }
     private static Vector3 _maxSize = new Vector3(1f, 1f, 1f);
 
     public const float Width = 1f;

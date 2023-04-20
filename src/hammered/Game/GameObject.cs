@@ -30,7 +30,6 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
     public abstract Vector3 MaxSize
     {
         get;
-        set;
     }
 
     public abstract GameObjectState State
@@ -131,14 +130,14 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
 #endif
     }
 
-    private Matrix ComputeRotation()
+    protected Matrix ComputeRotation()
     {
         float angle = MathF.Atan2(-Direction.Z, Direction.X);
         Matrix rotate = Matrix.CreateFromAxisAngle(Vector3.UnitY, angle);
         return rotate;
     }
 
-    private void DrawModel(Model model, Matrix world, Matrix view, Matrix projection)
+    protected void DrawModel(Model model, Matrix world, Matrix view, Matrix projection)
     {
         foreach (ModelMesh mesh in model.Meshes)
         {

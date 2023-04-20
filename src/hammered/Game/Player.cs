@@ -63,19 +63,15 @@ public class Player : GameObject<PlayerState>
     private Vector3 _velocity;
 
     // TODO (fbuetler) if a player is smaller than a tile it is immediately falling upon start
-    public override Vector3 MaxSize { get => _maxSize; set => _maxSize = value; }
+    public override Vector3 MaxSize { get => _maxSize; }
     private static Vector3 _maxSize = new Vector3(1f, 1f, 1f);
-    //public override Vector3 Size { get => _sizeVec; set => _sizeVec = value;}
-    //private Vector3 _sizeVec = new Vector3(1f, 1f, 1f);
 
     private PlayerState _state;
     public override PlayerState State => _state;
 
     // charge
-    public float Charge { get => _chargeDuration; }
-    public float _chargeDuration;
-    private int ChargeCounter = 0;
-    private int GameStateCounter = 0;
+    public float ThrowDistance { get => _chargeDuration * ChargeUnit; }
+    private float _chargeDuration;
 
     // note: this is null when we're not in a pushback state
     private Pushback _pushback;
@@ -91,7 +87,7 @@ public class Player : GameObject<PlayerState>
 
     // charge/throw
     // TODO (fbuetler) tweak unit
-    private const float ChargeUnit = 0.05f;
+    private const float ChargeUnit = 0.02f;
 
     // constants for controlling horizontal movement
     private const float MoveAcceleration = 1300f;
@@ -126,9 +122,6 @@ public class Player : GameObject<PlayerState>
         _objectModelPaths[PlayerState.DEAD] = "Player/playerNoHammer";
         _objectModelPaths[PlayerState.DASHING] = "Player/playerNoHammer";
         _objectModelPaths[PlayerState.CHARGING] = "Player/playerNoHammer";
-
-        _velocity = Vector3.Zero;
-        _chargeDuration = 0f;
     }
 
     protected override void LoadAudioContent()
@@ -142,11 +135,10 @@ public class Player : GameObject<PlayerState>
         Vector3 moveInput = ReadMovementInput();
         Vector3 prevCenter = Center;
 
-        GameStateCounter++;
         switch (State)
         {
             case PlayerState.ALIVE when Controls.Throw(_playerId).Held():
-                _chargeDuration = (float)gameTime.ElapsedGameTime.TotalMilliseconds;
+                _chargeDuration = 0;
                 _state = PlayerState.CHARGING;
                 break;
             case PlayerState.ALIVE when Controls.Dash(_playerId).Pressed():
@@ -159,13 +151,20 @@ public class Player : GameObject<PlayerState>
                 Move(gameTime, _velocity);
                 break;
             case PlayerState.CHARGING when Controls.Throw(_playerId).Released():
-                GameMain.Match.Map.Hammers[_playerId].Throw(_chargeDuration * ChargeUnit);
+                GameMain.Match.Map.Hammers[_playerId].Throw(ThrowDistance);
                 _state = PlayerState.ALIVE;
-                ChargeCounter = 0;
                 break;
             case PlayerState.CHARGING:
+                // move
+                if (moveInput != Vector3.Zero)
+                {
+                    Direction = moveInput;
+                    _velocity = ComputeVelocity(_velocity, Direction, MoveAcceleration, GroundDragFactor, gameTime);
+                    Move(gameTime, _velocity);
+                }
+
+                // charge
                 _chargeDuration += (float)gameTime.ElapsedGameTime.TotalMilliseconds;
-                ChargeCounter++;
                 break;
             case PlayerState.DASHING when _dash.Distance <= 0:
                 _dash = null;
@@ -197,7 +196,6 @@ public class Player : GameObject<PlayerState>
             default:
                 // do nothing
                 break;
-
         }
 
         HandlePlayerCollisions();
@@ -360,4 +358,5 @@ public class Player : GameObject<PlayerState>
         GamePad.SetVibration(_playerId, 0.0f, 0.0f, 0.0f, 0.0f);
         GameMain.Match.Map.AdjustSongSpeed();
     }
+
 }
