@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Input;
 
 namespace hammered;
@@ -11,32 +10,51 @@ public enum PlayerState
 {
     DEAD,
     FALLING,
-    FALLING_NO_HAMMER,
     ALIVE,
-    ALIVE_NO_HAMMER,
     PUSHBACK,
-    PUSHBACK_NO_HAMMER,
-    THROWING,
     CHARGING,
+    DASHING
 }
 
-public class Pushback
+public abstract class UnstoppableMove
 {
-    public Pushback(Vector3 direction, float distance)
+    public UnstoppableMove(Vector3 direction, float distance, float velocity)
     {
         Direction = direction;
         Distance = distance;
+        Velocity = velocity;
     }
-    public Vector3 Direction { get; set; }
+    public Vector3 Direction { get; }
     public float Distance { get; set; }
+    public float Velocity { get; }
 };
+
+public class Pushback : UnstoppableMove
+{
+    public Pushback(Vector3 direction, float distance, float velocity) : base(direction, distance, velocity)
+    {
+
+    }
+
+    // how far one gets pushed back by a hammer
+    public const float PushbackDistance = 3f;
+    public const float PushbackVelocity = 2000f;
+}
+
+public class Dash : UnstoppableMove
+{
+    public Dash(Vector3 direction, float distance, float velocity) : base(direction, distance, velocity)
+    {
+
+    }
+
+    // how far a player can dash
+    public const float DashDistance = 3f;
+    public const float DashVelocity = 8000f;
+}
 
 public class Player : GameObject<PlayerState>
 {
-
-    // sound
-    private SoundEffect _hammerHitSound;
-    private SoundEffect _fallingSound;
 
     // player attributes
     public int PlayerId { get => _playerId; }
@@ -54,18 +72,19 @@ public class Player : GameObject<PlayerState>
     public override PlayerState State => _state;
 
     // charge
+    public float Charge { get => _chargeDuration; }
     public float _chargeDuration;
+    private int ChargeCounter = 0;
+    private int GameStateCounter = 0;
 
     // note: this is null when we're not in a pushback state
     private Pushback _pushback;
 
+    // note: this is null when we're not in a dashing state
+    private Dash _dash;
+
     private Dictionary<PlayerState, string> _objectModelPaths;
     public override Dictionary<PlayerState, string> ObjectModelPaths => _objectModelPaths;
-
-
-    // how far one gets pushed back by a hammer
-    private const float PushbackDistance = 3f;
-    private const float PushbackVelocity = 2000f;
 
     // if a player is below the kill plane, it disappears
     private const float KillPlaneLevel = -10f;
@@ -84,19 +103,17 @@ public class Player : GameObject<PlayerState>
     private const float GravityAcceleration = 960f;
     private const float MaxFallVelocity = 340f;
 
-    // input configuration
-    private const float MoveStickScale = 1.0f;
-    //private const Buttons ThrowButton = Buttons.RightShoulder;
-    private const Buttons ThrowButton = Buttons.RightStick;
-    //private GamePadState PreviousPadState;
-    private int ChargeCounter = 0;
-    private int GameStateCounter = 0;
+    // sound effects
+    private const string HammerHitSoundEffect = "hammerBong";
+    private const string PlayerFallingSoundEffect = "falling";
 
     public Player(Game game, Vector3 position, int playerId) : base(game, position + _maxSize / 2)
     {
         // make update and draw called by monogame
         Enabled = true;
+        UpdateOrder = GameMain.PLAYER_UPDATE_ORDER;
         Visible = true;
+        DrawOrder = GameMain.PLAYER_DRAW_ORDER;
 
         _playerId = playerId;
 
@@ -104,15 +121,11 @@ public class Player : GameObject<PlayerState>
 
         _objectModelPaths = new Dictionary<PlayerState, string>();
         _objectModelPaths[PlayerState.ALIVE] = "Player/playerNoHammer";
-        _objectModelPaths[PlayerState.ALIVE_NO_HAMMER] = "Player/playerNoHammer";
         _objectModelPaths[PlayerState.PUSHBACK] = "Player/playerNoHammer";
-        _objectModelPaths[PlayerState.PUSHBACK_NO_HAMMER] = "Player/playerNoHammer";
-        _objectModelPaths[PlayerState.THROWING] = "Player/playerNoHammer";
-        _objectModelPaths[PlayerState.CHARGING] = "Player/playerNoHammer";
         _objectModelPaths[PlayerState.FALLING] = "Player/playerNoHammer";
-        _objectModelPaths[PlayerState.FALLING_NO_HAMMER] = "Player/playerNoHammer";
         _objectModelPaths[PlayerState.DEAD] = "Player/playerNoHammer";
-        // TODO: (lmeinen) Add models for other states
+        _objectModelPaths[PlayerState.DASHING] = "Player/playerNoHammer";
+        _objectModelPaths[PlayerState.CHARGING] = "Player/playerNoHammer";
 
         _velocity = Vector3.Zero;
         _chargeDuration = 0f;
@@ -120,66 +133,61 @@ public class Player : GameObject<PlayerState>
 
     protected override void LoadAudioContent()
     {
-        _fallingSound = GameMain.Map.Content.Load<SoundEffect>("Audio/falling");
-        _hammerHitSound = GameMain.Map.Content.Load<SoundEffect>("Audio/hammerBong");
+        GameMain.AudioManager.LoadSoundEffect(PlayerFallingSoundEffect);
+        GameMain.AudioManager.LoadSoundEffect(HammerHitSoundEffect);
     }
 
     public override void Update(GameTime gameTime)
     {
-        // TODO: (lmeinen) Both Hammer and Player now have Hammer.is_held type states - only one needs to store that info (buzzword: concurrent state machines)
-        KeyboardState keyboardState = Keyboard.GetState();
-        GamePadState gamePadState = GamePad.GetState(_playerId);
-        Vector3 moveInput = ReadMovementInput(keyboardState, gamePadState);
+        Vector3 moveInput = ReadMovementInput();
         Vector3 prevCenter = Center;
 
         GameStateCounter++;
         switch (State)
         {
-            case PlayerState.ALIVE when IsTryingToThrow(keyboardState, gamePadState):
+            case PlayerState.ALIVE when Controls.Throw(_playerId).Held():
                 _chargeDuration = (float)gameTime.ElapsedGameTime.TotalMilliseconds;
                 _state = PlayerState.CHARGING;
-
+                break;
+            case PlayerState.ALIVE when Controls.Dash(_playerId).Pressed():
+                _dash = new Dash(Direction, Dash.DashDistance, Dash.DashVelocity);
+                _state = PlayerState.DASHING;
                 break;
             case PlayerState.ALIVE when moveInput != Vector3.Zero:
-            case PlayerState.ALIVE_NO_HAMMER when moveInput != Vector3.Zero:
                 Direction = moveInput;
                 _velocity = ComputeVelocity(_velocity, Direction, MoveAcceleration, GroundDragFactor, gameTime);
                 Move(gameTime, _velocity);
                 break;
-            case PlayerState.CHARGING when !IsTryingToThrow(keyboardState, gamePadState):
-                _state = PlayerState.THROWING;
+            case PlayerState.CHARGING when Controls.Throw(_playerId).Released():
+                GameMain.Match.Map.Hammers[_playerId].Throw(_chargeDuration * ChargeUnit);
+                _state = PlayerState.ALIVE;
                 ChargeCounter = 0;
                 break;
             case PlayerState.CHARGING:
                 _chargeDuration += (float)gameTime.ElapsedGameTime.TotalMilliseconds;
                 ChargeCounter++;
-                //GameMain.Map.Arrows[_playerId].Charge(_chargeDuration);
                 break;
-            case PlayerState.THROWING:
-                GameMain.Map.Hammers[_playerId].Throw(_chargeDuration * ChargeUnit);
-                _state = PlayerState.ALIVE_NO_HAMMER;
-                //GameMain.Map.Arrows[_playerId].Charge(0f);
+            case PlayerState.DASHING when _dash.Distance <= 0:
+                _dash = null;
+                _state = PlayerState.ALIVE;
+                break;
+            case PlayerState.DASHING:
+                _velocity = ComputeVelocity(_velocity, _dash.Direction, _dash.Velocity, GroundDragFactor, gameTime);
+                _dash.Distance -= Move(gameTime, _velocity);
                 break;
             case PlayerState.PUSHBACK when _pushback.Distance <= 0:
                 _pushback = null;
                 _state = PlayerState.ALIVE;
                 break;
-            case PlayerState.PUSHBACK_NO_HAMMER when _pushback.Distance <= 0:
-                _pushback = null;
-                _state = PlayerState.ALIVE_NO_HAMMER;
-                break;
             case PlayerState.PUSHBACK:
-            case PlayerState.PUSHBACK_NO_HAMMER:
-                _velocity = ComputeVelocity(_velocity, _pushback.Direction, PushbackVelocity, GroundDragFactor, gameTime);
+                _velocity = ComputeVelocity(_velocity, _pushback.Direction, _pushback.Velocity, GroundDragFactor, gameTime);
                 _pushback.Distance -= Move(gameTime, _velocity);
                 break;
             case PlayerState.FALLING when Center.Y < KillPlaneLevel:
-            case PlayerState.FALLING_NO_HAMMER when Center.Y < KillPlaneLevel:
                 _state = PlayerState.DEAD;
                 OnKilled();
                 break;
             case PlayerState.FALLING:
-            case PlayerState.FALLING_NO_HAMMER:
                 // TODO: (lmeinen) there's currently a bug where a player transitions into a FALLING state when they manage to cross a gap
                 if (moveInput != Vector3.Zero)
                     Direction = moveInput;
@@ -195,14 +203,13 @@ public class Player : GameObject<PlayerState>
         HandlePlayerCollisions();
         HandleTileCollisions();
 
-        Pushback pushback = CheckHammerCollisions();
-        if (pushback != null && _pushback == null)
+        Pushback p = CheckHammerCollisions();
+        if (p != null && _pushback == null)
         {
-            _pushback = (Pushback)pushback;
+            // TODO (fbuetler) should we respect other hammer hits when already being pushed back?
+            _pushback = (Pushback)p;
             if (State == PlayerState.FALLING || State == PlayerState.ALIVE)
                 _state = PlayerState.PUSHBACK;
-            else if (State == PlayerState.FALLING_NO_HAMMER || State == PlayerState.ALIVE_NO_HAMMER)
-                _state = PlayerState.PUSHBACK_NO_HAMMER;
         }
 
         // if collision prevented us from moving, reset velocity
@@ -221,21 +228,17 @@ public class Player : GameObject<PlayerState>
                 _state = PlayerState.FALLING;
                 OnFalling();
             }
-            else if (State == PlayerState.ALIVE_NO_HAMMER || State == PlayerState.PUSHBACK_NO_HAMMER)
-            {
-                _state = PlayerState.FALLING_NO_HAMMER;
-                OnFalling();
-            }
         }
     }
 
-    private Vector3 ReadMovementInput(KeyboardState keyboardState, GamePadState gamePadState)
+    private Vector3 ReadMovementInput()
     {
         Vector3 movement = Vector3.Zero;
 
         // get analog movement
-        movement.X = gamePadState.ThumbSticks.Left.X * MoveStickScale;
-        movement.Z = gamePadState.ThumbSticks.Left.Y * MoveStickScale;
+        Vector2 m = Controls.Move(_playerId);
+        movement.X = m.X;
+        movement.Z = m.Y;
 
         // flip y: on the thumbsticks, down is -1, but on the screen, down is bigger numbers
         movement.Z *= -1;
@@ -245,24 +248,20 @@ public class Player : GameObject<PlayerState>
             movement = Vector3.Zero;
 
         // if any digital horizontal movement input is found, override the analog movement
-        if (gamePadState.IsButtonDown(Buttons.DPadUp) ||
-            keyboardState.IsKeyDown(Keys.Up))
+        if (Controls.MoveUp(_playerId).Held())
         {
             movement.Z -= 1.0f;
         }
-        else if (gamePadState.IsButtonDown(Buttons.DPadDown) ||
-                 keyboardState.IsKeyDown(Keys.Down))
+        else if (Controls.MoveDown(_playerId).Held())
         {
             movement.Z += 1.0f;
         }
 
-        if (gamePadState.IsButtonDown(Buttons.DPadLeft) ||
-            keyboardState.IsKeyDown(Keys.Left))
+        if (Controls.MoveLeft(_playerId).Held())
         {
             movement.X -= 1.0f;
         }
-        else if (gamePadState.IsButtonDown(Buttons.DPadRight) ||
-                 keyboardState.IsKeyDown(Keys.Right))
+        else if (Controls.MoveRight(_playerId).Held())
         {
             movement.X += 1.0f;
         }
@@ -275,13 +274,6 @@ public class Player : GameObject<PlayerState>
 
         return movement;
     }
-
-    public float Charge()
-    {
-        return _chargeDuration;
-    }
-
-    private bool IsTryingToThrow(KeyboardState keyboardState, GamePadState gamePadState) => keyboardState.IsKeyDown(Keys.Space) || gamePadState.IsButtonDown(ThrowButton);
 
     private Vector3 ComputeVelocity(Vector3 currentVelocity, Vector3 direction, float acceleration, float dragFactor, GameTime gameTime)
     {
@@ -298,7 +290,7 @@ public class Player : GameObject<PlayerState>
 
     private void HandlePlayerCollisions()
     {
-        foreach (Player opponent in GameMain.Map.Players.Values.Where(p => p.PlayerId != _playerId))
+        foreach (Player opponent in GameMain.Match.Map.Players.Values.Where(p => p.PlayerId != _playerId))
         {
             ResolveCollision(BoundingBox, opponent.BoundingBox);
         }
@@ -306,14 +298,14 @@ public class Player : GameObject<PlayerState>
 
     private Pushback CheckHammerCollisions()
     {
-        foreach (Hammer hammer in GameMain.Map.Hammers.Values.Where(h => h.OwnerId != _playerId && h.State != HammerState.IS_HELD))
+        foreach (Hammer hammer in GameMain.Match.Map.Hammers.Values.Where(h => h.OwnerId != _playerId && h.State != HammerState.IS_HELD))
         {
             // detect collision
             if (BoundingBox.Intersects(hammer.BoundingBox))
             {
                 OnHit(hammer);
                 // Pushback distance could be modifiable based on charge
-                return new Pushback(hammer.Direction, PushbackDistance);
+                return new Pushback(hammer.Direction, Pushback.PushbackDistance, Pushback.PushbackVelocity);
             }
         }
         return null;
@@ -332,12 +324,12 @@ public class Player : GameObject<PlayerState>
 
         for (int z = z_low; z <= z_high; z++)
         {
-            for (int y = 0; y <= GameMain.Map.Height; y++)
+            for (int y = 0; y <= GameMain.Match.Map.Height; y++)
             {
                 for (int x = x_low; x <= x_high; x++)
                 {
                     // check if there's a tile below us
-                    BoundingBox? neighbour = GameMain.Map.TryGetTileBounds(x, y, z);
+                    BoundingBox? neighbour = GameMain.Match.Map.TryGetTileBounds(x, y, z);
                     if (neighbour != null && ((BoundingBox)neighbour).Max.Y < BoundingBox.Min.Y)
                     {
                         return false;
@@ -351,22 +343,13 @@ public class Player : GameObject<PlayerState>
     private void OnHit(Hammer hammer)
     {
         hammer.Hit();
-        _hammerHitSound.Play();
+        GameMain.AudioManager.PlaySoundEffect(HammerHitSoundEffect);
         GamePad.SetVibration(_playerId, 0.2f, 0.2f, 0.2f, 0.2f);
-    }
-
-    public void OnHammerReturn()
-    {
-        if (State == PlayerState.ALIVE_NO_HAMMER)
-        {
-            _state = PlayerState.ALIVE;
-        }
-        // TODO (fbuetler) update texture
     }
 
     public void OnFalling()
     {
-        _fallingSound.Play();
+        GameMain.AudioManager.PlaySoundEffect(PlayerFallingSoundEffect);
         GamePad.SetVibration(_playerId, 0.2f, 0.2f, 0.2f, 0.2f);
     }
 
@@ -375,5 +358,6 @@ public class Player : GameObject<PlayerState>
         Visible = false;
         Enabled = false;
         GamePad.SetVibration(_playerId, 0.0f, 0.0f, 0.0f, 0.0f);
+        GameMain.Match.Map.AdjustSongSpeed();
     }
 }

@@ -1,32 +1,33 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Media;
 
 namespace hammered;
 
-public class Map
+public class Map : DrawableGameComponent
 {
-
-    private const int TILE_UPDATE_ORDER = 0;
-    private const int HAMMER_UPDATE_ORDER = 1;
-    private const int PLAYER_UPDATE_ORDER = 2;
 
     public ContentManager Content { get => _content; }
     ContentManager _content;
 
     public DebugDraw DebugDraw { get => _game.DebugDraw; }
 
+    public GameMain GameMain { get => _game; }
     private GameMain _game;
 
     public Camera Camera { get => _camera; }
     private Camera _camera;
 
+    private String _mapPath;
+
     public int Width { get => _tiles.GetLength(0); }
     public int Height { get => _tiles.GetLength(1); }
     public int Depth { get => _tiles.GetLength(2); }
+    public Tile[,,] Tiles { get => _tiles; }
     private Tile[,,] _tiles;
 
     public Dictionary<int, Player> Players { get => _players; }
@@ -38,8 +39,23 @@ public class Map
     public Dictionary<int, Arrow> Arrows { get => _arrows; }
     private Dictionary<int, Arrow> _arrows = new Dictionary<int, Arrow>();
 
+    // TODO: (lmeinen) Wait with decreasing playsAlive until player hits ground below (could make for fun animation or items that allow one to come back from falling)
+    public List<int> PlayersAlive
+    {
+        get => Players.Values
+            .Where(p => !(p.State == PlayerState.DEAD || p.State == PlayerState.FALLING))
+            .Select(p => p.PlayerId)
+            .ToList();
+    }
 
-    public Map(Game game, IServiceProvider serviceProvider, Stream fileStream)
+    public bool Paused { get => _paused; }
+    private bool _paused;
+
+    // song
+    private const string SlowMapSong = "MusicMapSlow";
+    private const string FastMapSong = "MusicMapFast";
+
+    public Map(Game game, IServiceProvider serviceProvider, String mapPath) : base(game)
     {
         if (game == null)
             throw new ArgumentNullException("game");
@@ -52,16 +68,20 @@ public class Map
         // create a new content manager to load content used just by this map 
         _content = new ContentManager(serviceProvider, "Content");
 
-        // load tiles and players
-        LoadMap(fileStream);
+        _mapPath = mapPath;
 
-        // setup camera
-        _camera = new Camera(
-            new Vector3(Width / 2, 0f, Depth / 2),
-            (float)_game.GetBackBufferWidth() / _game.GetBackBufferHeight(),
-            Width
-        );
+        // make update and draw called by monogame
+        Enabled = true;
+        UpdateOrder = GameMain.MAP_UPDATE_ORDER;
+        Visible = true;
+        DrawOrder = GameMain.MAP_DRAW_ORDER;
+    }
 
+    protected override void LoadContent()
+    {
+        using (Stream fileStream = TitleContainer.OpenStream(_mapPath))
+            LoadMap(fileStream);
+        LoadCamera();
         LoadMusic();
     }
 
@@ -99,7 +119,7 @@ public class Map
             }
         }
 
-        if (_players.Count < _game.NumberOfPlayers)
+        if (_players.Count < GameMain.Match.NumberOfPlayers)
         {
             throw new NotSupportedException("A map must have starting points for all players");
         }
@@ -107,7 +127,6 @@ public class Map
 
     private Tile LoadTile(char tileType, int x, int y, int z)
     {
-        // TODO (fbuetler) introduce different tile types
         Tile tile;
         switch (tileType)
         {
@@ -132,14 +151,13 @@ public class Map
             default:
                 return null;
         }
-        tile.UpdateOrder = TILE_UPDATE_ORDER;
-        _game.Components.Add(tile);
+        GameMain.Components.Add(tile);
         return tile;
     }
 
     private Tile LoadBreakableFloorTile(int x, int y, int z)
     {
-        return new Tile(_game, new Vector3(x, y, z));
+        return new Tile(GameMain, new Vector3(x, y, z));
     }
 
     private Tile LoadNonBreakableFloorTile(int x, int y, int z)
@@ -149,52 +167,81 @@ public class Map
 
     private Tile LoadWallTile(int x, int y, int z)
     {
-        return new Tile(_game, new Vector3(x, y, z));
+        return new Tile(GameMain, new Vector3(x, y, z));
     }
 
     private void LoadPlayer(int x, int y, int z)
     {
         // ignore starting tiles if already all players are loaded
-        if (_players.Count < _game.NumberOfPlayers)
+        if (_players.Count < GameMain.Match.NumberOfPlayers)
         {
             int playerId = _players.Count;
-            Player player = new Player(_game, new Vector3(x, y, z), playerId);
-            Hammer hammer = new Hammer(_game, new Vector3(x, y, z), playerId);
-            Arrow arrow = new Arrow(_game, new Vector3(x, 1, z), playerId);
+            Player player = new Player(GameMain, new Vector3(x, y, z), playerId);
+            Hammer hammer = new Hammer(GameMain, new Vector3(x, y, z), playerId);
+            Arrow arrow = new Arrow(GameMain, new Vector3(x, 1, z), playerId);
             _players.Add(playerId, player);
             _hammers.Add(playerId, hammer);
             _arrows.Add(playerId, arrow);
 
             // enable player component
-            player.UpdateOrder = PLAYER_UPDATE_ORDER;
-            _game.Components.Add(player);
+            GameMain.Components.Add(player);
 
             // enable hammer compohent
-            hammer.UpdateOrder = HAMMER_UPDATE_ORDER;
-            _game.Components.Add(hammer);
+            GameMain.Components.Add(hammer);
 
             // enable arrow component
-            arrow.UpdateOrder = HAMMER_UPDATE_ORDER;
             _game.Components.Add(arrow);
         }
     }
 
     private void LoadMusic()
     {
-        // game crashes sometimes with:
+        // TODO (fbuetler) game crashes sometimes with:
         // Unhandled exception. System.NullReferenceException: Object reference not set to an instance of an object.
         // are we loading not fast enough?
         try
         {
-            MediaPlayer.Play(_content.Load<Song>("Audio/Stormfront"));
-            MediaPlayer.IsRepeating = true;
+            GameMain.AudioManager.LoadSong(SlowMapSong);
+            GameMain.AudioManager.PlaySong(SlowMapSong);
+
+            GameMain.AudioManager.LoadSong(FastMapSong);
         }
         catch { }
     }
 
-    public void Dispose()
+    private void LoadCamera()
     {
-        _content.Unload();
+        _camera = new Camera(
+            new Vector3(Width / 2, 0f, Depth / 2),
+            (float)GameMain.GetBackBufferWidth() / GameMain.GetBackBufferHeight(),
+            Width
+        );
+    }
+
+    public override void Update(GameTime gameTime)
+    {
+        HandleInput();
+    }
+
+    private void HandleInput()
+    {
+        if (Controls.Pause.Pressed())
+        {
+            _paused = !_paused;
+            foreach (Player p in Players.Values)
+            {
+                p.Enabled = !p.Enabled;
+            }
+            foreach (Hammer h in Hammers.Values)
+            {
+                h.Enabled = !h.Enabled;
+            }
+            foreach (Tile t in Tiles)
+            {
+                if (t != null)
+                    t.Enabled = !t.Enabled;
+            }
+        }
     }
 
     public BoundingBox? TryGetTileBounds(int x, int y, int z)
@@ -212,15 +259,24 @@ public class Map
         }
     }
 
-    public void Draw(GameTime gameTime)
+    public void AdjustSongSpeed()
     {
+        if (PlayersAlive.Count == 2)
+        {
+            TimeSpan stopPosition = MediaPlayer.PlayPosition;
+            TimeSpan startPosition = TimeSpan.FromSeconds(stopPosition.Seconds);
+            // TODO (fbuetler) what is this math here?
+            GameMain.AudioManager.PlaySong(FastMapSong, 120 * startPosition / 135);
+        }
+    }
 
-        Matrix view = Camera.View;
-        Matrix projection = Camera.Projection;
+    public override void Draw(GameTime gameTime)
+    {
+        GraphicsDevice.Clear(Color.CornflowerBlue);
 
 #if DEBUG
         // draw coordinate system
-        DebugDraw.Begin(Matrix.Identity, view, projection);
+        DebugDraw.Begin(Matrix.Identity, Camera.View, Camera.Projection);
         DebugDraw.DrawLine(Vector3.Zero, 30 * Vector3.UnitX, Color.Black);
         DebugDraw.DrawLine(Vector3.Zero, 30 * Vector3.UnitY, Color.Black);
         DebugDraw.DrawLine(Vector3.Zero, 30 * Vector3.UnitZ, Color.Black);

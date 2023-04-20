@@ -82,10 +82,10 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
         // _models = new Dictionary<GameObjectState, ScaledModel>();
         foreach (GameObjectState state in Enum.GetValues(typeof(GameObjectState)))
         {
-            if (!GameMain.Models.ContainsKey(state.ToString()))
+            if (!GameMain.Match.Models.ContainsKey(state.ToString()))
             {
                 // load model
-                Model model = GameMain.Map.Content.Load<Model>(ObjectModelPaths[state]);
+                Model model = GameMain.Match.Map.Content.Load<Model>(ObjectModelPaths[state]);
 
                 // compute scaling required to fit model to its BoundingBox
                 BoundingBox size = GetModelSize(model);
@@ -97,11 +97,12 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
                 float actualScalingFactor = Math.Min(xScale, Math.Min(yScale, zScale));
                 _size = (size.Max - size.Min) * actualScalingFactor;
                 Matrix modelScale = Matrix.CreateScale(actualScalingFactor);
-                GameMain.Models.Add(state.ToString(), new ScaledModel(model, modelScale, Size));
+
+                GameMain.Match.Models.Add(state.ToString(), new ScaledModel(model, modelScale, Size));
             }
             else
             {
-                _size = GameMain.Models[state.ToString()].size;
+                _size = GameMain.Match.Models[state.ToString()].size;
             }
         }
 
@@ -112,22 +113,21 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
 
     public override void Draw(GameTime gameTime)
     {
-        Matrix view = GameMain.Map.Camera.View;
-        Matrix projection = GameMain.Map.Camera.Projection;
+        Matrix view = GameMain.Match.Map.Camera.View;
+        Matrix projection = GameMain.Match.Map.Camera.Projection;
 
-        // TODO (fbuetler) fix angle
         Matrix rotate = ComputeRotation();
 
         Matrix translateIntoPosition = Matrix.CreateTranslation(RotCenter);
 
-        Matrix world = GameMain.Models[State.ToString()].modelScale * rotate * translateIntoPosition;
+        Matrix world = GameMain.Match.Models[State.ToString()].modelScale * rotate * translateIntoPosition;
 
-        DrawModel(GameMain.Models[State.ToString()].model, world, view, projection);
+        DrawModel(GameMain.Match.Models[State.ToString()].model, world, view, projection);
 
 #if DEBUG
-        GameMain.Map.DebugDraw.Begin(Matrix.Identity, view, projection);
-        GameMain.Map.DebugDraw.DrawWireBox(BoundingBox, GetDebugColor());
-        GameMain.Map.DebugDraw.End();
+        GameMain.Match.Map.DebugDraw.Begin(Matrix.Identity, view, projection);
+        GameMain.Match.Map.DebugDraw.DrawWireBox(BoundingBox, GetDebugColor());
+        GameMain.Match.Map.DebugDraw.End();
 #endif
     }
 
@@ -200,7 +200,7 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
                 for (int x = x_low; x <= x_high; x++)
                 {
                     // determine collision depth (with direction) and magnitude
-                    BoundingBox? neighbour = GameMain.Map.TryGetTileBounds(x, y, z);
+                    BoundingBox? neighbour = GameMain.Match.Map.TryGetTileBounds(x, y, z);
                     if (neighbour != null)
                     {
                         ResolveCollision(BoundingBox, (BoundingBox)neighbour);

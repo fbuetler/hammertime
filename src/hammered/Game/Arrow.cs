@@ -21,7 +21,7 @@ public class Arrow : GameObject<ArrowState>
     //private int _playerId;
     //public int PlayerId { get => _playerId; }
 
-    public override Vector3 MaxSize { get => _maxSize; set => _maxSize= value;}
+    public override Vector3 MaxSize { get => _maxSize; set => _maxSize = value; }
     public Vector3 _maxSize = new Vector3(5f, 0.1f, 0.5f);
 
     private ArrowState _state;
@@ -55,25 +55,25 @@ public class Arrow : GameObject<ArrowState>
         Vector3 pos;
         switch (_state)
         {
-            case ArrowState.IS_NOT_CHARGING when GameMain.Map.Players[OwnerId].State == PlayerState.CHARGING:
+            case ArrowState.IS_NOT_CHARGING when GameMain.Match.Map.Players[OwnerId].State == PlayerState.CHARGING:
                 _state = ArrowState.IS_CHARGING;
-                Direction = GameMain.Map.Hammers[OwnerId].Direction;
-                pos = GameMain.Map.Players[OwnerId].Center;
-                throwDistance = GameMain.Map.Players[OwnerId].Charge();
-                _maxSize = new Vector3(throwDistance/(float) 2, 0.1f, 0.5f);
+                Direction = GameMain.Match.Map.Hammers[OwnerId].Direction;
+                pos = GameMain.Match.Map.Players[OwnerId].Center;
+                throwDistance = GameMain.Match.Map.Players[OwnerId].Charge;
+                _maxSize = new Vector3(throwDistance / (float)2, 0.1f, 0.5f);
                 pos.Y = 1f; // arrow should be on the floor
                 Center = pos;
                 Visible = true;
                 break;
-            case ArrowState.IS_CHARGING when GameMain.Map.Players[OwnerId].State != PlayerState.CHARGING:
+            case ArrowState.IS_CHARGING when GameMain.Match.Map.Players[OwnerId].State != PlayerState.CHARGING:
                 _state = ArrowState.IS_NOT_CHARGING;
                 Visible = false;
                 break;
             case ArrowState.IS_CHARGING:
-                Direction = GameMain.Map.Hammers[OwnerId].Direction;
-                throwDistance = GameMain.Map.Players[OwnerId].Charge();
-                _maxSize = new Vector3(throwDistance/(float) 2, 0.1f, 0.5f);
-                pos = GameMain.Map.Players[OwnerId].Center;
+                Direction = GameMain.Match.Map.Hammers[OwnerId].Direction;
+                throwDistance = GameMain.Match.Map.Players[OwnerId].Charge;
+                _maxSize = new Vector3(throwDistance / (float)2, 0.1f, 0.5f);
+                pos = GameMain.Match.Map.Players[OwnerId].Center;
                 pos.Y = 1f; // arrow should be on the floor
                 Center = pos;
                 break;
@@ -82,24 +82,24 @@ public class Arrow : GameObject<ArrowState>
                 break;
         }
     }
-    
+
     public override void Draw(GameTime gameTime)
     {
-        Matrix view = GameMain.Map.Camera.View;
-        Matrix projection = GameMain.Map.Camera.Projection;
+        Matrix view = GameMain.Match.Map.Camera.View;
+        Matrix projection = GameMain.Match.Map.Camera.Projection;
 
         Matrix rotate = ComputeRotation();
 
         Matrix translateIntoPosition = Matrix.CreateTranslation(RotCenter);
 
-        Matrix world =  Matrix.CreateScale(5f) * GameMain.Models[State.ToString()].modelScale * rotate * translateIntoPosition;
+        Matrix world = Matrix.CreateScale(5f) * GameMain.Match.Models[State.ToString()].modelScale * rotate * translateIntoPosition;
 
-        DrawModel(GameMain.Models[State.ToString()].model, world, view, projection);
+        DrawModel(GameMain.Match.Models[State.ToString()].model, world, view, projection);
 
 #if DEBUG
-        GameMain.Map.DebugDraw.Begin(Matrix.Identity, view, projection);
-        GameMain.Map.DebugDraw.DrawWireBox(BoundingBox, GetDebugColor());
-        GameMain.Map.DebugDraw.End();
+        GameMain.Match.Map.DebugDraw.Begin(Matrix.Identity, view, projection);
+        GameMain.Match.Map.DebugDraw.DrawWireBox(BoundingBox, GetDebugColor());
+        GameMain.Match.Map.DebugDraw.End();
 #endif
     }
 

@@ -36,7 +36,9 @@ public class Tile : GameObject<TileState>
     {
         // make update and draw called by monogame
         Enabled = true;
+        UpdateOrder = GameMain.TILE_UPDATE_ORDER;
         Visible = true;
+        DrawOrder = GameMain.TILE_DRAW_ORDER;
 
         _state = TileState.HP100;
 
@@ -53,13 +55,12 @@ public class Tile : GameObject<TileState>
 
     public override void Update(GameTime gameTime)
     {
-        foreach (Player p in GameMain.Map.Players.Values)
+        foreach (Player p in GameMain.Match.Map.Players.Values)
         {
             // is player standing on tile
             if (BoundingBox.Min.X <= p.Center.X && p.Center.X <= BoundingBox.Max.X &&
                 BoundingBox.Min.Z <= p.Center.Z && p.Center.Z <= BoundingBox.Max.Z &&
-                p.State != PlayerState.FALLING &&
-                p.State != PlayerState.FALLING_NO_HAMMER)
+                p.State != PlayerState.FALLING)
             {
                 if (!_visitors.Contains(p.PlayerId))
                 {
@@ -75,7 +76,7 @@ public class Tile : GameObject<TileState>
             }
         }
 
-        foreach (Hammer h in GameMain.Map.Hammers.Values)
+        foreach (Hammer h in GameMain.Match.Map.Hammers.Values)
         {
             // wall collisions
             if (h.BoundingBox.Intersects(BoundingBox) &&
@@ -91,8 +92,6 @@ public class Tile : GameObject<TileState>
             // only called once
             OnBreak();
         }
-
-        // TODO (fbuetler) update breaking animation based on health points
     }
 
     public void OnEnter(Player player)
@@ -108,7 +107,6 @@ public class Tile : GameObject<TileState>
 
     private static TileState NextState(TileState tileState) => tileState switch
     {
-        // TODO: (lmeinen) Wouldn't it be cooler if we used this everywhere, using case guards and callable actions?
         TileState.HP100 => TileState.HP80,
         TileState.HP80 => TileState.HP60,
         TileState.HP60 => TileState.HP40,

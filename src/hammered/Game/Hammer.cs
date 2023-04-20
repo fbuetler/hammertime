@@ -28,7 +28,7 @@ public class Hammer : GameObject<HammerState>
     // charging distance
     private float _throwDistance;
 
-    public override Vector3 MaxSize { get => _maxSize; set => _maxSize = value;}
+    public override Vector3 MaxSize { get => _maxSize; set => _maxSize = value; }
     private static Vector3 _maxSize = new Vector3(0.5f, 0.5f, 0.5f);
 
     private HammerState _state;
@@ -46,14 +46,13 @@ public class Hammer : GameObject<HammerState>
     // constants for controlling pickup
     private const float PickupDistance = 1f;
 
-    // input configuration
-    private const float AimStickScale = 1.0f;
-
     public Hammer(Game game, Vector3 position, int ownerId) : base(game, position + _maxSize / 2)
     {
         // make update and draw called by monogame
         Enabled = true;
+        UpdateOrder = GameMain.HAMMER_UPDATE_ORDER;
         Visible = false;
+        DrawOrder = GameMain.HAMMER_DRAW_ORDER;
 
         _ownerId = ownerId;
 
@@ -92,10 +91,9 @@ public class Hammer : GameObject<HammerState>
                 Move(gameTime, Direction * _velocity);
                 //Move(gameTime, Direction * ThrowSpeed);
                 break;
-            case HammerState.IS_RETURNING when (Center - GameMain.Map.Players[_ownerId].Center).LengthSquared() < PickupDistance * PickupDistance || GameMain.Map.Players[_ownerId].State == PlayerState.DEAD:
+            case HammerState.IS_RETURNING when (Center - GameMain.Match.Map.Players[_ownerId].Center).LengthSquared() < PickupDistance * PickupDistance || GameMain.Match.Map.Players[_ownerId].State == PlayerState.DEAD:
                 // if hammer is close to the player or the player is dead, it is picked up
                 PickUp();
-                GameMain.Map.Players[_ownerId].OnHammerReturn();
                 break;
             case HammerState.IS_RETURNING:
                 HandleTileCollisions();
@@ -109,13 +107,12 @@ public class Hammer : GameObject<HammerState>
 
     private Vector3 ReadAimingInput()
     {
-        KeyboardState keyboardState = Keyboard.GetState();
-        GamePadState gamePadState = GamePad.GetState(_ownerId);
+        Vector3 aimingDirection = Vector3.Zero;
 
         // get analog aim
-        Vector3 aimingDirection = Vector3.Zero;
-        aimingDirection.X = gamePadState.ThumbSticks.Right.X * AimStickScale;
-        aimingDirection.Z = gamePadState.ThumbSticks.Right.Y * AimStickScale;
+        Vector2 a = Controls.Aim(_ownerId);
+        aimingDirection.X = a.X;
+        aimingDirection.Z = a.Y;
 
         // flip y: on the thumbsticks, down is -1, but on the screen, down is bigger numbers
         aimingDirection.Z *= -1;
@@ -125,20 +122,20 @@ public class Hammer : GameObject<HammerState>
             aimingDirection = Vector3.Zero;
 
         // if any digital horizontal aiming input is found, override the analog aiming
-        if (keyboardState.IsKeyDown(Keys.W))
+        if (Controls.AimUp(_ownerId).Held())
         {
             aimingDirection.Z -= 1.0f;
         }
-        else if (keyboardState.IsKeyDown(Keys.S))
+        else if (Controls.AimDown(_ownerId).Held())
         {
             aimingDirection.Z += 1.0f;
         }
 
-        if (keyboardState.IsKeyDown(Keys.A))
+        if (Controls.AimLeft(_ownerId).Held())
         {
             aimingDirection.X -= 1.0f;
         }
-        else if (keyboardState.IsKeyDown(Keys.D))
+        else if (Controls.AimRight(_ownerId).Held())
         {
             aimingDirection.X += 1.0f;
         }
@@ -156,9 +153,9 @@ public class Hammer : GameObject<HammerState>
         // if there is no aiming input, use walking direction or default
         if (Direction == Vector3.Zero)
         {
-            if (GameMain.Map.Players[_ownerId].Direction != Vector3.Zero)
+            if (GameMain.Match.Map.Players[_ownerId].Direction != Vector3.Zero)
             {
-                Direction = GameMain.Map.Players[_ownerId].Direction;
+                Direction = GameMain.Match.Map.Players[_ownerId].Direction;
             }
             else
             {
@@ -179,14 +176,15 @@ public class Hammer : GameObject<HammerState>
         _state = HammerState.IS_FLYING;
         this.Visible = true;
 
-        _origin = GameMain.Map.Players[_ownerId].Center;
+        _origin = GameMain.Match.Map.Players[_ownerId].Center;
+        Center = GameMain.Match.Map.Players[_ownerId].Center;
+
         _throwDistance = throwDistance;
-        Center = GameMain.Map.Players[_ownerId].Center;
     }
 
     private void FollowOwner()
     {
-        Vector3 dir = GameMain.Map.Players[_ownerId].Center - Center;
+        Vector3 dir = GameMain.Match.Map.Players[_ownerId].Center - Center;
         dir.Normalize();
         Direction = dir;
     }
