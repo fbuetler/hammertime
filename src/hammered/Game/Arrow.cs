@@ -23,15 +23,12 @@ public class Arrow : GameObject<ArrowState>
     public override ArrowState State { get => _state; }
     private ArrowState _state;
 
-    // TODO: (lmeinen) why isn't this working?
-    public override Vector3 RotCenter { get => Center; }
-
     public override Dictionary<ArrowState, string> ObjectModelPaths { get => _objectModelPaths; }
     private Dictionary<ArrowState, string> _objectModelPaths;
 
     private float _throwDistance;
 
-    private const float MaxArrowLength = 3f;
+    private const float MaxArrowLength = 15f;
 
     public Arrow(Game game, Vector3 position, int ownerId) : base(game, position)
     {
@@ -85,15 +82,14 @@ public class Arrow : GameObject<ArrowState>
         Matrix view = GameMain.Match.Map.Camera.View;
         Matrix projection = GameMain.Match.Map.Camera.Projection;
 
-        Matrix rotate = ComputeRotation();
-
-        Matrix translateIntoPosition = Matrix.CreateTranslation(RotCenter);
-
-        Matrix scale = Matrix.CreateScale(_throwDistance * MaxArrowLength / Hammer.MaxThrowDistance);
-
         ScaledModel scaledModel = GameMain.Match.Models[State.ToString()];
 
-        Matrix world = scale * scaledModel.modelScale * rotate * translateIntoPosition;
+        Matrix translateIntoOrigin = Matrix.CreateTranslation(0, 0, -Size.Z / 2);
+        Matrix scale = Matrix.CreateScale(MathF.Min(_throwDistance * MaxArrowLength / Hammer.MaxThrowDistance, MaxArrowLength), 1, 1);
+        Matrix rotate = ComputeRotation();
+        Matrix translateIntoPosition = Matrix.CreateTranslation(RotCenter);
+        Matrix world = scaledModel.modelScale * translateIntoOrigin * scale * rotate * translateIntoPosition;
+
         DrawModel(scaledModel.model, world, view, projection);
 
 #if DEBUG
