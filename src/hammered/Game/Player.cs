@@ -66,8 +66,8 @@ public class Player : GameObject<PlayerState>
     public override Vector3 MaxSize { get => _maxSize; }
     private static Vector3 _maxSize = new Vector3(1f, 1f, 1f);
 
+    public override PlayerState State { get => _state; }
     private PlayerState _state;
-    public override PlayerState State => _state;
 
     // charge
     public float ThrowDistance { get => _chargeDuration * ChargeUnit; }
@@ -144,6 +144,7 @@ public class Player : GameObject<PlayerState>
             case PlayerState.ALIVE when Controls.Dash(_playerId).Pressed():
                 _dash = new Dash(Direction, Dash.DashDistance, Dash.DashVelocity);
                 _state = PlayerState.DASHING;
+                Visible = false;
                 break;
             case PlayerState.ALIVE when moveInput != Vector3.Zero:
                 Direction = moveInput;
@@ -169,6 +170,7 @@ public class Player : GameObject<PlayerState>
             case PlayerState.DASHING when _dash.Distance <= 0:
                 _dash = null;
                 _state = PlayerState.ALIVE;
+                Visible = true;
                 break;
             case PlayerState.DASHING:
                 _velocity = ComputeVelocity(_velocity, _dash.Direction, _dash.Velocity, GroundDragFactor, gameTime);
@@ -204,10 +206,9 @@ public class Player : GameObject<PlayerState>
         Pushback p = CheckHammerCollisions();
         if (p != null && _pushback == null)
         {
-            // TODO (fbuetler) should we respect other hammer hits when already being pushed back?
             _pushback = (Pushback)p;
-            if (State == PlayerState.FALLING || State == PlayerState.ALIVE)
-                _state = PlayerState.PUSHBACK;
+            _state = PlayerState.PUSHBACK;
+            Visible = true; // in case previous state was dashing
         }
 
         // if collision prevented us from moving, reset velocity
@@ -221,7 +222,7 @@ public class Player : GameObject<PlayerState>
         if (IsFalling())
         {
             // Vertical velocity means we're falling :(
-            if (_state == PlayerState.ALIVE || _state == PlayerState.PUSHBACK)
+            if (State == PlayerState.ALIVE || State == PlayerState.PUSHBACK)
             {
                 _state = PlayerState.FALLING;
                 OnFalling();
