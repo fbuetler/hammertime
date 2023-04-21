@@ -20,10 +20,12 @@ public class AudioManager
     private Dictionary<string, SoundEffect> _soundEffects = new Dictionary<string, SoundEffect>();
 
     public float Volume { get => MediaPlayer.Volume; }
+    public float VolumeSoundEffects { get => SoundEffect.MasterVolume; }
 
     private const string audioRootPath = "Audio/";
 
     private const float defaultVolume = 0.1f;
+    private const float defaultEffectVolume = 0.05f;
 
     public AudioManager(Game game)
     {
@@ -33,6 +35,7 @@ public class AudioManager
 
         MediaPlayer.Volume = defaultVolume;
         MediaPlayer.IsRepeating = true;
+        SoundEffect.MasterVolume = defaultEffectVolume;
     }
 
     public void LoadSong(string name)
@@ -56,6 +59,12 @@ public class AudioManager
     }
 
     // TODO (fbuetler) @fred do we really need to expose volume here?
+    //we don't but if its ever needed we have both now.
+    public void PlaySong(string name)
+    {
+        PlaySong(name, MediaPlayer.Volume, TimeSpan.FromSeconds(0));
+    }
+
     public void PlaySong(string name, float volume)
     {
         PlaySong(name, volume, TimeSpan.FromSeconds(0));
@@ -79,4 +88,5 @@ public class AudioManager
             loaded.Play();
         }
     }
+
 }

@@ -185,6 +185,9 @@ public class Map : DrawableGameComponent
             GameMain.AudioManager.PlaySong(SlowMapSong, GameMain.AudioManager.Volume);
 
             GameMain.AudioManager.LoadSong(FastMapSong);
+            GameMain.AudioManager.LoadSoundEffect("throw1");
+            GameMain.AudioManager.LoadSoundEffect("throw2");
+            GameMain.AudioManager.LoadSoundEffect("throw3");
         }
         catch { }
     }

@@ -80,10 +80,12 @@ public class Menu : DrawableGameComponent
         _title = GameMain.Content.Load<Texture2D>("Menu/title");
         _menuItems = GameMain.Content.Load<Texture2D>("Menu/items");
         _impactFont = _game.Content.Load<SpriteFont>("Fonts/impact");
-
+        
         LoadStartMenuGroup();
         LoadQuitMenuGroup();
         LoadPlayersMenuGroup();
+        _game.AudioManager.LoadSoundEffect("ButtonPress");
+            //.LoadSoundEffect("ButtonPress");
     }
 
     private void LoadStartMenuGroup()
@@ -131,6 +133,7 @@ public class Menu : DrawableGameComponent
 
     public override void Update(GameTime gameTime)
     {
+        MenuState prev = _state;
         switch (_state)
         {
             // title
@@ -233,7 +236,9 @@ public class Menu : DrawableGameComponent
                 _state = MenuState.MAIN_START;
             }
         }
-
+        if (_state != prev) {
+            _game.AudioManager.PlaySoundEffect("ButtonPress");
+        }
         base.Update(gameTime);
     }
 

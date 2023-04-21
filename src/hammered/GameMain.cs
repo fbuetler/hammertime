@@ -74,6 +74,9 @@ public class GameMain : Game
         _menu = new Menu(this);
         Components.Add(_menu);
 
+        _audio = new AudioManager(this);
+        _audio.LoadSong("Menu");
+        _audio.PlaySong("Menu");
         base.Initialize();
 
         _graphics.PreferredBackBufferWidth = GetBackBufferWidth();
@@ -83,7 +86,6 @@ public class GameMain : Game
         _graphics.ApplyChanges();
 
         _debugDraw = new DebugDraw(GraphicsDevice);
-        _audio = new AudioManager(this);
     }
 
     protected override void LoadContent()
