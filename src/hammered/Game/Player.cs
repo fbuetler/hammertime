@@ -135,6 +135,7 @@ public class Player : GameObject<PlayerState>
             case PlayerState.ALIVE when Controls.Dash(_playerId).Pressed():
                 _dash = new Dash(Direction, Dash.DashDistance, Dash.DashVelocity);
                 _state = PlayerState.DASHING;
+                Visible = false;
                 break;
             case PlayerState.ALIVE when moveInput != Vector3.Zero:
                 Direction = moveInput;
@@ -144,6 +145,7 @@ public class Player : GameObject<PlayerState>
             case PlayerState.DASHING when _dash.Distance <= 0:
                 _dash = null;
                 _state = PlayerState.ALIVE;
+                Visible = true;
                 break;
             case PlayerState.DASHING:
                 _velocity = ComputeVelocity(_velocity, _dash.Direction, _dash.Velocity, GroundDragFactor, gameTime);
