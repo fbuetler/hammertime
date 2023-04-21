@@ -153,7 +153,7 @@ public class Hammer : GameObject<HammerState>
             }
             else
             {
-                Direction = new Vector3(0, 0, 1);
+                Direction = new Vector3(1, 0, 0);
             }
         }
 
