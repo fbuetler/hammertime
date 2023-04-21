@@ -233,6 +233,10 @@ public class Map : DrawableGameComponent
             {
                 h.Enabled = !h.Enabled;
             }
+            foreach (Arrow a in Arrows.Values)
+            {
+                a.Enabled = !a.Enabled;
+            }
             foreach (Tile t in Tiles)
             {
                 if (t != null)
