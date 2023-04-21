@@ -36,7 +36,7 @@ public class Hammer : GameObject<HammerState>
     public override Dictionary<HammerState, string> ObjectModelPaths { get => _objectModelPaths; }
 
     // constants for controlling throwing
-    private const float ThrowAcceleration = 10f;
+    private const float ThrowAcceleration = 500f;
     private const float MaxThrowVelocity = 20f;
     public const float MaxThrowDistance = 10f;
 
@@ -75,14 +75,22 @@ public class Hammer : GameObject<HammerState>
                 if (collided)
                 {
                     Return();
+                    break;
                 }
-                if ((Center - _origin).Length() > _throwDistance)
+
+                float travelledThrowDistance = (Center - _origin).Length();
+                if (travelledThrowDistance > _throwDistance)
                 {
                     // if max distance is reached, make it return
                     Return();
+                    break;
                 }
 
-                _velocity = ComputeVelocity(gameTime, _velocity, ThrowAcceleration);
+                // magic function: check wolfram alpha for the plot
+                float travelledFraction = travelledThrowDistance / MaxThrowDistance;
+                float y = 0.25f * MathF.Log(-travelledFraction + 1.05f) + 1f;
+                _velocity = y * MaxThrowVelocity;
+
                 Move(gameTime, Direction * _velocity);
                 break;
             case HammerState.IS_RETURNING when (Center - GameMain.Match.Map.Players[_ownerId].Center).LengthSquared() < PickupDistance * PickupDistance || GameMain.Match.Map.Players[_ownerId].State == PlayerState.DEAD:
