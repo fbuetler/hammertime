@@ -57,7 +57,7 @@ public class HudOverlay : DrawableGameComponent
         );
 #endif
 
-        float screenWidth = GameMain.GetBackBufferWidth();
+        float screenWidth = GameMain.GetScreenWidth();
         DrawShadowedString(
             _font, "Scores:",
             new Vector2(screenWidth - rightAlignedOffset, topAlignedOffset),
@@ -79,7 +79,7 @@ public class HudOverlay : DrawableGameComponent
             );
         }
 
-        float screenHeight = GameMain.GetBackBufferHeight();
+        float screenHeight = GameMain.GetScreenHeight();
         if (GameMain.Match.MatchFinished || GameMain.Match.Map.Paused)
         {
             string text;

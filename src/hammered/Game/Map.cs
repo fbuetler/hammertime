@@ -210,7 +210,7 @@ public class Map : DrawableGameComponent
     {
         _camera = new Camera(
             new Vector3(Width / 2, 0f, Depth / 2),
-            (float)GameMain.GetBackBufferWidth() / GameMain.GetBackBufferHeight(),
+            (float)GameMain.GetScreenWidth() / GameMain.GetScreenHeight(),
             Width
         );
     }

@@ -86,7 +86,6 @@ public class Player : GameObject<PlayerState>
     private const float KillPlaneLevel = -10f;
 
     // charge/throw
-    // TODO (fbuetler) tweak unit
     private const float ChargeUnit = 0.02f;
 
     // constants for controlling horizontal movement

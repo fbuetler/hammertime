@@ -50,7 +50,7 @@ public class GameMain : Game
         Content.RootDirectory = "Content";
     }
 
-    public int GetBackBufferWidth()
+    public int GetScreenWidth()
     {
 #if DEBUG
         return 1280;
@@ -59,13 +59,21 @@ public class GameMain : Game
 #endif
     }
 
-    public int GetBackBufferHeight()
+    public int GetScreenHeight()
     {
 #if DEBUG
         return 720;
 #else
         return 1080;
 #endif
+    }
+
+    public Vector2 GetScreenCenter()
+    {
+        return new Vector2(
+            0.5f * GetScreenWidth(),
+            0.5f * GetScreenHeight()
+        );
     }
 
     protected override void Initialize()
@@ -78,8 +86,8 @@ public class GameMain : Game
 
         base.Initialize();
 
-        _graphics.PreferredBackBufferWidth = GetBackBufferWidth();
-        _graphics.PreferredBackBufferHeight = GetBackBufferHeight(); ;
+        _graphics.PreferredBackBufferWidth = GetScreenWidth();
+        _graphics.PreferredBackBufferHeight = GetScreenHeight(); ;
 
         _graphics.IsFullScreen = false;
         _graphics.ApplyChanges();

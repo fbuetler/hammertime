@@ -178,13 +178,9 @@ public class ScoreboardOverlay : DrawableGameComponent
 
     private Vector2 CalculateAnchor(int numberOfPlayers)
     {
-        Vector2 screenCenter = new Vector2(
-            GameMain.GetBackBufferWidth() * 0.5f,
-            GameMain.GetBackBufferHeight() * 0.5f
-        );
         // TODO (fbuetler) distinguish even (center is between buttons) and odd number of buttons (center is on a button)
         float totalHeight = numberOfPlayers * SCORE_BUBBLE.Height + (numberOfPlayers - 1) * MARGIN;
-        Vector2 anchor = screenCenter;
+        Vector2 anchor = GameMain.GetScreenCenter();
         anchor.Y -= totalHeight * 0.5f;
 
         return anchor;
