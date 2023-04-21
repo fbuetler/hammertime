@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
+using Microsoft.Xna.Framework.Audio;
 
 namespace hammered;
 
@@ -94,6 +96,11 @@ public class Player : GameObject<PlayerState>
     private const string HammerHitSoundEffect = "hammerBong";
     private const string PlayerFallingSoundEffect = "falling";
 
+    private int _previousStep;
+    private SoundEffectInstance _stepInstance;
+    private float _timeSinceSound;
+
+
     public Player(Game game, Vector3 position, int playerId) : base(game, position + _maxSize / 2)
     {
         // make update and draw called by monogame
@@ -114,12 +121,20 @@ public class Player : GameObject<PlayerState>
         _objectModelPaths[PlayerState.DASHING] = "Player/playerNoHammer";
 
         _velocity = Vector3.Zero;
+        _previousStep = 0;
+        _stepInstance = null;
+        _timeSinceSound = 0;
     }
 
     protected override void LoadAudioContent()
     {
         GameMain.AudioManager.LoadSoundEffect(PlayerFallingSoundEffect);
         GameMain.AudioManager.LoadSoundEffect(HammerHitSoundEffect);
+        for(int i = 1; i < 11; i++)
+        {
+            GameMain.AudioManager.LoadSoundEffect("step" + i.ToString());
+        }
+        
     }
 
     public override void Update(GameTime gameTime)
@@ -140,6 +155,7 @@ public class Player : GameObject<PlayerState>
                 Direction = moveInput;
                 _velocity = ComputeVelocity(_velocity, Direction, MoveAcceleration, GroundDragFactor, gameTime);
                 Move(gameTime, _velocity);
+                PlayStep(gameTime);
                 break;
             case PlayerState.DASHING when _dash.Distance <= 0:
                 _dash = null;
@@ -333,5 +349,14 @@ public class Player : GameObject<PlayerState>
         GamePad.SetVibration(_playerId, 0.0f, 0.0f, 0.0f, 0.0f);
         GameMain.Match.Map.AdjustSongSpeed();
     }
+    public void PlayStep(GameTime gameTime) {
+        float elapsed = (float)gameTime.ElapsedGameTime.TotalMilliseconds;
 
+        if (_timeSinceSound > 350) {
+            GameMain.AudioManager.PlaySoundEffect("step1");
+            _timeSinceSound = 0;
+        } else { 
+            _timeSinceSound += elapsed;
+        }
+    }
 }

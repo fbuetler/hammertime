@@ -85,7 +85,8 @@ public class Menu : DrawableGameComponent
         LoadQuitMenuGroup();
         LoadPlayersMenuGroup();
         _game.AudioManager.LoadSoundEffect("ButtonPress");
-            //.LoadSoundEffect("ButtonPress");
+        _game.AudioManager.LoadSoundEffect("ButtonPress2");
+        //.LoadSoundEffect("ButtonPress");
     }
 
     private void LoadStartMenuGroup()
@@ -237,7 +238,14 @@ public class Menu : DrawableGameComponent
             }
         }
         if (_state != prev) {
-            _game.AudioManager.PlaySoundEffect("ButtonPress");
+            if (Controls.Interact.Pressed())
+            {
+                _game.AudioManager.PlaySoundEffect("ButtonPress2");
+            }
+            else
+            {
+                _game.AudioManager.PlaySoundEffect("ButtonPress");
+            }
         }
         base.Update(gameTime);
     }
