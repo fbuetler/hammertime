@@ -44,21 +44,28 @@ public class HudOverlay : DrawableGameComponent
 
     private void DrawHud()
     {
+#if DEBUG
         DrawShadowedString(
             _font, $"Map: {GameMain.Match.MapIndex}",
             new Vector2(leftAlignedOffset, topAlignedOffset),
             Color.White
         );
         DrawShadowedString(
-            _font, $"Players alive: {GameMain.Match.PlayersAlive.Count}",
+            _font, $"Players alive: {GameMain.Match.Map.PlayersAlive.Count}",
             new Vector2(leftAlignedOffset, topAlignedOffset + nextLineOffset),
             Color.White
         );
+#endif
 
-        float screenWidth = GameMain.GetBackBufferWidth();
+        float screenWidth = GameMain.GetScreenWidth();
         DrawShadowedString(
             _font, "Scores:",
             new Vector2(screenWidth - rightAlignedOffset, topAlignedOffset),
+            Color.White
+        );
+        DrawShadowedString(
+            _font, $"Goal: {Match.MaxPoints}",
+            new Vector2(screenWidth - rightAlignedOffset, topAlignedOffset + nextLineOffset),
             Color.White
         );
         for (int i = 0; i < GameMain.Match.Scores.Length; i++)
@@ -67,35 +74,49 @@ public class HudOverlay : DrawableGameComponent
             DrawShadowedString(
                 _font,
                 $"P{i + 1}: {score}",
-                new Vector2(screenWidth - rightAlignedOffset, topAlignedOffset + nextLineOffset * (i + 1)),
+                new Vector2(screenWidth - rightAlignedOffset, topAlignedOffset + nextLineOffset * (i + 2)),
                 Color.White
             );
         }
 
-        float screenHeight = GameMain.GetBackBufferHeight();
-        if (GameMain.Match.Paused)
+        float screenHeight = GameMain.GetScreenHeight();
+        if (GameMain.Match.MatchFinished || GameMain.Match.Map.Paused)
         {
-            string paused = "PAUSED";
-            Vector2 textSize = _font.MeasureString(paused);
+            string text;
+            if (GameMain.Match.MatchFinished)
+            {
+                int winnerId = Array.IndexOf(GameMain.Match.Scores, Match.MaxPoints);
+                text = $"WINNER: P{winnerId + 1}";
+            }
+            else if (GameMain.Match.Map.Paused)
+            {
+                text = "PAUSED";
+            }
+            else
+            {
+                throw new ArgumentOutOfRangeException("unkown condition");
+            }
+
+            Vector2 textSize = _font.MeasureString(text);
             DrawShadowedString(
-                _font, paused,
+                _font, text,
                 new Vector2(
                     screenWidth / 2 - textSize.X / 2,
-                    screenHeight / 2 - textSize.Y / 2
+                    topAlignedOffset + nextLineOffset
                 ),
                 Color.White
             );
         }
 
+#if DEBUG
         switch (GameMain.Match.ScoreState)
         {
             case ScoreState.None:
-                // do nothing - game is still going on
                 break;
             case ScoreState.Winner:
                 DrawShadowedString(
                     _font,
-                    $"Winner: Player {GameMain.Match.WinnerId + 1}",
+                    $"Winner: Player {GameMain.Match.RoundWinnerId + 1}",
                     new Vector2(leftAlignedOffset, topAlignedOffset + 2 * nextLineOffset),
                     Color.White
                 );
@@ -112,6 +133,7 @@ public class HudOverlay : DrawableGameComponent
                 throw new NotSupportedException(String.Format("Scorestate type '{0}' is not supported", GameMain.Match.ScoreState));
         }
     }
+#endif
 
     private void DrawShadowedString(SpriteFont _font, string value, Vector2 position, Color color)
     {

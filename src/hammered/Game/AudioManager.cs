@@ -55,7 +55,6 @@ public class AudioManager
         }
     }
 
-    // TODO (fbuetler) @fred do we really need to expose volume here?
     public void PlaySong(string name)
     {
         PlaySong(name, TimeSpan.FromSeconds(0));
@@ -77,5 +76,10 @@ public class AudioManager
         {
             loaded.Play();
         }
+    }
+
+    public void Stop()
+    {
+        MediaPlayer.Stop();
     }
 }

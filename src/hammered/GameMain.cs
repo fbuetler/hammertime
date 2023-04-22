@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Apos.Input;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -12,6 +12,7 @@ public class GameMain : Game
     public const int MATCH_UPDATE_ORDER = 0;
     public const int MAP_UPDATE_ORDER = 0;
     public const int HUD_UPDATE_ORDER = 0;
+    public const int ARROW_UPDATE_ORDER = 1;
     public const int TILE_UPDATE_ORDER = 1;
     public const int HAMMER_UPDATE_ORDER = 2;
     public const int PLAYER_UPDATE_ORDER = 3;
@@ -22,7 +23,8 @@ public class GameMain : Game
     public const int OVERLAY_DRAW_ORDER = 1;
     public const int HAMMER_DRAW_ORDER = 2;
     public const int PLAYER_DRAW_ORDER = 3;
-    public const int TILE_DRAW_ORDER = 4;
+    public const int ARROW_DRAW_ORDER = 3;
+    public const int TILE_DRAW_ORDER = 5;
 
     // drawing
     private GraphicsDeviceManager _graphics;
@@ -48,7 +50,7 @@ public class GameMain : Game
         Content.RootDirectory = "Content";
     }
 
-    public int GetBackBufferWidth()
+    public int GetScreenWidth()
     {
 #if DEBUG
         return 1280;
@@ -57,13 +59,21 @@ public class GameMain : Game
 #endif
     }
 
-    public int GetBackBufferHeight()
+    public int GetScreenHeight()
     {
 #if DEBUG
         return 720;
 #else
         return 1080;
 #endif
+    }
+
+    public Vector2 GetScreenCenter()
+    {
+        return new Vector2(
+            0.5f * GetScreenWidth(),
+            0.5f * GetScreenHeight()
+        );
     }
 
     protected override void Initialize()
@@ -76,8 +86,8 @@ public class GameMain : Game
 
         base.Initialize();
 
-        _graphics.PreferredBackBufferWidth = GetBackBufferWidth();
-        _graphics.PreferredBackBufferHeight = GetBackBufferHeight(); ;
+        _graphics.PreferredBackBufferWidth = GetScreenWidth();
+        _graphics.PreferredBackBufferHeight = GetScreenHeight(); ;
 
         _graphics.IsFullScreen = false;
         _graphics.ApplyChanges();
@@ -97,8 +107,15 @@ public class GameMain : Game
         _match = new Match(this, NumberOfPlayers);
         Components.Add(_match);
 
-        _menu.Visible = false;
         Components.Remove(_menu);
+    }
+
+    public void EndMatch()
+    {
+        Components.Clear();
+        AudioManager.Stop();
+
+        Components.Add(_menu);
     }
 
     protected override void Update(GameTime gameTime)
