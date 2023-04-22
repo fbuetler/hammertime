@@ -20,10 +20,10 @@ public class Clouds : DrawableGameComponent
 
         // set plane positions
         _plane = new Vector3[] {
-            new Vector3(-100f, height, -100f),
-            new Vector3(-100f, height, +100f),
-            new Vector3(+100f, height, -100f),
-            new Vector3(+100f, height, +100f),
+            new Vector3(-20f, height, -20f),
+            new Vector3(-20f, height, +50f),
+            new Vector3(+50f, height, -20f),
+            new Vector3(+50f, height, +50f),
         };
 
         // make update and draw called by monogame
