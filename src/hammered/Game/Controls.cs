@@ -28,12 +28,30 @@ public static class Controls
             new GamePadCondition(GamePadButton.Back, PrimaryPlayerIndex)
         );
 
+    public static ICondition BackP(int playerIndex)
+    {
+        return new AnyCondition(
+            new KeyboardCondition(Keys.Escape),
+            new GamePadCondition(GamePadButton.B, playerIndex),
+            new GamePadCondition(GamePadButton.Back, playerIndex)
+        );
+    }
+
     public static ICondition Interact { get; } =
         new AnyCondition(
             new KeyboardCondition(Keys.Space),
             new KeyboardCondition(Keys.Enter),
             new GamePadCondition(GamePadButton.A, PrimaryPlayerIndex)
         );
+
+    public static ICondition InteractP(int playerIndex)
+    {
+        return new AnyCondition(
+            new KeyboardCondition(Keys.Space),
+            new KeyboardCondition(Keys.Enter),
+            new GamePadCondition(GamePadButton.A, playerIndex)
+        );
+    }
 
     public static ICondition FocusPrev { get; } =
         new AnyCondition(
@@ -169,5 +187,18 @@ public static class Controls
     public static Vector2 Aim(int playerIndex)
     {
         return InputHelper.NewGamePad[playerIndex].ThumbSticks.Right * AimStickScale;
+    }
+
+    public static int ConnectedPlayers()
+    {
+        int connected = 0;
+        for (int i = 0; i < Match.MaxNumberOfPlayers; i++)
+        {
+            if (InputHelper.NewGamePad[i].IsConnected)
+            {
+                connected++;
+            }
+        }
+        return connected;
     }
 }

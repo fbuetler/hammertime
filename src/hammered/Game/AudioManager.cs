@@ -19,8 +19,7 @@ public class AudioManager
     private Dictionary<string, Song> _songs = new Dictionary<string, Song>();
     private Dictionary<string, SoundEffect> _soundEffects = new Dictionary<string, SoundEffect>();
 
-    public float Volume { get => MediaPlayer.Volume; }
-    public float VolumeSoundEffects { get => SoundEffect.MasterVolume; }
+    public float Volume { get => MediaPlayer.Volume; set => MediaPlayer.Volume = value; }
 
     private const string audioRootPath = "Audio/";
 
@@ -58,25 +57,17 @@ public class AudioManager
         }
     }
 
-    // TODO (fbuetler) @fred do we really need to expose volume here?
-    //we don't but if its ever needed we have both now.
     public void PlaySong(string name)
     {
-        PlaySong(name, MediaPlayer.Volume, TimeSpan.FromSeconds(0));
+        PlaySong(name, TimeSpan.FromSeconds(0));
     }
 
-    public void PlaySong(string name, float volume)
-    {
-        PlaySong(name, volume, TimeSpan.FromSeconds(0));
-    }
-
-    public void PlaySong(string name, float volume, TimeSpan startPosition)
+    public void PlaySong(string name, TimeSpan startPosition)
     {
         Song loaded;
         if (_songs.TryGetValue(name, out loaded))
         {
             MediaPlayer.Play(loaded, startPosition);
-            MediaPlayer.Volume = volume;
         }
     }
 
@@ -89,13 +80,8 @@ public class AudioManager
         }
     }
 
-    public SoundEffectInstance GetSoundEffectInstance(string name)
+    public void Stop()
     {
-        SoundEffect loaded;
-        if (_soundEffects.TryGetValue(name, out loaded))
-        {
-            return loaded.CreateInstance();
-        }
-        return null;
+        MediaPlayer.Stop();
     }
 }

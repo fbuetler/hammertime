@@ -23,6 +23,9 @@ public class Hammer : GameObject<HammerState>
 
     private float _velocity;
 
+    // charging distance
+    private float _throwDistance;
+
     public override Vector3 MaxSize { get => _maxSize; }
     private static Vector3 _maxSize = new Vector3(0.5f, 0.5f, 0.5f);
 
@@ -36,9 +39,9 @@ public class Hammer : GameObject<HammerState>
     public override Dictionary<HammerState, string> ObjectModelPaths { get => _objectModelPaths; }
 
     // constants for controlling throwing
-    private const float ThrowAcceleration = 10f;
+    private const float ThrowAcceleration = 500f;
     private const float MaxThrowVelocity = 20f;
-    private const float MaxThrowDistance = 10f;
+    public const float MaxThrowDistance = 10f;
 
     // constants for controlling pickup
     private const float PickupDistance = 1f;
@@ -81,14 +84,22 @@ public class Hammer : GameObject<HammerState>
                 if (collided)
                 {
                     Return();
+                    break;
                 }
-                if ((Center - _origin).LengthSquared() > MaxThrowDistance * MaxThrowDistance)
+
+                float travelledThrowDistance = (Center - _origin).Length();
+                if (travelledThrowDistance > _throwDistance)
                 {
                     // if max distance is reached, make it return
                     Return();
+                    break;
                 }
 
-                _velocity = ComputeVelocity(gameTime, _velocity, ThrowAcceleration);
+                // magic function: check wolfram alpha for the plot
+                float travelledFraction = travelledThrowDistance / MaxThrowDistance;
+                float y = 0.25f * MathF.Log(-travelledFraction + 1.05f) + 1f;
+                _velocity = y * MaxThrowVelocity;
+
                 Move(gameTime, Direction * _velocity);
                 break;
             case HammerState.IS_RETURNING when (Center - GameMain.Match.Map.Players[_ownerId].Center).LengthSquared() < PickupDistance * PickupDistance || GameMain.Match.Map.Players[_ownerId].State == PlayerState.DEAD:
@@ -143,7 +154,7 @@ public class Hammer : GameObject<HammerState>
         return aimingDirection;
     }
 
-    public void Throw()
+    public void Throw(float throwDistance)
     {
         if (_state != HammerState.IS_HELD)
         {
@@ -163,7 +174,7 @@ public class Hammer : GameObject<HammerState>
             }
             else
             {
-                Direction = new Vector3(0, 0, 1);
+                Direction = new Vector3(1, 0, 0);
             }
         }
 
@@ -182,6 +193,8 @@ public class Hammer : GameObject<HammerState>
 
         _origin = GameMain.Match.Map.Players[_ownerId].Center;
         Center = GameMain.Match.Map.Players[_ownerId].Center;
+
+        _throwDistance = MathF.Min(throwDistance, MaxThrowDistance);
     }
 
     private void FollowOwner()
@@ -194,6 +207,7 @@ public class Hammer : GameObject<HammerState>
     private void PickUp()
     {
         _state = HammerState.IS_HELD;
+        _throwDistance = 0f;
         this.Visible = false;
         Direction = Vector3.Zero;
     }

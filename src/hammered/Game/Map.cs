@@ -36,6 +36,21 @@ public class Map : DrawableGameComponent
     public Dictionary<int, Hammer> Hammers { get => _hammers; }
     private Dictionary<int, Hammer> _hammers = new Dictionary<int, Hammer>();
 
+    public Dictionary<int, Arrow> Arrows { get => _arrows; }
+    private Dictionary<int, Arrow> _arrows = new Dictionary<int, Arrow>();
+
+    // TODO: (lmeinen) Wait with decreasing playsAlive until player hits ground below (could make for fun animation or items that allow one to come back from falling)
+    public List<int> PlayersAlive
+    {
+        get => Players.Values
+            .Where(p => !(p.State == PlayerState.DEAD || p.State == PlayerState.FALLING))
+            .Select(p => p.PlayerId)
+            .ToList();
+    }
+
+    public bool Paused { get => _paused; }
+    private bool _paused;
+
     // song
     private const string SlowMapSong = "MusicMapSlow";
     private const string FastMapSong = "MusicMapFast";
@@ -163,14 +178,16 @@ public class Map : DrawableGameComponent
             int playerId = _players.Count;
             Player player = new Player(GameMain, new Vector3(x, y, z), playerId);
             Hammer hammer = new Hammer(GameMain, new Vector3(x, y, z), playerId);
+            Arrow arrow = new Arrow(GameMain, new Vector3(x, 1, z), playerId);
+
             _players.Add(playerId, player);
             _hammers.Add(playerId, hammer);
+            _arrows.Add(playerId, arrow);
 
-            // enable player component
+            // enable components
             GameMain.Components.Add(player);
-
-            // enable hammer compohent
             GameMain.Components.Add(hammer);
+            GameMain.Components.Add(arrow);
         }
     }
 
@@ -182,7 +199,7 @@ public class Map : DrawableGameComponent
         try
         {
             GameMain.AudioManager.LoadSong(SlowMapSong);
-            GameMain.AudioManager.PlaySong(SlowMapSong, GameMain.AudioManager.Volume);
+            GameMain.AudioManager.PlaySong(SlowMapSong);
 
             GameMain.AudioManager.LoadSong(FastMapSong);
             GameMain.AudioManager.LoadSoundEffect("throw1");
@@ -196,9 +213,39 @@ public class Map : DrawableGameComponent
     {
         _camera = new Camera(
             new Vector3(Width / 2, 0f, Depth / 2),
-            (float)GameMain.GetBackBufferWidth() / GameMain.GetBackBufferHeight(),
+            (float)GameMain.GetScreenWidth() / GameMain.GetScreenHeight(),
             Width
         );
+    }
+
+    public override void Update(GameTime gameTime)
+    {
+        HandleInput();
+    }
+
+    private void HandleInput()
+    {
+        if (Controls.Pause.Pressed())
+        {
+            _paused = !_paused;
+            foreach (Player p in Players.Values)
+            {
+                p.Enabled = !p.Enabled;
+            }
+            foreach (Hammer h in Hammers.Values)
+            {
+                h.Enabled = !h.Enabled;
+            }
+            foreach (Arrow a in Arrows.Values)
+            {
+                a.Enabled = !a.Enabled;
+            }
+            foreach (Tile t in Tiles)
+            {
+                if (t != null)
+                    t.Enabled = !t.Enabled;
+            }
+        }
     }
 
     public BoundingBox? TryGetTileBounds(int x, int y, int z)
@@ -218,13 +265,12 @@ public class Map : DrawableGameComponent
 
     public void AdjustSongSpeed()
     {
-        int playersAlive = Players.Values.Where(p => p.Enabled).Count();
-        if (playersAlive == 2)
+        if (PlayersAlive.Count == 2)
         {
             TimeSpan stopPosition = MediaPlayer.PlayPosition;
             TimeSpan startPosition = TimeSpan.FromSeconds(stopPosition.Seconds);
             // TODO (fbuetler) what is this math here?
-            GameMain.AudioManager.PlaySong(FastMapSong, GameMain.AudioManager.Volume, 120 * startPosition / 135);
+            GameMain.AudioManager.PlaySong(FastMapSong, 120 * startPosition / 135);
         }
     }
 
@@ -232,12 +278,9 @@ public class Map : DrawableGameComponent
     {
         GraphicsDevice.Clear(Color.CornflowerBlue);
 
-        Matrix view = Camera.View;
-        Matrix projection = Camera.Projection;
-
 #if DEBUG
         // draw coordinate system
-        DebugDraw.Begin(Matrix.Identity, view, projection);
+        DebugDraw.Begin(Matrix.Identity, Camera.View, Camera.Projection);
         DebugDraw.DrawLine(Vector3.Zero, 30 * Vector3.UnitX, Color.Black);
         DebugDraw.DrawLine(Vector3.Zero, 30 * Vector3.UnitY, Color.Black);
         DebugDraw.DrawLine(Vector3.Zero, 30 * Vector3.UnitZ, Color.Black);
