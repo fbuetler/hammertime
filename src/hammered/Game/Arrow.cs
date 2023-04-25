@@ -83,7 +83,7 @@ public class Arrow : GameObject<ArrowState>
         Matrix view = GameMain.Match.Map.Camera.View;
         Matrix projection = GameMain.Match.Map.Camera.Projection;
 
-        ScaledModel scaledModel = GameMain.Match.Models[State.ToString()];
+        ScaledModel scaledModel = GameMain.Match.Models[ObjectModelPaths[State]];
 
         Vector3 rotationCenter = new Vector3(0, 0, Size.Z / 2);
         Vector3 position = Center + rotationCenter;

@@ -81,10 +81,11 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
         // _models = new Dictionary<GameObjectState, ScaledModel>();
         foreach (GameObjectState state in Enum.GetValues(typeof(GameObjectState)))
         {
-            if (!GameMain.Match.Models.ContainsKey(state.ToString()))
+            string assetName = ObjectModelPaths[state];
+            if (!GameMain.Match.Models.ContainsKey(assetName))
             {
                 // load model
-                Model model = GameMain.Match.Map.Content.Load<Model>(ObjectModelPaths[state]);
+                Model model = GameMain.Match.Map.Content.Load<Model>(assetName);
 
                 // compute scaling required to fit model to its BoundingBox
                 BoundingBox size = GetModelSize(model);
@@ -97,11 +98,11 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
                 _size = (size.Max - size.Min) * actualScalingFactor;
                 Matrix modelScale = Matrix.CreateScale(actualScalingFactor);
 
-                GameMain.Match.Models.Add(state.ToString(), new ScaledModel(model, modelScale, Size));
+                GameMain.Match.Models.Add(assetName, new ScaledModel(model, modelScale, Size));
             }
             else
             {
-                _size = GameMain.Match.Models[state.ToString()].size;
+                _size = GameMain.Match.Models[assetName].size;
             }
         }
 
@@ -119,9 +120,9 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
 
         Matrix translateIntoPosition = Matrix.CreateTranslation(RotCenter);
 
-        Matrix world = GameMain.Match.Models[State.ToString()].modelScale * rotate * translateIntoPosition;
+        Matrix world = GameMain.Match.Models[ObjectModelPaths[State]].modelScale * rotate * translateIntoPosition;
 
-        DrawModel(GameMain.Match.Models[State.ToString()].model, world, view, projection);
+        DrawModel(GameMain.Match.Models[ObjectModelPaths[State]].model, world, view, projection);
 
 #if DEBUG
         GameMain.Match.Map.DebugDraw.Begin(Matrix.Identity, view, projection);

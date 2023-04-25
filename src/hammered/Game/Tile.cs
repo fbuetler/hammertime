@@ -44,7 +44,6 @@ public class Tile : GameObject<TileState>
 
         _objectModelPaths = new Dictionary<TileState, string>();
         _objectModelPaths[TileState.HP100] = "Tile/iceCube4";
-        // _objectModelPaths[TileState.HP100] = "Tile/tileCube4";
         _objectModelPaths[TileState.HP80] = "Tile/iceCube3";
         _objectModelPaths[TileState.HP60] = "Tile/iceCube2";
         _objectModelPaths[TileState.HP40] = "Tile/iceCube1";

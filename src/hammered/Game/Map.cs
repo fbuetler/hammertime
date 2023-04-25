@@ -168,7 +168,7 @@ public class Map : DrawableGameComponent
 
     private Tile LoadWallTile(int x, int y, int z)
     {
-        return new Tile(GameMain, new Vector3(x, y, z));
+        return new Wall(GameMain, new Vector3(x, y, z));
     }
 
     private void LoadPlayer(int x, int y, int z)
