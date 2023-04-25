@@ -85,7 +85,7 @@ public class Player : GameObject<PlayerState>
     public override Dictionary<PlayerState, string> ObjectModelPaths => _objectModelPaths;
 
     // if a player is below the kill plane, it disappears
-    private const float KillPlaneLevel = -10f;
+    public const float KillPlaneLevel = -10f;
 
     // charge/throw
     private const float ChargeUnit = 0.02f;

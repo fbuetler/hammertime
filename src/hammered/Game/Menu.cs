@@ -213,6 +213,16 @@ public class Menu : DrawableGameComponent
                         _state = MenuState.PLAYERS;
                     }
                 }
+
+#if DEBUG
+                if (Controls.Start.Pressed())
+                {
+                    // helper if a poor, controller-less peasant (lasse) needs to test the game with a keyboard
+                    _state = MenuState.MAIN_START;
+                    GameMain.StartMatch(4);
+                }
+#endif
+
                 break;
 
             // settings
