@@ -66,6 +66,10 @@ public class Menu : DrawableGameComponent
 
     private static readonly Vector2 nextLineOffset = new Vector2(0, 50);
 
+    // sound effects
+    private const string InteractButtonPressSoundEffect = "ButtonPress0";
+    private const string AlternativeButtonPressSoundEffect = "ButtonPress1";
+
     public Menu(Game game) : base(game)
     {
         _game = (GameMain)game;
@@ -84,13 +88,13 @@ public class Menu : DrawableGameComponent
         _title = GameMain.Content.Load<Texture2D>("Menu/title");
         _menuItems = GameMain.Content.Load<Texture2D>("Menu/items");
         _impactFont = _game.Content.Load<SpriteFont>("Fonts/impact");
-        
+
         LoadStartMenuGroup();
         LoadQuitMenuGroup();
         LoadPlayersMenuGroup();
-        _game.AudioManager.LoadSoundEffect("ButtonPress");
-        _game.AudioManager.LoadSoundEffect("ButtonPress2");
-        //.LoadSoundEffect("ButtonPress");
+
+        GameMain.AudioManager.LoadSoundEffect(InteractButtonPressSoundEffect);
+        GameMain.AudioManager.LoadSoundEffect(AlternativeButtonPressSoundEffect);
     }
 
     private void LoadStartMenuGroup()
@@ -252,19 +256,17 @@ public class Menu : DrawableGameComponent
                 throw new ArgumentOutOfRangeException(nameof(_state), $"Unexpected menu state: {_state}");
         }
 
-
-        base.Update(gameTime);
-        if (_state != prev) {
+        if (_state != prev)
+        {
             if (Controls.Interact.Pressed())
             {
-                _game.AudioManager.PlaySoundEffect("ButtonPress2");
+                GameMain.AudioManager.PlaySoundEffect(InteractButtonPressSoundEffect);
             }
             else
             {
-                _game.AudioManager.PlaySoundEffect("ButtonPress");
+                GameMain.AudioManager.PlaySoundEffect(AlternativeButtonPressSoundEffect);
             }
         }
-
     }
 
     public override void Draw(GameTime gameTime)

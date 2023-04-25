@@ -19,7 +19,9 @@ public class AudioManager
     private Dictionary<string, Song> _songs = new Dictionary<string, Song>();
     private Dictionary<string, SoundEffect> _soundEffects = new Dictionary<string, SoundEffect>();
 
-    public float Volume { get => MediaPlayer.Volume; set => MediaPlayer.Volume = value; }
+    public float SongVolume { get => MediaPlayer.Volume; set => MediaPlayer.Volume = value; }
+
+    public float SoundEffectVolume { get => SoundEffect.MasterVolume; set => SoundEffect.MasterVolume = value; }
 
     private const string audioRootPath = "Audio/";
 
