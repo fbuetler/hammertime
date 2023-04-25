@@ -29,9 +29,6 @@ public class Hammer : GameObject<HammerState>
     public override Vector3 MaxSize { get => _maxSize; }
     private static Vector3 _maxSize = new Vector3(0.5f, 0.5f, 0.5f);
 
-    public GameMain GameMain { get => _game; }
-    private GameMain _game;
-
     private HammerState _state;
     public override HammerState State { get => _state; }
 
@@ -46,7 +43,9 @@ public class Hammer : GameObject<HammerState>
     // constants for controlling pickup
     private const float PickupDistance = 1f;
 
-    private Random _rnd;
+    // sound effects
+    private const string ThrowSoundEffectPrefix = "throw";
+    private const int NumThrowSoundEffects = 3;
 
     public Hammer(Game game, Vector3 position, int ownerId) : base(game, position + _maxSize / 2)
     {
@@ -60,14 +59,18 @@ public class Hammer : GameObject<HammerState>
 
         _state = HammerState.IS_HELD;
 
-        _game = (GameMain)game;
-
         _objectModelPaths = new Dictionary<HammerState, string>();
         _objectModelPaths[HammerState.IS_FLYING] = "Hammer/hammer";
         _objectModelPaths[HammerState.IS_RETURNING] = "Hammer/hammer";
         _objectModelPaths[HammerState.IS_HELD] = "Hammer/hammer";
+    }
 
-        _rnd = new Random();
+    protected override void LoadAudioContent()
+    {
+        for (int i = 0; i < NumThrowSoundEffects; i++)
+        {
+            GameMain.AudioManager.LoadSoundEffect($"{ThrowSoundEffectPrefix}{i}");
+        }
     }
 
     public override void Update(GameTime gameTime)
@@ -160,10 +163,9 @@ public class Hammer : GameObject<HammerState>
         {
             return;
         }
-        
-        int num = _rnd.Next(1,4);
-        
-        _game.AudioManager.PlaySoundEffect("throw" + num);
+
+        int throwIndex = GameMain.Random.Next(NumThrowSoundEffects);
+        GameMain.AudioManager.PlaySoundEffect($"{ThrowSoundEffectPrefix}{throwIndex}");
 
         // if there is no aiming input, use walking direction or default
         if (Direction == Vector3.Zero)
