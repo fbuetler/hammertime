@@ -38,6 +38,7 @@ public class Hammer : GameObject<HammerState>
     // constants for controlling throwing
     private const float ThrowAcceleration = 500f;
     private const float MaxThrowVelocity = 20f;
+    public const float MinThrowDistance = 1f;
     public const float MaxThrowDistance = 10f;
 
     // constants for controlling pickup
@@ -99,7 +100,7 @@ public class Hammer : GameObject<HammerState>
                 }
 
                 // magic function: check wolfram alpha for the plot
-                float travelledFraction = travelledThrowDistance / MaxThrowDistance;
+                float travelledFraction = travelledThrowDistance / _throwDistance;
                 float y = 0.25f * MathF.Log(-travelledFraction + 1.05f) + 1f;
                 _velocity = y * MaxThrowVelocity;
 
@@ -196,7 +197,7 @@ public class Hammer : GameObject<HammerState>
         _origin = GameMain.Match.Map.Players[_ownerId].Center;
         Center = GameMain.Match.Map.Players[_ownerId].Center;
 
-        _throwDistance = MathF.Min(throwDistance, MaxThrowDistance);
+        _throwDistance = MathHelper.Clamp(throwDistance, MinThrowDistance, MaxThrowDistance);
     }
 
     private void FollowOwner()
