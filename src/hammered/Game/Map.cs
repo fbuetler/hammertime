@@ -83,6 +83,7 @@ public class Map : DrawableGameComponent
             LoadMap(fileStream);
         LoadCamera();
         LoadMusic();
+        LoadKillplane();
     }
 
     private void LoadMap(Stream fileStream)
@@ -216,6 +217,12 @@ public class Map : DrawableGameComponent
             (float)GameMain.GetScreenWidth() / GameMain.GetScreenHeight(),
             Width
         );
+    }
+
+    private void LoadKillplane()
+    {
+        // Add clouds so that it looks like the player disappears out of sight
+        GameMain.Components.Add(new Clouds(GameMain, 0.9f * Player.KillPlaneLevel));
     }
 
     public override void Update(GameTime gameTime)

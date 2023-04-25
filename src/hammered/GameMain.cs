@@ -16,6 +16,7 @@ public class GameMain : Game
     public const int TILE_UPDATE_ORDER = 1;
     public const int HAMMER_UPDATE_ORDER = 2;
     public const int PLAYER_UPDATE_ORDER = 3;
+    public const int KILLPLANE_UPDATE_ORDER = 5;
 
     // draw order from high to low (default is 0)
     public const int MENU_DRAW_ORDER = 0; // clears screen
@@ -25,6 +26,7 @@ public class GameMain : Game
     public const int PLAYER_DRAW_ORDER = 3;
     public const int ARROW_DRAW_ORDER = 3;
     public const int TILE_DRAW_ORDER = 5;
+    public const int KILLPLANE_DRAW_ORDER = 5;
 
     // drawing
     private GraphicsDeviceManager _graphics;
