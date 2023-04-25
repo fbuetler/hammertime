@@ -83,6 +83,8 @@ public class Tile : GameObject<TileState>
                 IntersectionDepth(h.BoundingBox, BoundingBox) != Vector3.Zero &&
                 (h.State == HammerState.IS_FLYING || h.State == HammerState.IS_RETURNING))
             {
+
+                GameMain.AudioManager.PlaySoundEffect("hammerBongWall");
                 _state = NextState(_state);
             }
         }

@@ -157,6 +157,7 @@ public class Player : GameObject<PlayerState>
                 _dash = new Dash(Direction, Dash.DashDistance, Dash.DashVelocity);
                 _state = PlayerState.DASHING;
                 Visible = false;
+                GameMain.AudioManager.PlaySoundEffect("Dash");
                 break;
             case PlayerState.ALIVE when moveInput != Vector3.Zero:
                 Direction = moveInput;
