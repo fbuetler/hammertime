@@ -43,12 +43,13 @@ public class Tile : GameObject<TileState>
         _state = TileState.HP100;
 
         _objectModelPaths = new Dictionary<TileState, string>();
-        _objectModelPaths[TileState.HP100] = "Tile/tileCube4";
-        _objectModelPaths[TileState.HP80] = "Tile/tileCube3";
-        _objectModelPaths[TileState.HP60] = "Tile/tileCube2";
-        _objectModelPaths[TileState.HP40] = "Tile/tileCube1";
-        _objectModelPaths[TileState.HP20] = "Tile/tileCube0";
-        _objectModelPaths[TileState.HP0] = "Tile/tileCube0";
+        _objectModelPaths[TileState.HP100] = "Tile/iceCube4";
+        // _objectModelPaths[TileState.HP100] = "Tile/tileCube4";
+        _objectModelPaths[TileState.HP80] = "Tile/iceCube3";
+        _objectModelPaths[TileState.HP60] = "Tile/iceCube2";
+        _objectModelPaths[TileState.HP40] = "Tile/iceCube1";
+        _objectModelPaths[TileState.HP20] = "Tile/iceCube0";
+        _objectModelPaths[TileState.HP0] = "Tile/iceCube0";
 
         _visitors = new HashSet<int>();
     }

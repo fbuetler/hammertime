@@ -328,7 +328,7 @@ public class Player : GameObject<PlayerState>
                 {
                     // check if there's a tile below us
                     BoundingBox? neighbour = GameMain.Match.Map.TryGetTileBounds(x, y, z);
-                    if (neighbour != null && ((BoundingBox)neighbour).Max.Y < BoundingBox.Min.Y)
+                    if (neighbour != null && ((BoundingBox)neighbour).Max.Y <= BoundingBox.Min.Y)
                     {
                         return false;
                     }
