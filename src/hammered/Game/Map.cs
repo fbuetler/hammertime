@@ -82,7 +82,7 @@ public class Map : DrawableGameComponent
         using (Stream fileStream = TitleContainer.OpenStream(_mapPath))
             LoadMap(fileStream);
         LoadCamera();
-        LoadMusic();
+        LoadAudio();
         LoadKillplane();
     }
 
@@ -192,7 +192,7 @@ public class Map : DrawableGameComponent
         }
     }
 
-    private void LoadMusic()
+    private void LoadAudio()
     {
         // TODO (fbuetler) game crashes sometimes with:
         // Unhandled exception. System.NullReferenceException: Object reference not set to an instance of an object.

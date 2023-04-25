@@ -38,10 +38,15 @@ public class Hammer : GameObject<HammerState>
     // constants for controlling throwing
     private const float ThrowAcceleration = 500f;
     private const float MaxThrowVelocity = 20f;
+    public const float MinThrowDistance = 1f;
     public const float MaxThrowDistance = 10f;
 
     // constants for controlling pickup
     private const float PickupDistance = 1f;
+
+    // sound effects
+    private const string ThrowSoundEffectPrefix = "throw";
+    private const int NumThrowSoundEffects = 3;
 
     public Hammer(Game game, Vector3 position, int ownerId) : base(game, position + _maxSize / 2)
     {
@@ -59,6 +64,14 @@ public class Hammer : GameObject<HammerState>
         _objectModelPaths[HammerState.IS_FLYING] = "Hammer/hammer";
         _objectModelPaths[HammerState.IS_RETURNING] = "Hammer/hammer";
         _objectModelPaths[HammerState.IS_HELD] = "Hammer/hammer";
+    }
+
+    protected override void LoadAudioContent()
+    {
+        for (int i = 0; i < NumThrowSoundEffects; i++)
+        {
+            GameMain.AudioManager.LoadSoundEffect($"{ThrowSoundEffectPrefix}{i}");
+        }
     }
 
     public override void Update(GameTime gameTime)
@@ -87,7 +100,7 @@ public class Hammer : GameObject<HammerState>
                 }
 
                 // magic function: check wolfram alpha for the plot
-                float travelledFraction = travelledThrowDistance / MaxThrowDistance;
+                float travelledFraction = travelledThrowDistance / _throwDistance;
                 float y = 0.25f * MathF.Log(-travelledFraction + 1.05f) + 1f;
                 _velocity = y * MaxThrowVelocity;
 
@@ -152,6 +165,9 @@ public class Hammer : GameObject<HammerState>
             return;
         }
 
+        int throwIndex = GameMain.Random.Next(NumThrowSoundEffects);
+        GameMain.AudioManager.PlaySoundEffect($"{ThrowSoundEffectPrefix}{throwIndex}");
+
         // if there is no aiming input, use walking direction or default
         if (Direction == Vector3.Zero)
         {
@@ -181,7 +197,7 @@ public class Hammer : GameObject<HammerState>
         _origin = GameMain.Match.Map.Players[_ownerId].Center;
         Center = GameMain.Match.Map.Players[_ownerId].Center;
 
-        _throwDistance = MathF.Min(throwDistance, MaxThrowDistance);
+        _throwDistance = MathHelper.Clamp(throwDistance, MinThrowDistance, MaxThrowDistance);
     }
 
     private void FollowOwner()

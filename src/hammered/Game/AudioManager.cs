@@ -19,11 +19,14 @@ public class AudioManager
     private Dictionary<string, Song> _songs = new Dictionary<string, Song>();
     private Dictionary<string, SoundEffect> _soundEffects = new Dictionary<string, SoundEffect>();
 
-    public float Volume { get => MediaPlayer.Volume; set => MediaPlayer.Volume = value; }
+    public float SongVolume { get => MediaPlayer.Volume; set => MediaPlayer.Volume = value; }
+
+    public float SoundEffectVolume { get => SoundEffect.MasterVolume; set => SoundEffect.MasterVolume = value; }
 
     private const string audioRootPath = "Audio/";
 
-    private const float defaultVolume = 0.1f;
+    private const float defaultVolume = 0.05f;
+    private const float defaultEffectVolume = 0.1f;
 
     public AudioManager(Game game)
     {
@@ -33,6 +36,7 @@ public class AudioManager
 
         MediaPlayer.Volume = defaultVolume;
         MediaPlayer.IsRepeating = true;
+        SoundEffect.MasterVolume = defaultEffectVolume;
     }
 
     public void LoadSong(string name)
