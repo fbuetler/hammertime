@@ -45,6 +45,10 @@ public class GameMain : Game
     public AudioManager AudioManager { get => _audio; }
     private AudioManager _audio;
 
+    public Random Random { get => _random; }
+    private Random _random;
+
+    private const string MenuSong = "Menu";
 
     public GameMain()
     {
@@ -86,6 +90,8 @@ public class GameMain : Game
         _menu = new Menu(this);
         Components.Add(_menu);
 
+        _audio = new AudioManager(this);
+
         base.Initialize();
 
         _graphics.PreferredBackBufferWidth = GetScreenWidth();
@@ -95,13 +101,18 @@ public class GameMain : Game
         _graphics.ApplyChanges();
 
         _debugDraw = new DebugDraw(GraphicsDevice);
-        _audio = new AudioManager(this);
+
+        _random = new Random();
     }
 
     protected override void LoadContent()
     {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
+
         InputHelper.Setup(this);
+
+        _audio.LoadSong(MenuSong);
+        _audio.PlaySong(MenuSong);
     }
 
     public void StartMatch(int NumberOfPlayers)

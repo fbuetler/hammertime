@@ -70,8 +70,8 @@ public class Player : GameObject<PlayerState>
     private PlayerState _state;
 
     // charge
-    public float ThrowDistance { get => _chargeDuration * ChargeUnit; }
-    private float _chargeDuration;
+    public float ThrowDistance { get => _chargeDurationMs * ChargeUnit; }
+    private float _chargeDurationMs;
 
     // note: this is null when we're not in a pushback state
     private Pushback _pushback;
@@ -81,6 +81,10 @@ public class Player : GameObject<PlayerState>
 
     private Dictionary<PlayerState, string> _objectModelPaths;
     public override Dictionary<PlayerState, string> ObjectModelPaths => _objectModelPaths;
+
+    // sound effects
+    private int _stepIndex = 0;
+    private float _timeSinceLastStepMs = 0;
 
     // if a player is below the kill plane, it disappears
     public const float KillPlaneLevel = -10f;
@@ -101,6 +105,10 @@ public class Player : GameObject<PlayerState>
     // sound effects
     private const string HammerHitSoundEffect = "hammerBong";
     private const string PlayerFallingSoundEffect = "falling";
+    private const string StepSoundEffectPrefix = "step";
+
+    private const int NumStepSoundEffects = 10;
+    private const int StepSoundEffectIntervalMs = 350;
 
     public Player(Game game, Vector3 position, int playerId) : base(game, position + _maxSize / 2)
     {
@@ -127,6 +135,11 @@ public class Player : GameObject<PlayerState>
     {
         GameMain.AudioManager.LoadSoundEffect(PlayerFallingSoundEffect);
         GameMain.AudioManager.LoadSoundEffect(HammerHitSoundEffect);
+
+        for (int i = 0; i < NumStepSoundEffects; i++)
+        {
+            GameMain.AudioManager.LoadSoundEffect($"{StepSoundEffectPrefix}{i}");
+        }
     }
 
     public override void Update(GameTime gameTime)
@@ -137,7 +150,7 @@ public class Player : GameObject<PlayerState>
         switch (State)
         {
             case PlayerState.ALIVE when Controls.Throw(_playerId).Held():
-                _chargeDuration = 0;
+                _chargeDurationMs = 0;
                 _state = PlayerState.CHARGING;
                 break;
             case PlayerState.ALIVE when Controls.Dash(_playerId).Pressed():
@@ -149,6 +162,7 @@ public class Player : GameObject<PlayerState>
                 Direction = moveInput;
                 _velocity = ComputeVelocity(_velocity, Direction, MoveAcceleration, GroundDragFactor, gameTime);
                 Move(gameTime, _velocity);
+                PlayStepSoundEffect(gameTime);
                 break;
             case PlayerState.CHARGING when Controls.Throw(_playerId).Released():
                 GameMain.Match.Map.Hammers[_playerId].Throw(ThrowDistance);
@@ -164,7 +178,7 @@ public class Player : GameObject<PlayerState>
                 }
 
                 // charge
-                _chargeDuration += (float)gameTime.ElapsedGameTime.TotalMilliseconds;
+                _chargeDurationMs += (float)gameTime.ElapsedGameTime.TotalMilliseconds;
                 break;
             case PlayerState.DASHING when _dash.Distance <= 0:
                 _dash = null;
@@ -359,4 +373,18 @@ public class Player : GameObject<PlayerState>
         GameMain.Match.Map.AdjustSongSpeed();
     }
 
+    public void PlayStepSoundEffect(GameTime gameTime)
+    {
+        if (_timeSinceLastStepMs > StepSoundEffectIntervalMs)
+        {
+            _stepIndex = (_stepIndex + 1) % NumStepSoundEffects;
+            GameMain.AudioManager.PlaySoundEffect($"{StepSoundEffectPrefix}{_stepIndex}");
+            _timeSinceLastStepMs = 0;
+        }
+        else
+        {
+            float elapsed = (float)gameTime.ElapsedGameTime.TotalMilliseconds;
+            _timeSinceLastStepMs += elapsed;
+        }
+    }
 }

@@ -43,6 +43,10 @@ public class Hammer : GameObject<HammerState>
     // constants for controlling pickup
     private const float PickupDistance = 1f;
 
+    // sound effects
+    private const string ThrowSoundEffectPrefix = "throw";
+    private const int NumThrowSoundEffects = 3;
+
     public Hammer(Game game, Vector3 position, int ownerId) : base(game, position + _maxSize / 2)
     {
         // make update and draw called by monogame
@@ -59,6 +63,14 @@ public class Hammer : GameObject<HammerState>
         _objectModelPaths[HammerState.IS_FLYING] = "Hammer/hammer";
         _objectModelPaths[HammerState.IS_RETURNING] = "Hammer/hammer";
         _objectModelPaths[HammerState.IS_HELD] = "Hammer/hammer";
+    }
+
+    protected override void LoadAudioContent()
+    {
+        for (int i = 0; i < NumThrowSoundEffects; i++)
+        {
+            GameMain.AudioManager.LoadSoundEffect($"{ThrowSoundEffectPrefix}{i}");
+        }
     }
 
     public override void Update(GameTime gameTime)
@@ -151,6 +163,9 @@ public class Hammer : GameObject<HammerState>
         {
             return;
         }
+
+        int throwIndex = GameMain.Random.Next(NumThrowSoundEffects);
+        GameMain.AudioManager.PlaySoundEffect($"{ThrowSoundEffectPrefix}{throwIndex}");
 
         // if there is no aiming input, use walking direction or default
         if (Direction == Vector3.Zero)
