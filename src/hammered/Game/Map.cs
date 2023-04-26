@@ -204,8 +204,8 @@ public class Map : DrawableGameComponent
 
             GameMain.AudioManager.LoadSong(FastMapSong);
 
-            GameMain.AudioManager.LoadSoundEffect("Dash");
-            GameMain.AudioManager.LoadSoundEffect("hammerBongWall");
+            
+            
         }
         catch { }
     }

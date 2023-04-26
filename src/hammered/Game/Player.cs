@@ -135,7 +135,7 @@ public class Player : GameObject<PlayerState>
     {
         GameMain.AudioManager.LoadSoundEffect(PlayerFallingSoundEffect);
         GameMain.AudioManager.LoadSoundEffect(HammerHitSoundEffect);
-
+        GameMain.AudioManager.LoadSoundEffect("Dash");
         for (int i = 0; i < NumStepSoundEffects; i++)
         {
             GameMain.AudioManager.LoadSoundEffect($"{StepSoundEffectPrefix}{i}");
