@@ -25,8 +25,8 @@ public class AudioManager
 
     private const string audioRootPath = "Audio/";
 
-    private const float defaultVolume = 0.05f;
-    private const float defaultEffectVolume = 0.1f;
+    private const float defaultVolume = 0.4f;
+    private const float defaultEffectVolume = 0.4f;
 
     public AudioManager(Game game)
     {

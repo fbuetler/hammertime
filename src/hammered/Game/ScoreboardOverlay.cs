@@ -145,9 +145,9 @@ public class ScoreboardOverlay : DrawableGameComponent
 
             Vector2 scoreBubblePosition = scoreBarPosition;
             scoreBubblePosition.Y += (SCOREBAR.Height - SCORE_BUBBLE.Height) * 0.5f;
-            float bubbleOffset = SCOREBAR.Width / (Match.MaxPoints + 1);
+            float bubbleOffset = SCOREBAR.Width / (GameMain.Match.NumberOfRounds + 1);
             scoreBubblePosition.X += bubbleOffset * 0.5f;
-            for (int j = 0; j < Match.MaxPoints; j++)
+            for (int j = 0; j < GameMain.Match.NumberOfRounds; j++)
             {
                 Rectangle bubble;
                 if (GameMain.Match.Scores[i] > j)

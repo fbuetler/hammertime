@@ -20,6 +20,9 @@ public class Match : DrawableGameComponent
     public int NumberOfPlayers { get => _numberOfPlayers; }
     private int _numberOfPlayers;
 
+    public int NumberOfRounds { get => _numberOfRounds; }
+    private int _numberOfRounds;
+
     /// <summary>
     /// We persist loaded models at the top level to ensure we only load them once #flyweight
     /// </summary>
@@ -47,8 +50,7 @@ public class Match : DrawableGameComponent
 
     private float _roundFinishedAt = 0;
 
-    public bool MatchFinished { get => _matchFinished; }
-    private bool _matchFinished { get => _scores.Max() >= MaxPoints; }
+    public bool MatchFinished { get => _scores.Max() >= _numberOfRounds; }
 
     public const int MaxNumberOfPlayers = 4;
     // The number of levels in the Levels directory of our content. We assume that
@@ -57,15 +59,14 @@ public class Match : DrawableGameComponent
     // or handle exceptions, both of which can add unnecessary time to level loading.
     private const int numberOfMaps = 11;
 
-    public const int MaxPoints = 10;
-
     private const int roundTimeoutSec = 3;
 
-    public Match(Game game, int NumberOfPlayers) : base(game)
+    public Match(Game game, int numberOfPlayers, int numberOfRounds) : base(game)
     {
         _game = (GameMain)game;
 
-        _numberOfPlayers = NumberOfPlayers;
+        _numberOfPlayers = numberOfPlayers;
+        _numberOfRounds = numberOfRounds;
 
         _models = new Dictionary<string, ScaledModel>();
 

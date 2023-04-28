@@ -64,7 +64,7 @@ public class HudOverlay : DrawableGameComponent
             Color.White
         );
         DrawShadowedString(
-            _font, $"Goal: {Match.MaxPoints}",
+            _font, $"Goal: {GameMain.Match.NumberOfRounds}",
             new Vector2(screenWidth - rightAlignedOffset, topAlignedOffset + nextLineOffset),
             Color.White
         );
@@ -85,7 +85,7 @@ public class HudOverlay : DrawableGameComponent
             string text;
             if (GameMain.Match.MatchFinished)
             {
-                int winnerId = Array.IndexOf(GameMain.Match.Scores, Match.MaxPoints);
+                int winnerId = Array.IndexOf(GameMain.Match.Scores, GameMain.Match.NumberOfRounds);
                 text = $"WINNER: P{winnerId + 1}";
             }
             else if (GameMain.Match.Map.Paused)

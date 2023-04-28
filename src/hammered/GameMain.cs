@@ -115,9 +115,9 @@ public class GameMain : Game
         _audio.PlaySong(MenuSong);
     }
 
-    public void StartMatch(int NumberOfPlayers)
+    public void StartMatch(int numberOfPlayers, int numberOfRounds)
     {
-        _match = new Match(this, NumberOfPlayers);
+        _match = new Match(this, numberOfPlayers, numberOfRounds);
         Components.Add(_match);
 
         Components.Remove(_menu);

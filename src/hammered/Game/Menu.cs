@@ -5,25 +5,37 @@ using hammered;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-// TODO (fbuetler) maybe do a hierachical state machine
 enum MenuState
 {
     TITLE,
 
     MAIN_START,
-    MAIN_SETTINGS,
+    MAIN_OPTIONS,
     MAIN_QUIT,
 
     PLAYERS,
     PLAYERS_CONFIRMED,
 
-    SETTINGS, // TODO (fbuetler) subcategories
+    ROUNDS_1,
+    ROUNDS_3,
+    ROUNDS_5,
+    ROUNDS_10,
+
+    // IMPORTANT: make sure the volumes are in order
+    OPTIONS_VOLUME_0,
+    OPTIONS_VOLUME_1,
+    OPTIONS_VOLUME_2,
+    OPTIONS_VOLUME_3,
+    OPTIONS_VOLUME_4,
+    OPTIONS_VOLUME_5,
 
     QUIT_YES,
     QUIT_NO,
 };
 
 record MenuGroup(List<(int, MenuState)> buttons, Vector2 anchor);
+
+record MenuComponent(string path, Texture2D texture);
 
 public class Menu : DrawableGameComponent
 {
@@ -40,7 +52,7 @@ public class Menu : DrawableGameComponent
     private static float MARGIN = 2f;
 
     private static int MAIN_START_ROW = 0;
-    private static int MAIN_SETTINGS_ROW = 1;
+    private static int MAIN_OPTIONS_ROW = 1;
     private static int MAIN_QUIT_ROW = 2;
     private static int QUIT_YES_ROW = 3;
     private static int QUIT_NO_ROW = 4;
@@ -64,15 +76,45 @@ public class Menu : DrawableGameComponent
     private int _playersConnected;
     private List<bool> _playersConfirmed;
 
+    private Dictionary<MenuState, MenuComponent> _menus;
+
     private static readonly Vector2 nextLineOffset = new Vector2(0, 50);
 
     // sound effects
     private const string InteractButtonPressSoundEffect = "MenuAudio/ButtonPress0";
     private const string AlternativeButtonPressSoundEffect = "MenuAudio/ButtonPress1";
 
+    // sound
+    private const float volumeStep = 1f / (MenuState.OPTIONS_VOLUME_5 - MenuState.OPTIONS_VOLUME_0);
+
     public Menu(Game game) : base(game)
     {
         _game = (GameMain)game;
+
+        _menus = new Dictionary<MenuState, MenuComponent>();
+        _menus[MenuState.TITLE] = new MenuComponent("Menu/title", null);
+
+        _menus[MenuState.MAIN_START] = new MenuComponent("Menu/Start/press_start", null);
+        _menus[MenuState.MAIN_OPTIONS] = new MenuComponent("Menu/Start/press_options", null);
+        _menus[MenuState.MAIN_QUIT] = new MenuComponent("Menu/Start/press_quit", null);
+
+        _menus[MenuState.PLAYERS] = new MenuComponent("Menu/title", null);
+        _menus[MenuState.PLAYERS_CONFIRMED] = new MenuComponent("Menu/title", null);
+
+        _menus[MenuState.ROUNDS_1] = new MenuComponent("Menu/Rounds/rounds_1", null);
+        _menus[MenuState.ROUNDS_3] = new MenuComponent("Menu/Rounds/rounds_3", null);
+        _menus[MenuState.ROUNDS_5] = new MenuComponent("Menu/Rounds/rounds_5", null);
+        _menus[MenuState.ROUNDS_10] = new MenuComponent("Menu/Rounds/rounds_10", null);
+
+        _menus[MenuState.OPTIONS_VOLUME_0] = new MenuComponent("Menu/Options/volume0", null);
+        _menus[MenuState.OPTIONS_VOLUME_1] = new MenuComponent("Menu/Options/volume1", null);
+        _menus[MenuState.OPTIONS_VOLUME_2] = new MenuComponent("Menu/Options/volume2", null);
+        _menus[MenuState.OPTIONS_VOLUME_3] = new MenuComponent("Menu/Options/volume3", null);
+        _menus[MenuState.OPTIONS_VOLUME_4] = new MenuComponent("Menu/Options/volume4", null);
+        _menus[MenuState.OPTIONS_VOLUME_5] = new MenuComponent("Menu/Options/volume5", null);
+
+        _menus[MenuState.QUIT_YES] = new MenuComponent("Menu/Quit/quit_yes", null);
+        _menus[MenuState.QUIT_NO] = new MenuComponent("Menu/Quit/quit_no", null);
 
         // make update and draw called by monogame
         Enabled = true;
@@ -89,9 +131,14 @@ public class Menu : DrawableGameComponent
         _menuItems = GameMain.Content.Load<Texture2D>("Menu/items");
         _impactFont = _game.Content.Load<SpriteFont>("Fonts/impact");
 
-        LoadStartMenuGroup();
-        LoadQuitMenuGroup();
         LoadPlayersMenuGroup();
+
+        foreach (MenuState state in Enum.GetValues(typeof(MenuState)))
+        {
+            string path = _menus[state].path;
+            var texture = GameMain.Content.Load<Texture2D>(path);
+            _menus[state] = new MenuComponent(path, texture);
+        }
 
         GameMain.AudioManager.LoadSoundEffect(InteractButtonPressSoundEffect);
         GameMain.AudioManager.LoadSoundEffect(AlternativeButtonPressSoundEffect);
@@ -101,7 +148,7 @@ public class Menu : DrawableGameComponent
     {
         var buttons = new List<(int, MenuState)>{
             (MAIN_START_ROW, MenuState.MAIN_START),
-            (MAIN_SETTINGS_ROW, MenuState.MAIN_SETTINGS),
+            (MAIN_OPTIONS_ROW, MenuState.MAIN_OPTIONS),
             (MAIN_QUIT_ROW, MenuState.MAIN_QUIT)
         };
         _startMenu = new MenuGroup(buttons, CalculateAnchorOfMenuGroup(buttons.Count, Vector2.Zero));
@@ -150,25 +197,26 @@ public class Menu : DrawableGameComponent
                 if (Controls.FocusPrev.Pressed())
                     _state = MenuState.MAIN_QUIT;
                 else if (Controls.FocusNext.Pressed())
-                    _state = MenuState.MAIN_SETTINGS;
+                    _state = MenuState.MAIN_OPTIONS;
                 else if (Controls.Interact.Pressed())
                     _state = MenuState.PLAYERS;
                 else if (Controls.Back.Pressed())
                     _state = MenuState.TITLE;
                 break;
-            case MenuState.MAIN_SETTINGS:
+            case MenuState.MAIN_OPTIONS:
                 if (Controls.FocusPrev.Pressed())
                     _state = MenuState.MAIN_START;
                 else if (Controls.FocusNext.Pressed())
                     _state = MenuState.MAIN_QUIT;
                 else if (Controls.Interact.Pressed())
-                    _state = MenuState.SETTINGS;
+                    // very hacky, but Im too lazy for a switch statement. take this comment instead
+                    _state = MenuState.OPTIONS_VOLUME_0 + GetVolumeLevel();
                 else if (Controls.Back.Pressed())
                     _state = MenuState.TITLE;
                 break;
             case MenuState.MAIN_QUIT:
                 if (Controls.FocusPrev.Pressed())
-                    _state = MenuState.MAIN_SETTINGS;
+                    _state = MenuState.MAIN_OPTIONS;
                 else if (Controls.FocusNext.Pressed())
                     _state = MenuState.MAIN_START;
                 else if (Controls.Interact.Pressed())
@@ -208,8 +256,7 @@ public class Menu : DrawableGameComponent
                 {
                     if (Controls.InteractP(i).Pressed() && _playersConnected > 1)
                     {
-                        _state = MenuState.MAIN_START;
-                        GameMain.StartMatch(_playersConnected);
+                        _state = MenuState.ROUNDS_5;
                     }
                     else if (Controls.BackP(i).Pressed() && _playersConfirmed[i])
                     {
@@ -222,17 +269,78 @@ public class Menu : DrawableGameComponent
                 if (Controls.Start.Pressed())
                 {
                     // helper if a poor, controller-less peasant (lasse) needs to test the game with a keyboard
-                    _state = MenuState.MAIN_START;
-                    GameMain.StartMatch(4);
+                    _state = MenuState.ROUNDS_5;
+                    _playersConnected = 2;
                 }
 #endif
-
                 break;
 
-            // settings
-            case MenuState.SETTINGS:
+            case MenuState.ROUNDS_1:
+            case MenuState.ROUNDS_3:
+            case MenuState.ROUNDS_5:
+            case MenuState.ROUNDS_10:
                 if (Controls.Back.Pressed())
-                    _state = MenuState.MAIN_SETTINGS;
+                    _state = MenuState.PLAYERS_CONFIRMED;
+                else if (Controls.Increase.Pressed())
+                {
+                    // very hacky
+                    _state = (MenuState)MathHelper.Clamp(
+                        (float)_state + 1,
+                        (float)MenuState.ROUNDS_1,
+                        (float)MenuState.ROUNDS_10
+                    );
+                }
+                else if (Controls.Decrease.Pressed())
+                {
+                    // very hacky
+                    // very hacky
+                    _state = (MenuState)MathHelper.Clamp(
+                        (float)_state - 1,
+                        (float)MenuState.ROUNDS_1,
+                        (float)MenuState.ROUNDS_10
+                    );
+                }
+                else if (Controls.Interact.Pressed())
+                {
+                    switch (_state)
+                    {
+                        case MenuState.ROUNDS_1:
+                            GameMain.StartMatch(_playersConnected, 1);
+                            break;
+                        case MenuState.ROUNDS_3:
+                            GameMain.StartMatch(_playersConnected, 3);
+                            break;
+                        case MenuState.ROUNDS_5:
+                            GameMain.StartMatch(_playersConnected, 5);
+                            break;
+                        case MenuState.ROUNDS_10:
+                            GameMain.StartMatch(_playersConnected, 10);
+                            break;
+                    }
+                }
+                break;
+
+            // options
+            case MenuState.OPTIONS_VOLUME_0:
+            case MenuState.OPTIONS_VOLUME_1:
+            case MenuState.OPTIONS_VOLUME_2:
+            case MenuState.OPTIONS_VOLUME_3:
+            case MenuState.OPTIONS_VOLUME_4:
+            case MenuState.OPTIONS_VOLUME_5:
+                if (Controls.Back.Pressed())
+                    _state = MenuState.MAIN_OPTIONS;
+                else if (Controls.Increase.Pressed())
+                {
+                    // very hacky
+                    SetVolumeLevel(_state - MenuState.OPTIONS_VOLUME_0 + 1);
+                    _state = MenuState.OPTIONS_VOLUME_0 + GetVolumeLevel();
+                }
+                else if (Controls.Decrease.Pressed())
+                {
+                    // very hacky
+                    SetVolumeLevel(_state - MenuState.OPTIONS_VOLUME_0 - 1);
+                    _state = MenuState.OPTIONS_VOLUME_0 + GetVolumeLevel();
+                }
                 break;
 
             // quit
@@ -269,6 +377,19 @@ public class Menu : DrawableGameComponent
         }
     }
 
+    private int GetVolumeLevel()
+    {
+        float volume = GameMain.AudioManager.SongVolume;
+        int level = (int)MathF.Floor(volume / volumeStep);
+        return level;
+    }
+
+    private void SetVolumeLevel(int level)
+    {
+        float volume = level * volumeStep;
+        GameMain.AudioManager.SongVolume = volume;
+    }
+
     public override void Draw(GameTime gameTime)
     {
         GraphicsDevice.Clear(Color.White);
@@ -281,14 +402,6 @@ public class Menu : DrawableGameComponent
 
         switch (_state)
         {
-            case MenuState.TITLE:
-                DrawFullScreen(GameMain.SpriteBatch, _title);
-                break;
-            case MenuState.MAIN_START:
-            case MenuState.MAIN_SETTINGS:
-            case MenuState.MAIN_QUIT:
-                DrawMenuGroup(GameMain.SpriteBatch, _startMenu);
-                break;
             case MenuState.PLAYERS:
             case MenuState.PLAYERS_CONFIRMED:
                 Vector2 anchor = screenCenter - new Vector2(0, GameMain.GetScreenHeight() / 6);
@@ -306,20 +419,11 @@ public class Menu : DrawableGameComponent
                     }
                     DrawString(GameMain.SpriteBatch, _impactFont, s, anchor + (i + 1) * nextLineOffset);
                 }
-
                 DrawMenuGroup(GameMain.SpriteBatch, _playersMenu);
-
-                break;
-            case MenuState.SETTINGS:
-                DrawString(GameMain.SpriteBatch, _impactFont, "Settings", screenCenter);
-                break;
-            case MenuState.QUIT_YES:
-            case MenuState.QUIT_NO:
-                DrawString(GameMain.SpriteBatch, _impactFont, "QUIT?", _quitMenu.anchor);
-                DrawMenuGroup(GameMain.SpriteBatch, _quitMenu);
                 break;
             default:
-                throw new ArgumentOutOfRangeException(nameof(_state), $"Unexpected menu state: {_state}");
+                DrawFullScreen(GameMain.SpriteBatch, _menus[_state].texture);
+                break;
         }
 
         GameMain.SpriteBatch.End();
