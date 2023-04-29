@@ -91,6 +91,14 @@ public class Match : DrawableGameComponent
 
     protected override void LoadContent()
     {
+        _hud = new HudOverlay(GameMain);
+        _startOverlay = new StartOverlay(GameMain);
+        _pauseOverlay = new PauseOverlay(GameMain);
+        for (int i = 0; i < _winnerOverlays.Count(); i++)
+        {
+            _winnerOverlays[i] = new WinnerOverlay(GameMain, i);
+        }
+
         LoadMap();
     }
 
@@ -111,32 +119,24 @@ public class Match : DrawableGameComponent
             Models.Clear();
         }
 
-        // initialize game overlay
-        _hud = new HudOverlay(GameMain);
+        // initialize overlays
         GameMain.Components.Add(_hud);
-        // GameMain.Components.Add(new ScoreboardOverlay(GameMain));
-
-        for (int i = 0; i < _winnerOverlays.Count(); i++)
-        {
-            var winnerOverlay = new WinnerOverlay(GameMain, i);
-            winnerOverlay.Visible = false;
-            _winnerOverlays[i] = winnerOverlay;
-            GameMain.Components.Add(winnerOverlay);
-        }
-
-        _pauseOverlay = new PauseOverlay(GameMain);
+        _startOverlay.Visible = true;
+        GameMain.Components.Add(_startOverlay);
         _pauseOverlay.Visible = false;
         GameMain.Components.Add(_pauseOverlay);
-
-        _scoreState = ScoreState.None;
+        // GameMain.Components.Add(new ScoreboardOverlay(GameMain));
+        foreach (var winnerOverlay in _winnerOverlays)
+        {
+            winnerOverlay.Visible = false;
+            GameMain.Components.Add(winnerOverlay);
+        }
 
         string mapPath = string.Format("Content/Maps/{0}.txt", _mapIndex);
         _map = new Map(GameMain, GameMain.Services, mapPath);
         GameMain.Components.Add(_map);
 
-        _startOverlay = new StartOverlay(GameMain);
-        GameMain.Components.Add(_startOverlay);
-
+        _scoreState = ScoreState.None;
         _roundStarted = false;
         _roundStartedAt = 0;
         _roundFinishedAt = 0;
