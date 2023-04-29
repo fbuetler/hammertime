@@ -317,6 +317,7 @@ public class Menu : DrawableGameComponent
                             GameMain.StartMatch(_playersConnected, 10);
                             break;
                     }
+                    _state = MenuState.MAIN_START;
                 }
                 break;
 
