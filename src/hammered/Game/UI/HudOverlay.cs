@@ -132,8 +132,8 @@ public class HudOverlay : DrawableGameComponent
             default:
                 throw new NotSupportedException(String.Format("Scorestate type '{0}' is not supported", GameMain.Match.ScoreState));
         }
-    }
 #endif
+    }
 
     private void DrawShadowedString(SpriteFont _font, string value, Vector2 position, Color color)
     {

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
@@ -30,6 +31,7 @@ public class Match : DrawableGameComponent
     private Dictionary<string, ScaledModel> _models;
 
     private HudOverlay _hud;
+    private WinnerOverlay[] _winnerOverlays;
 
     // map
     private Map _map;
@@ -72,6 +74,8 @@ public class Match : DrawableGameComponent
 
         _scores = new int[_numberOfPlayers];
 
+        _winnerOverlays = new WinnerOverlay[_numberOfPlayers];
+
         // make update and draw called by monogame
         Enabled = true;
         UpdateOrder = GameMain.MATCH_UPDATE_ORDER;
@@ -104,6 +108,14 @@ public class Match : DrawableGameComponent
         _hud = new HudOverlay(GameMain);
         GameMain.Components.Add(_hud);
         // GameMain.Components.Add(new ScoreboardOverlay(GameMain));
+
+        for (int i = 0; i < _winnerOverlays.Count(); i++)
+        {
+            var winnerOverlay = new WinnerOverlay(GameMain, i);
+            winnerOverlay.Visible = false;
+            _winnerOverlays[i] = winnerOverlay;
+            GameMain.Components.Add(winnerOverlay);
+        }
 
         _scoreState = ScoreState.None;
 
@@ -145,29 +157,50 @@ public class Match : DrawableGameComponent
     private void UpdateGameState(GameTime gameTime)
     {
         List<int> playersAlive = Map.PlayersAlive;
-        if (_scoreState == ScoreState.None)
+        switch (GameMain.Match.ScoreState)
         {
-            if (playersAlive.Count > 1)
-            {
-                return;
-            }
+            case ScoreState.None:
+                if (playersAlive.Count > 1)
+                {
+                    return;
+                }
 
-            _roundFinishedAt = (float)gameTime.TotalGameTime.TotalSeconds;
-            if (playersAlive.Count == 1)
-            {
-                _scoreState = ScoreState.Winner;
-                _roundWinnerId = Map.PlayersAlive[0];
-                _scores[(int)_roundWinnerId]++;
-            }
-            else if (playersAlive.Count == 0)
-            {
-                _scoreState = ScoreState.Draw;
-            }
+                _roundFinishedAt = (float)gameTime.TotalGameTime.TotalSeconds;
+                if (playersAlive.Count == 1)
+                {
+                    _scoreState = ScoreState.Winner;
+                    _roundWinnerId = Map.PlayersAlive[0];
+                    _scores[(int)_roundWinnerId]++;
+                }
+                else if (playersAlive.Count == 0)
+                {
+                    _scoreState = ScoreState.Draw;
+                }
+                break;
+            case ScoreState.Winner:
+                break;
+            case ScoreState.Draw:
+                break;
+            default:
+                throw new NotSupportedException(String.Format("Scorestate type '{0}' is not supported", ScoreState));
         }
 
-        if (gameTime.TotalGameTime.TotalSeconds - _roundFinishedAt > roundTimeoutSec && !MatchFinished)
+        if (gameTime.TotalGameTime.TotalSeconds - _roundFinishedAt > roundTimeoutSec)
         {
-            LoadNextMap();
+            if (MatchFinished)
+            {
+
+                int winnerId = _scores.ToList().IndexOf(_scores.Max());
+                _winnerOverlays[winnerId].Visible = true;
+            }
+            else
+            {
+                LoadNextMap();
+                foreach (var winnerOverlay in _winnerOverlays)
+                {
+                    winnerOverlay.Visible = false;
+                }
+            }
         }
     }
 }
