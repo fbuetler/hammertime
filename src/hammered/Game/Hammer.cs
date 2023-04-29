@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input;
 
 namespace hammered;
 
@@ -51,7 +50,7 @@ public class Hammer : GameObject<HammerState>
     public Hammer(Game game, Vector3 position, int ownerId) : base(game, position + _maxSize / 2)
     {
         // make update and draw called by monogame
-        Enabled = true;
+        Enabled = false; // enabled by match
         UpdateOrder = GameMain.HAMMER_UPDATE_ORDER;
         Visible = false;
         DrawOrder = GameMain.HAMMER_DRAW_ORDER;

@@ -33,7 +33,7 @@ public class Arrow : GameObject<ArrowState>
     public Arrow(Game game, Vector3 position, int ownerId) : base(game, position)
     {
         // make update and draw called by monogame
-        Enabled = true;
+        Enabled = false; // enabled by match
         UpdateOrder = GameMain.ARROW_UPDATE_ORDER;
         Visible = false;
         DrawOrder = GameMain.ARROW_DRAW_ORDER;

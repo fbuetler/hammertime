@@ -31,6 +31,7 @@ public class Match : DrawableGameComponent
     private Dictionary<string, ScaledModel> _models;
 
     private HudOverlay _hud;
+    private StartOverlay _startOverlay;
     private WinnerOverlay[] _winnerOverlays;
 
     // map
@@ -50,6 +51,7 @@ public class Match : DrawableGameComponent
     public int? RoundWinnerId { get => _roundWinnerId; }
     private int? _roundWinnerId = null;
 
+    private float _roundStartedAt = 0;
     private float _roundFinishedAt = 0;
 
     public bool MatchFinished { get => _scores.Max() >= _numberOfRounds; }
@@ -61,6 +63,7 @@ public class Match : DrawableGameComponent
     // or handle exceptions, both of which can add unnecessary time to level loading.
     private const int numberOfMaps = 11;
 
+    private const int startDelaySec = 2;
     private const int roundTimeoutSec = 3;
 
     public Match(Game game, int numberOfPlayers, int numberOfRounds) : base(game)
@@ -121,15 +124,19 @@ public class Match : DrawableGameComponent
 
         string mapPath = string.Format("Content/Maps/{0}.txt", _mapIndex);
         _map = new Map(GameMain, GameMain.Services, mapPath);
-
         GameMain.Components.Add(_map);
 
+        _startOverlay = new StartOverlay(GameMain);
+        GameMain.Components.Add(_startOverlay);
+
+        _roundStartedAt = 0;
         _roundFinishedAt = 0;
     }
 
     public override void Update(GameTime gameTime)
     {
         HandleInput();
+        StartRound(gameTime);
         UpdateGameState(gameTime);
     }
 
@@ -150,6 +157,39 @@ public class Match : DrawableGameComponent
             if (Controls.Interact.Pressed())
             {
                 GameMain.EndMatch();
+            }
+        }
+    }
+
+    private void StartRound(GameTime gameTime)
+    {
+        float elapsedSinceStart = (float)gameTime.TotalGameTime.TotalSeconds;
+
+        if (_roundStartedAt == 0)
+        {
+            _roundStartedAt = elapsedSinceStart;
+        }
+
+        if (_roundStartedAt > 0 && elapsedSinceStart - _roundStartedAt > startDelaySec)
+        {
+            _startOverlay.Visible = false;
+
+            foreach (Player p in Map.Players.Values)
+            {
+                p.Enabled = true;
+            }
+            foreach (Hammer h in Map.Hammers.Values)
+            {
+                h.Enabled = true;
+            }
+            foreach (Arrow a in Map.Arrows.Values)
+            {
+                a.Enabled = true;
+            }
+            foreach (Tile t in Map.Tiles)
+            {
+                if (t != null)
+                    t.Enabled = true;
             }
         }
     }

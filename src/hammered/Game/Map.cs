@@ -231,24 +231,29 @@ public class Map : DrawableGameComponent
     {
         if (Controls.Pause.Pressed())
         {
-            _paused = !_paused;
-            foreach (Player p in Players.Values)
-            {
-                p.Enabled = !p.Enabled;
-            }
-            foreach (Hammer h in Hammers.Values)
-            {
-                h.Enabled = !h.Enabled;
-            }
-            foreach (Arrow a in Arrows.Values)
-            {
-                a.Enabled = !a.Enabled;
-            }
-            foreach (Tile t in Tiles)
-            {
-                if (t != null)
-                    t.Enabled = !t.Enabled;
-            }
+            TogglePause();
+        }
+    }
+
+    private void TogglePause()
+    {
+        _paused = !_paused;
+        foreach (Player p in Players.Values)
+        {
+            p.Enabled = !p.Enabled;
+        }
+        foreach (Hammer h in Hammers.Values)
+        {
+            h.Enabled = !h.Enabled;
+        }
+        foreach (Arrow a in Arrows.Values)
+        {
+            a.Enabled = !a.Enabled;
+        }
+        foreach (Tile t in Tiles)
+        {
+            if (t != null)
+                t.Enabled = !t.Enabled;
         }
     }
 

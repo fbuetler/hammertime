@@ -114,7 +114,7 @@ public class Player : GameObject<PlayerState>
     public Player(Game game, Vector3 position, int playerId) : base(game, position + _maxSize / 2)
     {
         // make update and draw called by monogame
-        Enabled = true;
+        Enabled = false; // enabled by match
         UpdateOrder = GameMain.PLAYER_UPDATE_ORDER;
         Visible = true;
         DrawOrder = GameMain.PLAYER_DRAW_ORDER;

@@ -38,7 +38,7 @@ public class Tile : GameObject<TileState>
     public Tile(Game game, Vector3 position) : base(game, position + _maxSize / 2)
     {
         // make update and draw called by monogame
-        Enabled = true;
+        Enabled = false; // enabled by match
         UpdateOrder = GameMain.TILE_UPDATE_ORDER;
         Visible = true;
         DrawOrder = GameMain.TILE_DRAW_ORDER;
