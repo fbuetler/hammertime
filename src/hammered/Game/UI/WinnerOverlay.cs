@@ -7,7 +7,7 @@ public class WinnerOverlay : Overlay
 
     private const string texturePathPrefix = "Overlays/Winner/";
 
-    public WinnerOverlay(Game game, int playerId) : base(game, $"{texturePathPrefix}{playerId}")
+    public WinnerOverlay(Game game, string type) : base(game, $"{texturePathPrefix}{type}")
     {
 
     }

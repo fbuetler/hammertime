@@ -32,7 +32,9 @@ public class Match : DrawableGameComponent
 
     private HudOverlay _hud;
     private StartOverlay _startOverlay;
-    private WinnerOverlay[] _winnerOverlays;
+    private WinnerOverlay _roundDrawOverlay;
+    private WinnerOverlay[] _roundWinnerOverlays;
+    private WinnerOverlay[] _matchWinnerOverlays;
 
     public PauseOverlay PauseOverlay { get => _pauseOverlay; }
     private PauseOverlay _pauseOverlay;
@@ -68,7 +70,8 @@ public class Match : DrawableGameComponent
     private const int numberOfMaps = 11;
 
     private const int startDelaySec = 2;
-    private const int roundTimeoutSec = 3;
+    private const int finishedDelaySec = 2;
+    private const int nextRoundTimeoutSec = 4;
 
     public Match(Game game, int numberOfPlayers, int numberOfRounds) : base(game)
     {
@@ -81,7 +84,8 @@ public class Match : DrawableGameComponent
 
         _scores = new int[_numberOfPlayers];
 
-        _winnerOverlays = new WinnerOverlay[_numberOfPlayers];
+        _roundWinnerOverlays = new WinnerOverlay[_numberOfPlayers];
+        _matchWinnerOverlays = new WinnerOverlay[_numberOfPlayers];
 
         // make update and draw called by monogame
         Enabled = true;
@@ -94,9 +98,14 @@ public class Match : DrawableGameComponent
         _hud = new HudOverlay(GameMain);
         _startOverlay = new StartOverlay(GameMain);
         _pauseOverlay = new PauseOverlay(GameMain);
-        for (int i = 0; i < _winnerOverlays.Count(); i++)
+        _roundDrawOverlay = new WinnerOverlay(GameMain, "Round/draw");
+        for (int i = 0; i < _roundWinnerOverlays.Count(); i++)
         {
-            _winnerOverlays[i] = new WinnerOverlay(GameMain, i);
+            _roundWinnerOverlays[i] = new WinnerOverlay(GameMain, $"Round/{i}");
+        }
+        for (int i = 0; i < _matchWinnerOverlays.Count(); i++)
+        {
+            _matchWinnerOverlays[i] = new WinnerOverlay(GameMain, $"Match/{i}");
         }
 
         LoadMap();
@@ -126,10 +135,17 @@ public class Match : DrawableGameComponent
         _pauseOverlay.Visible = false;
         GameMain.Components.Add(_pauseOverlay);
         // GameMain.Components.Add(new ScoreboardOverlay(GameMain));
-        foreach (var winnerOverlay in _winnerOverlays)
+        _roundDrawOverlay.Visible = false;
+        GameMain.Components.Add(_roundDrawOverlay);
+        foreach (var roundWinnerOverlay in _roundWinnerOverlays)
         {
-            winnerOverlay.Visible = false;
-            GameMain.Components.Add(winnerOverlay);
+            roundWinnerOverlay.Visible = false;
+            GameMain.Components.Add(roundWinnerOverlay);
+        }
+        foreach (var gameWinnerOverlay in _matchWinnerOverlays)
+        {
+            gameWinnerOverlay.Visible = false;
+            GameMain.Components.Add(gameWinnerOverlay);
         }
 
         string mapPath = string.Format("Content/Maps/{0}.txt", _mapIndex);
@@ -229,28 +245,31 @@ public class Match : DrawableGameComponent
                 }
                 break;
             case ScoreState.Winner:
+                if (gameTime.TotalGameTime.TotalSeconds - _roundFinishedAt > finishedDelaySec)
+                    _roundWinnerOverlays[(int)_roundWinnerId].Visible = true;
                 break;
             case ScoreState.Draw:
+                if (gameTime.TotalGameTime.TotalSeconds - _roundFinishedAt > finishedDelaySec)
+                    _roundDrawOverlay.Visible = true;
                 break;
             default:
                 throw new NotSupportedException(String.Format("Scorestate type '{0}' is not supported", ScoreState));
         }
 
-        if (gameTime.TotalGameTime.TotalSeconds - _roundFinishedAt > roundTimeoutSec)
+        if (gameTime.TotalGameTime.TotalSeconds - _roundFinishedAt > nextRoundTimeoutSec)
         {
+            _roundDrawOverlay.Visible = false;
+            _roundWinnerOverlays.ToList().ForEach(o => o.Visible = false);
+
             if (MatchFinished)
             {
-
                 int winnerId = _scores.ToList().IndexOf(_scores.Max());
-                _winnerOverlays[winnerId].Visible = true;
+                _matchWinnerOverlays[winnerId].Visible = true;
             }
             else
             {
                 LoadNextMap();
-                foreach (var winnerOverlay in _winnerOverlays)
-                {
-                    winnerOverlay.Visible = false;
-                }
+                _roundWinnerOverlays.ToList().ForEach(o => o.Visible = false);
             }
         }
     }
