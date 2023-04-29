@@ -34,6 +34,9 @@ public class Match : DrawableGameComponent
     private StartOverlay _startOverlay;
     private WinnerOverlay[] _winnerOverlays;
 
+    public PauseOverlay PauseOverlay { get => _pauseOverlay; }
+    private PauseOverlay _pauseOverlay;
+
     // map
     private Map _map;
     public Map Map { get => _map; }
@@ -54,6 +57,7 @@ public class Match : DrawableGameComponent
     private float _roundStartedAt = 0;
     private float _roundFinishedAt = 0;
 
+    private bool _roundStarted;
     public bool MatchFinished { get => _scores.Max() >= _numberOfRounds; }
 
     public const int MaxNumberOfPlayers = 4;
@@ -120,6 +124,10 @@ public class Match : DrawableGameComponent
             GameMain.Components.Add(winnerOverlay);
         }
 
+        _pauseOverlay = new PauseOverlay(GameMain);
+        _pauseOverlay.Visible = false;
+        GameMain.Components.Add(_pauseOverlay);
+
         _scoreState = ScoreState.None;
 
         string mapPath = string.Format("Content/Maps/{0}.txt", _mapIndex);
@@ -129,6 +137,7 @@ public class Match : DrawableGameComponent
         _startOverlay = new StartOverlay(GameMain);
         GameMain.Components.Add(_startOverlay);
 
+        _roundStarted = false;
         _roundStartedAt = 0;
         _roundFinishedAt = 0;
     }
@@ -136,7 +145,8 @@ public class Match : DrawableGameComponent
     public override void Update(GameTime gameTime)
     {
         HandleInput();
-        StartRound(gameTime);
+        if (!_roundStarted)
+            StartRound(gameTime);
         UpdateGameState(gameTime);
     }
 
@@ -173,6 +183,7 @@ public class Match : DrawableGameComponent
         if (_roundStartedAt > 0 && elapsedSinceStart - _roundStartedAt > startDelaySec)
         {
             _startOverlay.Visible = false;
+            _roundStarted = true;
 
             foreach (Player p in Map.Players.Values)
             {

@@ -238,22 +238,23 @@ public class Map : DrawableGameComponent
     private void TogglePause()
     {
         _paused = !_paused;
+        GameMain.Match.PauseOverlay.Visible = _paused;
         foreach (Player p in Players.Values)
         {
-            p.Enabled = !p.Enabled;
+            p.Enabled = !_paused;
         }
         foreach (Hammer h in Hammers.Values)
         {
-            h.Enabled = !h.Enabled;
+            h.Enabled = !_paused;
         }
         foreach (Arrow a in Arrows.Values)
         {
-            a.Enabled = !a.Enabled;
+            a.Enabled = !_paused;
         }
         foreach (Tile t in Tiles)
         {
             if (t != null)
-                t.Enabled = !t.Enabled;
+                t.Enabled = !_paused;
         }
     }
 
