@@ -52,8 +52,8 @@ public class Map : DrawableGameComponent
     private bool _paused;
 
     // song
-    private const string SlowMapSong = "MusicMapSlow";
-    private const string FastMapSong = "MusicMapFast";
+    private const string SlowMapSong = "MusicTracks/MusicMapSlow";
+    private const string FastMapSong = "MusicTracks/MusicMapFast";
 
     public Map(Game game, IServiceProvider serviceProvider, String mapPath) : base(game)
     {
@@ -203,9 +203,6 @@ public class Map : DrawableGameComponent
             GameMain.AudioManager.PlaySong(SlowMapSong);
 
             GameMain.AudioManager.LoadSong(FastMapSong);
-
-            
-            
         }
         catch { }
     }

@@ -32,8 +32,8 @@ public class Tile : GameObject<TileState>
     public const float Height = 1f;
     public const float Depth = 1f;
 
+    private const string WallHitSoundEffect = "HammerAudio/hammerBongWall";
 
-    private const string WallHitSoundEffectPrefix = "HammerAudio/hammerBongWall";
     public Tile(Game game, Vector3 position) : base(game, position + _maxSize / 2)
     {
         // make update and draw called by monogame
@@ -53,7 +53,11 @@ public class Tile : GameObject<TileState>
         _objectModelPaths[TileState.HP0] = "Tile/tileCube0";
 
         _visitors = new HashSet<int>();
-        GameMain.AudioManager.LoadSoundEffect(WallHitSoundEffectPrefix);
+    }
+
+    protected override void LoadAudioContent()
+    {
+        GameMain.AudioManager.LoadSoundEffect(WallHitSoundEffect);
     }
 
     public override void Update(GameTime gameTime)
@@ -86,9 +90,9 @@ public class Tile : GameObject<TileState>
                 IntersectionDepth(h.BoundingBox, BoundingBox) != Vector3.Zero &&
                 (h.State == HammerState.IS_FLYING || h.State == HammerState.IS_RETURNING))
             {
-                if(!(GameMain.Match.Map.Players[h.OwnerId].State == PlayerState.FALLING && h.State == HammerState.IS_RETURNING))
+                if (!(GameMain.Match.Map.Players[h.OwnerId].State == PlayerState.FALLING && h.State == HammerState.IS_RETURNING))
                 {
-                    GameMain.AudioManager.PlaySoundEffect(WallHitSoundEffectPrefix);
+                    GameMain.AudioManager.PlaySoundEffect(WallHitSoundEffect);
                 }
                 _state = NextState(_state);
             }
