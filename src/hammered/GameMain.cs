@@ -48,7 +48,7 @@ public class GameMain : Game
     public Random Random { get => _random; }
     private Random _random;
 
-    private const string MenuSong = "Menu";
+    private const string MenuSong = "MenuAudio/Menu";
 
     public GameMain()
     {

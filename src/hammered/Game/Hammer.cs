@@ -45,7 +45,7 @@ public class Hammer : GameObject<HammerState>
     private const float PickupDistance = 1f;
 
     // sound effects
-    private const string ThrowSoundEffectPrefix = "throw";
+    private const string ThrowSoundEffectPrefix = "HammerAudio/throw";
     private const int NumThrowSoundEffects = 3;
 
     public Hammer(Game game, Vector3 position, int ownerId) : base(game, position + _maxSize / 2)
