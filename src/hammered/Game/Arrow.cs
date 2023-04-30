@@ -18,7 +18,7 @@ public class Arrow : GameObject<ArrowState>
     private int _ownerId;
 
     public override Vector3 MaxSize { get => _maxSize; }
-    public Vector3 _maxSize = new Vector3(5f, 0.1f, 0.5f);
+    public Vector3 _maxSize = new Vector3(1f, 1f, 1f);
 
     public override ArrowState State { get => _state; }
     private ArrowState _state;
@@ -28,7 +28,7 @@ public class Arrow : GameObject<ArrowState>
 
     private float _throwDistance;
 
-    private const float MaxArrowLength = 15f;
+    private const float MaxArrowLength = 5f;
 
     public Arrow(Game game, Vector3 position, int ownerId) : base(game, position)
     {
@@ -43,8 +43,8 @@ public class Arrow : GameObject<ArrowState>
         _state = ArrowState.IS_NOT_CHARGING;
 
         _objectModelPaths = new Dictionary<ArrowState, string>();
-        _objectModelPaths[ArrowState.IS_CHARGING] = "Hammer/hammerCube";
-        _objectModelPaths[ArrowState.IS_NOT_CHARGING] = "Hammer/hammerCube";
+        _objectModelPaths[ArrowState.IS_CHARGING] = "Player/arrow";
+        _objectModelPaths[ArrowState.IS_NOT_CHARGING] = "Player/arrow";
     }
 
     public override void Update(GameTime gameTime)
@@ -77,29 +77,34 @@ public class Arrow : GameObject<ArrowState>
         }
     }
 
-    // TODO (fbuetler) fix rotation center once we have the arrow model and dont override
-    public override void Draw(GameTime gameTime)
+    protected override Matrix ComputeScale()
     {
-        Matrix view = GameMain.Match.Map.Camera.View;
-        Matrix projection = GameMain.Match.Map.Camera.Projection;
-
-        ScaledModel scaledModel = GameMain.Match.Models[ObjectModelPaths[State]];
-
-        Vector3 rotationCenter = new Vector3(0, 0, Size.Z / 2);
-        Vector3 position = Center + rotationCenter;
-
-        Matrix translateIntoOrigin = Matrix.CreateTranslation(-rotationCenter);
-        Matrix scale = Matrix.CreateScale(MathF.Min(_throwDistance * MaxArrowLength / Hammer.MaxThrowDistance, MaxArrowLength), 1, 3);
-        Matrix rotate = ComputeRotation();
-        Matrix translateIntoPosition = Matrix.CreateTranslation(position);
-        Matrix world = scaledModel.modelScale * translateIntoOrigin * scale * rotate * translateIntoPosition;
-
-        DrawModel(scaledModel.model, world, view, projection);
-
-#if DEBUG
-        GameMain.Match.Map.DebugDraw.Begin(Matrix.Identity, view, projection);
-        GameMain.Match.Map.DebugDraw.DrawWireBox(BoundingBox, GetDebugColor());
-        GameMain.Match.Map.DebugDraw.End();
-#endif
+        return Matrix.CreateScale(MathF.Min(_throwDistance * MaxArrowLength / Hammer.MaxThrowDistance, MaxArrowLength), 1, 3);
     }
+
+    // TODO(fbuetler) fix rotation center once we have the arrow model and dont override
+    //     public override void Draw(GameTime gameTime)
+    //     {
+    //         Matrix view = GameMain.Match.Map.Camera.View;
+    //         Matrix projection = GameMain.Match.Map.Camera.Projection;
+
+    //         ScaledModel scaledModel = GameMain.Match.Models[ObjectModelPaths[State]];
+
+    //         Vector3 rotationCenter = new Vector3(0, 0, Size.Z / 2);
+    //         Vector3 position = Center + rotationCenter;
+
+    //         Matrix translateIntoOrigin = Matrix.CreateTranslation(-rotationCenter);
+    //         Matrix scale = Matrix.CreateScale(MathF.Min(_throwDistance * MaxArrowLength / Hammer.MaxThrowDistance, MaxArrowLength), 1, 3);
+    //         Matrix rotate = ComputeRotation();
+    //         Matrix translateIntoPosition = Matrix.CreateTranslation(position);
+    //         Matrix world = scaledModel.modelScale * translateIntoOrigin * scale * rotate * translateIntoPosition;
+
+    //         DrawModel(scaledModel.model, world, view, projection);
+
+    // #if DEBUG
+    //         GameMain.Match.Map.DebugDraw.Begin(Matrix.Identity, view, projection);
+    //         GameMain.Match.Map.DebugDraw.DrawWireBox(BoundingBox, GetDebugColor());
+    //         GameMain.Match.Map.DebugDraw.End();
+    // #endif
+    //     }
 }

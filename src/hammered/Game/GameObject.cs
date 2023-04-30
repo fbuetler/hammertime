@@ -89,12 +89,15 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
 
                 // compute scaling required to fit model to its BoundingBox
                 BoundingBox size = GetModelSize(model);
+                Console.WriteLine($"Loading model {assetName} with mesh size {size}");
+                Console.WriteLine($"-- scaling it down to fit in a box of size {MaxSize}");
                 float xScale = MaxSize.X / (size.Max.X - size.Min.X);
                 float yScale = MaxSize.Y / (size.Max.Y - size.Min.Y);
                 float zScale = MaxSize.Z / (size.Max.Z - size.Min.Z);
 
                 // take the minimum to preserve model proportions
                 float actualScalingFactor = Math.Min(xScale, Math.Min(yScale, zScale));
+                Console.WriteLine($"-- computed scaling factor {actualScalingFactor}");
                 _size = (size.Max - size.Min) * actualScalingFactor;
                 Matrix modelScale = Matrix.CreateScale(actualScalingFactor);
 
@@ -111,6 +114,18 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
 
     protected virtual void LoadAudioContent() { }
 
+    protected virtual Matrix ComputeScale()
+    {
+        return Matrix.Identity;
+    }
+
+    protected Matrix ComputeRotation()
+    {
+        float angle = MathF.Atan2(-Direction.Z, Direction.X);
+        Matrix rotate = Matrix.CreateFromAxisAngle(Vector3.UnitY, angle);
+        return rotate;
+    }
+
     public override void Draw(GameTime gameTime)
     {
         Matrix view = GameMain.Match.Map.Camera.View;
@@ -120,7 +135,7 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
 
         Matrix translateIntoPosition = Matrix.CreateTranslation(RotCenter);
 
-        Matrix world = GameMain.Match.Models[ObjectModelPaths[State]].modelScale * rotate * translateIntoPosition;
+        Matrix world = GameMain.Match.Models[ObjectModelPaths[State]].modelScale * ComputeScale() * rotate * translateIntoPosition;
 
         DrawModel(GameMain.Match.Models[ObjectModelPaths[State]].model, world, view, projection);
 
@@ -129,13 +144,6 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
         GameMain.Match.Map.DebugDraw.DrawWireBox(BoundingBox, GetDebugColor());
         GameMain.Match.Map.DebugDraw.End();
 #endif
-    }
-
-    protected Matrix ComputeRotation()
-    {
-        float angle = MathF.Atan2(-Direction.Z, Direction.X);
-        Matrix rotate = Matrix.CreateFromAxisAngle(Vector3.UnitY, angle);
-        return rotate;
     }
 
     protected void DrawModel(Model model, Matrix world, Matrix view, Matrix projection)
