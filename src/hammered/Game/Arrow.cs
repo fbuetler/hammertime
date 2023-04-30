@@ -62,7 +62,7 @@ public class Arrow : GameObject<ArrowState>
             case ArrowState.IS_CHARGING:
                 // arrow origin
                 Vector3 pos = GameMain.Match.Map.Players[OwnerId].Center;
-                pos.Y = 1f; // arrow should be on the floor
+                pos.Y = 1.1f; // arrow should be on the floor
                 Center = pos;
 
                 // arrow direction
@@ -79,32 +79,15 @@ public class Arrow : GameObject<ArrowState>
 
     protected override Matrix ComputeScale()
     {
-        return Matrix.CreateScale(MathF.Min(_throwDistance * MaxArrowLength / Hammer.MaxThrowDistance, MaxArrowLength), 1, 3);
+        // scale along x-axis based on charged amount
+        return Matrix.CreateScale(_throwDistance * MaxArrowLength / Hammer.MaxThrowDistance, 1, 1);
     }
 
-    // TODO(fbuetler) fix rotation center once we have the arrow model and dont override
-    //     public override void Draw(GameTime gameTime)
-    //     {
-    //         Matrix view = GameMain.Match.Map.Camera.View;
-    //         Matrix projection = GameMain.Match.Map.Camera.Projection;
+    protected override void SetCustomLightingProperties(BasicEffect effect)
+    {
+        base.SetCustomLightingProperties(effect);
 
-    //         ScaledModel scaledModel = GameMain.Match.Models[ObjectModelPaths[State]];
-
-    //         Vector3 rotationCenter = new Vector3(0, 0, Size.Z / 2);
-    //         Vector3 position = Center + rotationCenter;
-
-    //         Matrix translateIntoOrigin = Matrix.CreateTranslation(-rotationCenter);
-    //         Matrix scale = Matrix.CreateScale(MathF.Min(_throwDistance * MaxArrowLength / Hammer.MaxThrowDistance, MaxArrowLength), 1, 3);
-    //         Matrix rotate = ComputeRotation();
-    //         Matrix translateIntoPosition = Matrix.CreateTranslation(position);
-    //         Matrix world = scaledModel.modelScale * translateIntoOrigin * scale * rotate * translateIntoPosition;
-
-    //         DrawModel(scaledModel.model, world, view, projection);
-
-    // #if DEBUG
-    //         GameMain.Match.Map.DebugDraw.Begin(Matrix.Identity, view, projection);
-    //         GameMain.Match.Map.DebugDraw.DrawWireBox(BoundingBox, GetDebugColor());
-    //         GameMain.Match.Map.DebugDraw.End();
-    // #endif
-    //     }
+        // change colour based on charged amount
+        effect.AmbientLightColor = Vector3.One * _throwDistance;
+    }
 }

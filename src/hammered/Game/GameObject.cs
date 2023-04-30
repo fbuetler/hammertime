@@ -119,6 +119,11 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
         return Matrix.Identity;
     }
 
+    protected virtual void SetCustomLightingProperties(BasicEffect effect)
+    {
+        effect.EnableDefaultLighting();
+    }
+
     protected Matrix ComputeRotation()
     {
         float angle = MathF.Atan2(-Direction.Z, Direction.X);
@@ -146,13 +151,13 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
 #endif
     }
 
-    protected void DrawModel(Model model, Matrix world, Matrix view, Matrix projection)
+    private void DrawModel(Model model, Matrix world, Matrix view, Matrix projection)
     {
         foreach (ModelMesh mesh in model.Meshes)
         {
             foreach (BasicEffect effect in mesh.Effects)
             {
-                effect.EnableDefaultLighting();
+                SetCustomLightingProperties(effect);
                 effect.World = world;
                 effect.View = view;
                 effect.Projection = projection;
