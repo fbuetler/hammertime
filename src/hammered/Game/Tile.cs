@@ -32,6 +32,8 @@ public class Tile : GameObject<TileState>
     public const float Height = 1f;
     public const float Depth = 1f;
 
+
+    private const string WallHitSoundEffectPrefix = "HammerAudio/hammerBongWall";
     public Tile(Game game, Vector3 position) : base(game, position + _maxSize / 2)
     {
         // make update and draw called by monogame
@@ -51,7 +53,7 @@ public class Tile : GameObject<TileState>
         _objectModelPaths[TileState.HP0] = "Tile/tileCube0";
 
         _visitors = new HashSet<int>();
-        GameMain.AudioManager.LoadSoundEffect("hammerBongWall");
+        GameMain.AudioManager.LoadSoundEffect(WallHitSoundEffectPrefix);
     }
 
     public override void Update(GameTime gameTime)
@@ -86,7 +88,7 @@ public class Tile : GameObject<TileState>
             {
                 if(!(GameMain.Match.Map.Players[h.OwnerId].State == PlayerState.FALLING && h.State == HammerState.IS_RETURNING))
                 {
-                    GameMain.AudioManager.PlaySoundEffect("hammerBongWall");
+                    GameMain.AudioManager.PlaySoundEffect(WallHitSoundEffectPrefix);
                 }
                 _state = NextState(_state);
             }

@@ -103,9 +103,10 @@ public class Player : GameObject<PlayerState>
     private const float MaxFallVelocity = 340f;
 
     // sound effects
-    private const string HammerHitSoundEffect = "hammerBong";
-    private const string PlayerFallingSoundEffect = "falling";
-    private const string StepSoundEffectPrefix = "step";
+    private const string HammerHitSoundEffect = "HammerAudio/hammerBong";
+    private const string PlayerFallingSoundEffect = "MouvementAudio/falling";
+    private const string StepSoundEffectPrefix = "MouvementAudio/step";
+    private const string DashSoundEffectPrefix = "MouvementAudio/Dash";
 
     private const int NumStepSoundEffects = 10;
     private const int StepSoundEffectIntervalMs = 350;
@@ -157,7 +158,7 @@ public class Player : GameObject<PlayerState>
                 _dash = new Dash(Direction, Dash.DashDistance, Dash.DashVelocity);
                 _state = PlayerState.DASHING;
                 Visible = false;
-                GameMain.AudioManager.PlaySoundEffect("Dash");
+                GameMain.AudioManager.PlaySoundEffect(DashSoundEffectPrefix);
                 break;
             case PlayerState.ALIVE when moveInput != Vector3.Zero:
                 Direction = moveInput;

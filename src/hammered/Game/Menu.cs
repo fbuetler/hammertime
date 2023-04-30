@@ -67,8 +67,8 @@ public class Menu : DrawableGameComponent
     private static readonly Vector2 nextLineOffset = new Vector2(0, 50);
 
     // sound effects
-    private const string InteractButtonPressSoundEffect = "ButtonPress0";
-    private const string AlternativeButtonPressSoundEffect = "ButtonPress1";
+    private const string InteractButtonPressSoundEffect = "MenuAudio/ButtonPress0";
+    private const string AlternativeButtonPressSoundEffect = "MenuAudio/ButtonPress1";
 
     public Menu(Game game) : base(game)
     {
