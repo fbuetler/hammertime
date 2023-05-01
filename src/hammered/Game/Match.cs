@@ -35,6 +35,7 @@ public class Match : DrawableGameComponent
     private WinnerOverlay _roundDrawOverlay;
     private WinnerOverlay[] _roundWinnerOverlays;
     private WinnerOverlay[] _matchWinnerOverlays;
+    private ScoreboardOverlay _scoreboardOverlay;
 
     public PauseOverlay PauseOverlay { get => _pauseOverlay; }
     private PauseOverlay _pauseOverlay;
@@ -63,6 +64,7 @@ public class Match : DrawableGameComponent
     public bool MatchFinished { get => _scores.Max() >= _numberOfRounds; }
 
     public const int MaxNumberOfPlayers = 4;
+    public const int MaxNumberOfRounds = 10;
     // The number of levels in the Levels directory of our content. We assume that
     // levels in our content are 0-based and that all numbers under this constant
     // have a level file present. This allows us to not need to check for the file
@@ -107,6 +109,7 @@ public class Match : DrawableGameComponent
         {
             _matchWinnerOverlays[i] = new WinnerOverlay(GameMain, $"Match/{i}");
         }
+        _scoreboardOverlay = new ScoreboardOverlay(GameMain);
 
         LoadMap();
     }
@@ -129,14 +132,16 @@ public class Match : DrawableGameComponent
         }
 
         // initialize overlays
-        GameMain.Components.Add(_hud);
-        _startOverlay.Visible = true;
         GameMain.Components.Add(_startOverlay);
+
         _pauseOverlay.Visible = false;
         GameMain.Components.Add(_pauseOverlay);
-        // GameMain.Components.Add(new ScoreboardOverlay(GameMain));
+
+        GameMain.Components.Add(_scoreboardOverlay);
+
         _roundDrawOverlay.Visible = false;
         GameMain.Components.Add(_roundDrawOverlay);
+
         foreach (var roundWinnerOverlay in _roundWinnerOverlays)
         {
             roundWinnerOverlay.Visible = false;
@@ -148,6 +153,7 @@ public class Match : DrawableGameComponent
             GameMain.Components.Add(gameWinnerOverlay);
         }
 
+        // init map
         string mapPath = string.Format("Content/Maps/{0}.txt", _mapIndex);
         _map = new Map(GameMain, GameMain.Services, mapPath);
         GameMain.Components.Add(_map);

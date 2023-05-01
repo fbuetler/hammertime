@@ -5,95 +5,51 @@ using Microsoft.Xna.Framework.Graphics;
 
 public class ScoreboardOverlay : DrawableGameComponent
 {
-    private static Rectangle PLAYER_BUBBLE = new Rectangle(
+    private static Rectangle SCORE = new Rectangle(
         0, 0,
-        37, 42
-    );
-    private static Vector2 PLAYER_BUBBLE_OFFSET = new Vector2(56, 0);
-
-    private static Rectangle SCORE_BUBBLE = new Rectangle(
-        0, 75,
-        31, 34
-    );
-    private static Vector2 SCORE_BUBBLE_OFFSET = new Vector2(37, 0);
-
-    private static Rectangle SCOREBAR = new Rectangle(
-        0, 113,
-        381, 58
+        150, 300
     );
 
-    private static float MARGIN = 5f;
+    private static Point SCORE_ROW_OFFSET = new Point(0, 400);
 
     public GameMain GameMain { get => _game; }
     private GameMain _game;
 
-    private Texture2D _scoreItems;
+    private Texture2D _scoreTexture;
 
-    private Rectangle _scoreBar;
-    private Rectangle[] _playerBubbles;
-    private Rectangle[] _scoreBubbles;
-    private Rectangle _emptyScoreBubble;
+    private Rectangle[,] _scoreSourceRectangles;
 
     public ScoreboardOverlay(Game game) : base(game)
     {
         _game = (GameMain)game;
 
+        _scoreSourceRectangles = new Rectangle[Match.MaxNumberOfPlayers, Match.MaxNumberOfRounds];
+
         // make update and draw called by monogame
-        Enabled = true;
-        UpdateOrder = GameMain.HUD_UPDATE_ORDER;
-        Visible = false;
+        Enabled = false;
+        Visible = true;
         DrawOrder = GameMain.OVERLAY_DRAW_ORDER;
     }
 
     protected override void LoadContent()
     {
-        _scoreItems = GameMain.Content.Load<Texture2D>("Menu/items");
-
-        LoadScoreBar();
-        LoadPlayerBubbles();
-        LoadScoreBubbles();
+        _scoreTexture = GameMain.Content.Load<Texture2D>("Overlays/Scoreboard/scores");
+        LoadScores();
     }
 
-    private void LoadScoreBar()
+    private void LoadScores()
     {
-        _scoreBar = SCOREBAR; ;
-    }
-
-    private void LoadPlayerBubbles()
-    {
-        _playerBubbles = new Rectangle[Match.MaxNumberOfPlayers];
-        for (int i = 0; i < _playerBubbles.Length; i++)
+        for (int i = 0; i < Match.MaxNumberOfPlayers; i++)
         {
-            _playerBubbles[i] = PLAYER_BUBBLE;
-            _playerBubbles[i].Offset(i * PLAYER_BUBBLE_OFFSET);
-        }
-    }
-
-    private void LoadScoreBubbles()
-    {
-        _scoreBubbles = new Rectangle[Match.MaxNumberOfPlayers];
-        for (int i = 0; i < _scoreBubbles.Length; i++)
-        {
-            _scoreBubbles[i] = SCORE_BUBBLE;
-            _scoreBubbles[i].Offset(i * SCORE_BUBBLE_OFFSET);
-        }
-        _emptyScoreBubble = SCORE_BUBBLE;
-        _emptyScoreBubble.Offset(Match.MaxNumberOfPlayers * SCORE_BUBBLE_OFFSET);
-    }
-
-    public override void Update(GameTime gameTime)
-    {
-        switch (GameMain.Match.ScoreState)
-        {
-            case ScoreState.None:
-                Visible = false;
-                break;
-            case ScoreState.Winner:
-            case ScoreState.Draw:
-                Visible = true;
-                break;
-            default:
-                throw new NotSupportedException(String.Format("Scorestate type '{0}' is not supported", GameMain.Match.ScoreState));
+            for (int j = 0; j < Match.MaxNumberOfRounds; j++)
+            {
+                _scoreSourceRectangles[i, j] = new Rectangle(
+                    j * SCORE.Width,
+                    i * SCORE_ROW_OFFSET.Y,
+                    SCORE.Width,
+                    SCORE.Height
+                );
+            }
         }
     }
 
@@ -103,22 +59,31 @@ public class ScoreboardOverlay : DrawableGameComponent
         // therefore we have to reenable the depth buffer here
         GameMain.SpriteBatch.Begin(depthStencilState: DepthStencilState.Default);
 
-        DrawScoreBars(GameMain.SpriteBatch, GameMain.Match.NumberOfPlayers);
+        DrawScores(GameMain.SpriteBatch, GameMain.Match.Scores);
 
         GameMain.SpriteBatch.End();
     }
 
-    private void DrawScoreBars(SpriteBatch spriteBatch, int numberOfPlayers)
+    private void DrawScores(SpriteBatch spriteBatch, int[] scores)
     {
-        Vector2 anchor = CalculateAnchor(numberOfPlayers);
-        for (int i = 0; i < numberOfPlayers; i++)
+        Vector2 scoresSize = scores.Length * SCORE.Size.ToVector2();
+        // centered
+        Vector2 anchor = new Vector2(
+            0.5f * (GameMain.GetScreenWidth() - scoresSize.X),
+            0
+        );
+
+        for (int playerId = 0; playerId < scores.Length; playerId++)
         {
-            Vector2 scoreBarPosition = anchor - SCOREBAR.Size.ToVector2() * 0.5f;
-            scoreBarPosition.Y += (SCOREBAR.Height + MARGIN) * i;
+            int score = scores[playerId];
+            Vector2 scorePosition = new Vector2(
+                anchor.X + playerId * SCORE.Width,
+                anchor.Y
+            );
             spriteBatch.Draw(
-                _scoreItems,
-                position: scoreBarPosition,
-                sourceRectangle: SCOREBAR,
+                _scoreTexture,
+                position: scorePosition,
+                sourceRectangle: _scoreSourceRectangles[playerId, score],
                 color: Color.White,
                 rotation: 0f,
                 origin: Vector2.Zero,
@@ -126,63 +91,6 @@ public class ScoreboardOverlay : DrawableGameComponent
                 effects: SpriteEffects.None,
                 layerDepth: 0f
             );
-
-            Vector2 playerBubblePosition = scoreBarPosition;
-            playerBubblePosition.Y += (SCOREBAR.Height - PLAYER_BUBBLE.Height) * 0.5f;
-            playerBubblePosition.X -= PLAYER_BUBBLE.Width + MARGIN;
-            spriteBatch.Draw(
-                _scoreItems,
-                position: playerBubblePosition,
-                sourceRectangle: _playerBubbles[i],
-                color: Color.White,
-                rotation: 0f,
-                origin: Vector2.Zero,
-                scale: 1f,
-                effects: SpriteEffects.None,
-                layerDepth: 0f
-            );
-
-
-            Vector2 scoreBubblePosition = scoreBarPosition;
-            scoreBubblePosition.Y += (SCOREBAR.Height - SCORE_BUBBLE.Height) * 0.5f;
-            float bubbleOffset = SCOREBAR.Width / (GameMain.Match.NumberOfRounds + 1);
-            scoreBubblePosition.X += bubbleOffset * 0.5f;
-            for (int j = 0; j < GameMain.Match.NumberOfRounds; j++)
-            {
-                Rectangle bubble;
-                if (GameMain.Match.Scores[i] > j)
-                {
-                    bubble = _scoreBubbles[i];
-                }
-                else
-                {
-                    bubble = _emptyScoreBubble;
-                }
-
-                spriteBatch.Draw(
-                    _scoreItems,
-                    position: scoreBubblePosition,
-                    sourceRectangle: bubble,
-                    color: Color.White,
-                    rotation: 0f,
-                    origin: Vector2.Zero,
-                    scale: 1f,
-                    effects: SpriteEffects.None,
-                    layerDepth: 0f
-                );
-
-                scoreBubblePosition.X += bubbleOffset;
-            }
         }
-    }
-
-    private Vector2 CalculateAnchor(int numberOfPlayers)
-    {
-        // TODO (fbuetler) distinguish even (center is between buttons) and odd number of buttons (center is on a button)
-        float totalHeight = numberOfPlayers * SCORE_BUBBLE.Height + (numberOfPlayers - 1) * MARGIN;
-        Vector2 anchor = GameMain.GetScreenCenter();
-        anchor.Y -= totalHeight * 0.5f;
-
-        return anchor;
     }
 }
