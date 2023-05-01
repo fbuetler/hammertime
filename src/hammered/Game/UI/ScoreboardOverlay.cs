@@ -100,7 +100,7 @@ public class ScoreboardOverlay : DrawableGameComponent
                 color: Color.White,
                 rotation: 0f,
                 origin: Vector2.Zero,
-                scale: 1f,
+                scale: 0.5f,
                 effects: SpriteEffects.None,
                 layerDepth: 0f
             );
