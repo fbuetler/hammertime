@@ -42,7 +42,7 @@ public class ScoreboardOverlay : DrawableGameComponent
 
     private void LoadScores()
     {
-        for (int j = 0; j < _scoreSourceRectangles.Length; j++)
+        for (int j = 0; j < _scoreSourceRectangles.Length - 2; j++)
         {
             _scoreSourceRectangles[j] = new Rectangle(
                 j * SCORE.Width,
@@ -51,6 +51,19 @@ public class ScoreboardOverlay : DrawableGameComponent
                 SCORE.Height
             );
         }
+        // TODO (fbuetler) fix special cases
+        _scoreSourceRectangles[9] = new Rectangle(
+            2130,
+            0,
+            200,
+            SCORE.Height
+        );
+        _scoreSourceRectangles[10] = new Rectangle(
+            2330,
+            0,
+            250,
+            SCORE.Height
+        );
     }
 
     public override void Draw(GameTime gameTime)
