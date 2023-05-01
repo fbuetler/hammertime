@@ -120,7 +120,7 @@ public class Match : DrawableGameComponent
         LoadMap();
     }
 
-    private void LoadMap()
+    public void LoadMap()
     {
         // unloads the content for the current map before loading the next one
         if (Map != null)

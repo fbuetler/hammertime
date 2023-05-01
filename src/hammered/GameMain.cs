@@ -9,6 +9,7 @@ public class GameMain : Game
 {
     // update order from high to low (default is 0)
     public const int MENU_UPDATE_ORDER = 0;
+    public const int PAUSE_UPDATE_ORDER = 0;
     public const int MATCH_UPDATE_ORDER = 0;
     public const int MAP_UPDATE_ORDER = 0;
     public const int HUD_UPDATE_ORDER = 0;
@@ -27,6 +28,7 @@ public class GameMain : Game
     public const int HAMMER_DRAW_ORDER = 4;
     public const int PLAYER_DRAW_ORDER = 5;
     public const int OVERLAY_DRAW_ORDER = 6;
+    public const int PAUSE_DRAW_ORDER = 7;
 
     // drawing
     private GraphicsDeviceManager _graphics;
@@ -111,8 +113,8 @@ public class GameMain : Game
 
         InputHelper.Setup(this);
 
-        _audio.LoadSong(MenuSong);
-        _audio.PlaySong(MenuSong);
+        AudioManager.LoadSong(MenuSong);
+        AudioManager.PlaySong(MenuSong);
     }
 
     public void SetupMatch(int numberOfPlayers, int numberOfRounds)
@@ -129,8 +131,8 @@ public class GameMain : Game
     public void EndMatch()
     {
         Components.Clear();
-        AudioManager.Stop();
 
+        AudioManager.PlaySong(MenuSong);
         Components.Add(_menu);
     }
 

@@ -235,10 +235,9 @@ public class Map : DrawableGameComponent
         }
     }
 
-    private void TogglePause()
+    public void TogglePause()
     {
         _paused = !_paused;
-        GameMain.Match.PauseOverlay.Visible = _paused;
         foreach (Player p in Players.Values)
         {
             p.Enabled = !_paused;
