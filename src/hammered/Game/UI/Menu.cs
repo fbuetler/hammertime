@@ -101,10 +101,10 @@ public class Menu : DrawableGameComponent
         _menus[MenuState.PLAYERS] = new MenuComponent("Menu/title", null);
         _menus[MenuState.PLAYERS_CONFIRMED] = new MenuComponent("Menu/title", null);
 
-        _menus[MenuState.ROUNDS_1] = new MenuComponent("Menu/Rounds/rounds_1", null);
-        _menus[MenuState.ROUNDS_3] = new MenuComponent("Menu/Rounds/rounds_3", null);
-        _menus[MenuState.ROUNDS_5] = new MenuComponent("Menu/Rounds/rounds_5", null);
-        _menus[MenuState.ROUNDS_10] = new MenuComponent("Menu/Rounds/rounds_10", null);
+        _menus[MenuState.ROUNDS_1] = new MenuComponent("Menu/Goals/goal_1", null);
+        _menus[MenuState.ROUNDS_3] = new MenuComponent("Menu/Goals/goal_3", null);
+        _menus[MenuState.ROUNDS_5] = new MenuComponent("Menu/Goals/goal_5", null);
+        _menus[MenuState.ROUNDS_10] = new MenuComponent("Menu/Goals/goal_10", null);
 
         _menus[MenuState.OPTIONS_VOLUME_0] = new MenuComponent("Menu/Options/volume0", null);
         _menus[MenuState.OPTIONS_VOLUME_1] = new MenuComponent("Menu/Options/volume1", null);
