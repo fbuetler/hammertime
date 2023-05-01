@@ -17,13 +17,8 @@ Members: Frederic Necker, Florian Buetler, Lasse Meinen, Deniz Yildiz, and Shira
 
 ## Controls:
 
-Every player:
 * Left thumbstick: move player
 * Right thumbstick: aim with hammer
 * Left shoulder button: dash
 * Right shoulder button: throw hammer
-
-Only player 1:
-* Triangle button: go to next map (this is only temporary)
-* Start button: restart map 
-* Back button: pause
+* Start button: pause

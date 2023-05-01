@@ -87,14 +87,12 @@ public static class Controls
 
     public static ICondition ReloadMap { get; } =
         new AnyCondition(
-            new KeyboardCondition(Keys.R),
-            new GamePadCondition(GamePadButton.X, PrimaryPlayerIndex)
+            new KeyboardCondition(Keys.R)
         );
 
     public static ICondition NextMap { get; } =
         new AnyCondition(
-            new KeyboardCondition(Keys.N),
-            new GamePadCondition(GamePadButton.Y, PrimaryPlayerIndex)
+            new KeyboardCondition(Keys.N)
         );
 
     public static ICondition Pause { get; } =
