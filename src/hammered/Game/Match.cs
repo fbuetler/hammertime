@@ -116,7 +116,7 @@ public class Match : DrawableGameComponent
 
     private void LoadNextMap()
     {
-        _mapIndex = (_mapIndex + 1) % numberOfMaps;
+        _mapIndex = GameMain.Random.Next(numberOfMaps);
         LoadMap();
     }
 
