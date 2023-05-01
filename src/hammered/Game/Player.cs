@@ -70,7 +70,7 @@ public class Player : GameObject<PlayerState>
     private PlayerState _state;
 
     // charge
-    public float ThrowDistance { get => _chargeDurationMs * ChargeUnit; }
+    public float ThrowDistance { get => Math.Clamp(_chargeDurationMs * ChargeUnit, Hammer.MinThrowDistance, Hammer.MaxThrowDistance); }
     private float _chargeDurationMs;
 
     // note: this is null when we're not in a pushback state

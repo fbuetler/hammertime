@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace hammered;
 
@@ -131,5 +132,12 @@ public class Tile : GameObject<TileState>
     {
         this.Visible = false;
         this.Enabled = false;
+    }
+
+    protected override void SetCustomLightingProperties(BasicEffect effect)
+    {
+        base.SetCustomLightingProperties(effect);
+        effect.AmbientLightColor = Vector3.One * 0.1f;
+        effect.SpecularColor = new Vector3(0.266f, 0.745f, 0.888f);
     }
 }
