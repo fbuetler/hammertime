@@ -45,39 +45,12 @@ record MenuComponent(string path, Texture2D texture);
 
 public class Menu : DrawableGameComponent
 {
-    // button grid in texture
-    private static float BUTTON_GRID_HORIZONTAL_ANCHOR = 412;
-    private static float BUTTON_GRID_VERTICAL_ANCHOR = 0;
-    private static float BUTTON_GRID_HORIZONTAL_OFFSET = 190;
-    private static float BUTTON_GRID_VERTICAL_OFFSET = 56;
-
-    private static float BUTTON_GRID_ACTIVE_COL = 0;
-    private static float BUTTON_GRID_INACTIVE_COL = 1;
-
-    private static Vector2 BUTTON_SIZE = new Vector2(176, 55);
-    private static float MARGIN = 2f;
-
-    private static int MAIN_START_ROW = 0;
-    private static int MAIN_OPTIONS_ROW = 1;
-    private static int MAIN_QUIT_ROW = 2;
-    private static int QUIT_YES_ROW = 3;
-    private static int QUIT_NO_ROW = 4;
-
-    private static Color TEXT_COLOR = Color.Black;
-
     public GameMain GameMain { get => _game; }
     private GameMain _game;
 
     private MenuState _state = MenuState.TITLE;
 
     private Texture2D _title;
-    private Texture2D _menuItems;
-
-    private SpriteFont _impactFont;
-
-    private MenuGroup _startMenu;
-    private MenuGroup _quitMenu;
-    private MenuGroup _playersMenu;
 
     private int _playersConnected;
     private List<bool> _playersConfirmed;
@@ -150,10 +123,6 @@ public class Menu : DrawableGameComponent
     protected override void LoadContent()
     {
         _title = GameMain.Content.Load<Texture2D>("Menu/title");
-        _menuItems = GameMain.Content.Load<Texture2D>("Menu/items");
-        _impactFont = _game.Content.Load<SpriteFont>("Fonts/impact");
-
-        LoadPlayersMenuGroup();
 
         foreach (MenuState state in Enum.GetValues(typeof(MenuState)))
         {
@@ -173,43 +142,6 @@ public class Menu : DrawableGameComponent
 
         GameMain.AudioManager.LoadSoundEffect(InteractButtonPressSoundEffect);
         GameMain.AudioManager.LoadSoundEffect(AlternativeButtonPressSoundEffect);
-    }
-
-    private void LoadStartMenuGroup()
-    {
-        var buttons = new List<(int, MenuState)>{
-            (MAIN_START_ROW, MenuState.MAIN_START),
-            (MAIN_OPTIONS_ROW, MenuState.MAIN_OPTIONS),
-            (MAIN_QUIT_ROW, MenuState.MAIN_QUIT)
-        };
-        _startMenu = new MenuGroup(buttons, CalculateAnchorOfMenuGroup(buttons.Count, Vector2.Zero));
-    }
-
-    private void LoadQuitMenuGroup()
-    {
-        var buttons = new List<(int, MenuState)>{
-            (QUIT_YES_ROW, MenuState.QUIT_YES),
-            (QUIT_NO_ROW, MenuState.QUIT_NO),
-        };
-        _quitMenu = new MenuGroup(buttons, CalculateAnchorOfMenuGroup(buttons.Count, Vector2.Zero));
-    }
-
-    private void LoadPlayersMenuGroup()
-    {
-        var buttons = new List<(int, MenuState)>{
-            (MAIN_START_ROW, MenuState.PLAYERS_CONFIRMED),
-        };
-        _playersMenu = new MenuGroup(buttons, CalculateAnchorOfMenuGroup(buttons.Count, new Vector2(0, 150)));
-    }
-
-    private Vector2 CalculateAnchorOfMenuGroup(int numberOfButons, Vector2 centerOffset)
-    {
-        // TODO (fbuetler) distinguish even (center is between buttons) and odd number of buttons (center is on a button)
-        float totalHeight = numberOfButons * BUTTON_SIZE.Y + (numberOfButons - 1) * MARGIN;
-        Vector2 anchor = GameMain.GetScreenCenter();
-        anchor.Y -= totalHeight * 0.5f;
-
-        return anchor + centerOffset;
     }
 
     public override void Update(GameTime gameTime)
@@ -500,42 +432,4 @@ public class Menu : DrawableGameComponent
         spriteBatch.Draw(texture, Vector2.Zero, null, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
     }
 
-    private void DrawMenuGroup(SpriteBatch spriteBatch, MenuGroup group)
-    {
-        for (int i = 0; i < group.buttons.Count; i++)
-        {
-            var b = group.buttons[i];
-
-            Rectangle area = new Rectangle(
-                new Vector2(
-                    BUTTON_GRID_HORIZONTAL_ANCHOR + (_state == b.Item2 ? BUTTON_GRID_ACTIVE_COL : BUTTON_GRID_INACTIVE_COL) * BUTTON_GRID_HORIZONTAL_OFFSET,
-                    BUTTON_GRID_VERTICAL_ANCHOR + b.Item1 * BUTTON_GRID_VERTICAL_OFFSET
-                ).ToPoint(),
-                BUTTON_SIZE.ToPoint()
-            );
-
-            Vector2 position = group.anchor - BUTTON_SIZE * 0.5f;
-            position.Y += (BUTTON_SIZE.Y + MARGIN) * i;
-            spriteBatch.Draw(
-                _menuItems,
-                position: position,
-                sourceRectangle: area,
-                color: Color.White,
-                rotation: 0f,
-                origin: Vector2.Zero,
-                scale: 1f,
-                effects: SpriteEffects.None,
-                layerDepth: 0f
-            );
-        }
-    }
-
-    private void DrawString(SpriteBatch spriteBatch, SpriteFont font, string text, Vector2 anchor)
-    {
-        Vector2 textSize = font.MeasureString(text);
-        Vector2 position = anchor - textSize * 0.5f;
-        position.Y = position.Y - BUTTON_SIZE.Y * 0.5f - MARGIN - textSize.Y * 0.5f;
-
-        spriteBatch.DrawString(font, text, position, TEXT_COLOR);
-    }
 }
