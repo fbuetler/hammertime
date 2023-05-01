@@ -7,23 +7,23 @@ public class ScoreboardOverlay : DrawableGameComponent
 {
     private static Rectangle SCORE = new Rectangle(
         0, 0,
-        150, 300
+        237, 237
     );
-
-    private static Point SCORE_ROW_OFFSET = new Point(0, 400);
 
     public GameMain GameMain { get => _game; }
     private GameMain _game;
 
-    private Texture2D _scoreTexture;
+    private Texture2D[] _scoreTextures;
+    private Rectangle[] _scoreSourceRectangles;
 
-    private Rectangle[,] _scoreSourceRectangles;
+    private const string scoreTexturePrefix = "Overlays/Scoreboard";
 
     public ScoreboardOverlay(Game game) : base(game)
     {
         _game = (GameMain)game;
 
-        _scoreSourceRectangles = new Rectangle[Match.MaxNumberOfPlayers, Match.MaxNumberOfRounds];
+        _scoreTextures = new Texture2D[Match.MaxNumberOfPlayers];
+        _scoreSourceRectangles = new Rectangle[Match.MaxNumberOfRounds + 1];
 
         // make update and draw called by monogame
         Enabled = false;
@@ -33,23 +33,23 @@ public class ScoreboardOverlay : DrawableGameComponent
 
     protected override void LoadContent()
     {
-        _scoreTexture = GameMain.Content.Load<Texture2D>("Overlays/Scoreboard/scores");
+        for (int i = 0; i < Match.MaxNumberOfPlayers; i++)
+        {
+            _scoreTextures[i] = GameMain.Content.Load<Texture2D>($"{scoreTexturePrefix}/{i}");
+        }
         LoadScores();
     }
 
     private void LoadScores()
     {
-        for (int i = 0; i < Match.MaxNumberOfPlayers; i++)
+        for (int j = 0; j < _scoreSourceRectangles.Length; j++)
         {
-            for (int j = 0; j < Match.MaxNumberOfRounds; j++)
-            {
-                _scoreSourceRectangles[i, j] = new Rectangle(
-                    j * SCORE.Width,
-                    i * SCORE_ROW_OFFSET.Y,
-                    SCORE.Width,
-                    SCORE.Height
-                );
-            }
+            _scoreSourceRectangles[j] = new Rectangle(
+                j * SCORE.Width,
+                0,
+                SCORE.Width,
+                SCORE.Height
+            );
         }
     }
 
@@ -81,9 +81,9 @@ public class ScoreboardOverlay : DrawableGameComponent
                 anchor.Y
             );
             spriteBatch.Draw(
-                _scoreTexture,
+                _scoreTextures[playerId],
                 position: scorePosition,
-                sourceRectangle: _scoreSourceRectangles[playerId, score],
+                sourceRectangle: _scoreSourceRectangles[score],
                 color: Color.White,
                 rotation: 0f,
                 origin: Vector2.Zero,
