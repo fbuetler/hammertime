@@ -240,6 +240,12 @@ public class Menu : DrawableGameComponent
 
             // players
             case MenuState.PLAYERS:
+                if (Controls.Back.Pressed())
+                {
+                    _state = MenuState.MAIN_START;
+                    break;
+                }
+
                 _playersConnected = Controls.ConnectedPlayers();
                 for (int i = 0; i < _playersConnected; i++)
                 {
@@ -250,10 +256,6 @@ public class Menu : DrawableGameComponent
                     else if (Controls.BackP(i).Pressed() && _playersConfirmed[i])
                     {
                         _playersConfirmed[i] = false;
-                    }
-                    else if (Controls.BackP(i).Pressed())
-                    {
-                        _state = MenuState.MAIN_START;
                     }
                 }
 
