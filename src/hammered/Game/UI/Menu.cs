@@ -240,6 +240,14 @@ public class Menu : DrawableGameComponent
                     _playersConnected = 2;
                 }
 #endif
+                // unconfirm all players
+                if (_state == MenuState.ROUNDS_5)
+                {
+                    for (int i = 0; i < _playersConnected; i++)
+                    {
+                        _playersConfirmed[i] = false;
+                    }
+                }
                 break;
 
             case MenuState.ROUNDS_1:
