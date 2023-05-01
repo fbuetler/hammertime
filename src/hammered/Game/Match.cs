@@ -71,9 +71,9 @@ public class Match : DrawableGameComponent
     // or handle exceptions, both of which can add unnecessary time to level loading.
     private const int numberOfMaps = 11;
 
-    private const int startDelaySec = 2;
-    private const int finishedDelaySec = 2;
-    private const int nextRoundTimeoutSec = 4;
+    private const int startDelayMs = 1000;
+    private const int finishedDelayMs = 2000;
+    private const int nextRoundTimeoutMs = 4000;
 
     public Match(Game game, int numberOfPlayers, int numberOfRounds) : base(game)
     {
@@ -195,14 +195,14 @@ public class Match : DrawableGameComponent
 
     private void StartRound(GameTime gameTime)
     {
-        float elapsedSinceStart = (float)gameTime.TotalGameTime.TotalSeconds;
+        float elapsedSinceStart = (float)gameTime.TotalGameTime.TotalMilliseconds;
 
         if (_roundStartedAt == 0)
         {
             _roundStartedAt = elapsedSinceStart;
         }
 
-        if (_roundStartedAt > 0 && elapsedSinceStart - _roundStartedAt > startDelaySec)
+        if (_roundStartedAt > 0 && elapsedSinceStart - _roundStartedAt > startDelayMs)
         {
             _startOverlay.Visible = false;
             _roundStarted = true;
@@ -229,6 +229,8 @@ public class Match : DrawableGameComponent
 
     private void UpdateGameState(GameTime gameTime)
     {
+        float totalElapsed = (float)gameTime.TotalGameTime.TotalMilliseconds;
+
         List<int> playersAlive = Map.PlayersAlive;
         switch (GameMain.Match.ScoreState)
         {
@@ -238,7 +240,7 @@ public class Match : DrawableGameComponent
                     return;
                 }
 
-                _roundFinishedAt = (float)gameTime.TotalGameTime.TotalSeconds;
+                _roundFinishedAt = totalElapsed;
                 if (playersAlive.Count == 1)
                 {
                     _scoreState = ScoreState.Winner;
@@ -251,18 +253,18 @@ public class Match : DrawableGameComponent
                 }
                 break;
             case ScoreState.Winner:
-                if (gameTime.TotalGameTime.TotalSeconds - _roundFinishedAt > finishedDelaySec)
+                if (totalElapsed - _roundFinishedAt > finishedDelayMs)
                     _roundWinnerOverlays[(int)_roundWinnerId].Visible = true;
                 break;
             case ScoreState.Draw:
-                if (gameTime.TotalGameTime.TotalSeconds - _roundFinishedAt > finishedDelaySec)
+                if (totalElapsed - _roundFinishedAt > finishedDelayMs)
                     _roundDrawOverlay.Visible = true;
                 break;
             default:
                 throw new NotSupportedException(String.Format("Scorestate type '{0}' is not supported", ScoreState));
         }
 
-        if (gameTime.TotalGameTime.TotalSeconds - _roundFinishedAt > nextRoundTimeoutSec)
+        if (totalElapsed - _roundFinishedAt > nextRoundTimeoutMs)
         {
             _roundDrawOverlay.Visible = false;
             _roundWinnerOverlays.ToList().ForEach(o => o.Visible = false);

@@ -22,6 +22,7 @@ enum MenuState
     ROUNDS_10,
 
     // IMPORTANT: make sure the countdowns are in order
+    COUNTDOWN_0,
     COUNTDOWN_1,
     COUNTDOWN_2,
     COUNTDOWN_3,
@@ -119,6 +120,7 @@ public class Menu : DrawableGameComponent
         _menus[MenuState.ROUNDS_5] = new MenuComponent("Menu/Goals/goal_5", null);
         _menus[MenuState.ROUNDS_10] = new MenuComponent("Menu/Goals/goal_10", null);
 
+        _menus[MenuState.COUNTDOWN_0] = new MenuComponent("Menu/Countdown/0", null);
         _menus[MenuState.COUNTDOWN_1] = new MenuComponent("Menu/Countdown/1", null);
         _menus[MenuState.COUNTDOWN_2] = new MenuComponent("Menu/Countdown/2", null);
         _menus[MenuState.COUNTDOWN_3] = new MenuComponent("Menu/Countdown/3", null);
@@ -356,6 +358,7 @@ public class Menu : DrawableGameComponent
 
             case MenuState.COUNTDOWN_3:
             case MenuState.COUNTDOWN_2:
+            case MenuState.COUNTDOWN_1:
                 _countdownElapsedMs += elapsed;
                 if (_countdownElapsedMs > 1000)
                 {
@@ -363,7 +366,7 @@ public class Menu : DrawableGameComponent
                     _countdownElapsedMs = 0;
                 }
                 break;
-            case MenuState.COUNTDOWN_1:
+            case MenuState.COUNTDOWN_0:
                 _countdownElapsedMs += elapsed;
                 if (_countdownElapsedMs > 1000)
                 {
