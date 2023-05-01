@@ -89,15 +89,12 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
 
                 // compute scaling required to fit model to its BoundingBox
                 BoundingBox size = GetModelSize(model);
-                Console.WriteLine($"Loading model {assetName} with mesh size {size}");
-                Console.WriteLine($"-- scaling it down to fit in a box of size {MaxSize}");
                 float xScale = MaxSize.X / (size.Max.X - size.Min.X);
                 float yScale = MaxSize.Y / (size.Max.Y - size.Min.Y);
                 float zScale = MaxSize.Z / (size.Max.Z - size.Min.Z);
 
                 // take the minimum to preserve model proportions
                 float actualScalingFactor = Math.Min(xScale, Math.Min(yScale, zScale));
-                Console.WriteLine($"-- computed scaling factor {actualScalingFactor}");
                 _size = (size.Max - size.Min) * actualScalingFactor;
                 Matrix modelScale = Matrix.CreateScale(actualScalingFactor);
 
