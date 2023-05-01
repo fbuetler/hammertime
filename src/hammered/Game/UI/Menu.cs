@@ -21,6 +21,11 @@ enum MenuState
     ROUNDS_5,
     ROUNDS_10,
 
+    // IMPORTANT: make sure the countdowns are in order
+    COUNTDOWN_1,
+    COUNTDOWN_2,
+    COUNTDOWN_3,
+
     // IMPORTANT: make sure the volumes are in order
     OPTIONS_VOLUME_0,
     OPTIONS_VOLUME_1,
@@ -78,6 +83,8 @@ public class Menu : DrawableGameComponent
 
     private Dictionary<MenuState, MenuComponent> _menus;
 
+    private float _countdownElapsedMs = 0;
+
     private static readonly Vector2 nextLineOffset = new Vector2(0, 50);
 
     // sound effects
@@ -105,6 +112,10 @@ public class Menu : DrawableGameComponent
         _menus[MenuState.ROUNDS_3] = new MenuComponent("Menu/Goals/goal_3", null);
         _menus[MenuState.ROUNDS_5] = new MenuComponent("Menu/Goals/goal_5", null);
         _menus[MenuState.ROUNDS_10] = new MenuComponent("Menu/Goals/goal_10", null);
+
+        _menus[MenuState.COUNTDOWN_1] = new MenuComponent("Menu/Countdown/1", null);
+        _menus[MenuState.COUNTDOWN_2] = new MenuComponent("Menu/Countdown/2", null);
+        _menus[MenuState.COUNTDOWN_3] = new MenuComponent("Menu/Countdown/3", null);
 
         _menus[MenuState.OPTIONS_VOLUME_0] = new MenuComponent("Menu/Options/volume0", null);
         _menus[MenuState.OPTIONS_VOLUME_1] = new MenuComponent("Menu/Options/volume1", null);
@@ -183,6 +194,8 @@ public class Menu : DrawableGameComponent
 
     public override void Update(GameTime gameTime)
     {
+        float elapsed = (float)gameTime.ElapsedGameTime.TotalMilliseconds;
+
         MenuState prev = _state;
         switch (_state)
         {
@@ -305,19 +318,38 @@ public class Menu : DrawableGameComponent
                     switch (_state)
                     {
                         case MenuState.ROUNDS_1:
-                            GameMain.StartMatch(_playersConnected, 1);
+                            GameMain.SetupMatch(_playersConnected, 1);
                             break;
                         case MenuState.ROUNDS_3:
-                            GameMain.StartMatch(_playersConnected, 3);
+                            GameMain.SetupMatch(_playersConnected, 3);
                             break;
                         case MenuState.ROUNDS_5:
-                            GameMain.StartMatch(_playersConnected, 5);
+                            GameMain.SetupMatch(_playersConnected, 5);
                             break;
                         case MenuState.ROUNDS_10:
-                            GameMain.StartMatch(_playersConnected, 10);
+                            GameMain.SetupMatch(_playersConnected, 10);
                             break;
                     }
-                    _state = MenuState.MAIN_START;
+                    _state = MenuState.COUNTDOWN_3;
+                }
+                break;
+
+            case MenuState.COUNTDOWN_3:
+            case MenuState.COUNTDOWN_2:
+                _countdownElapsedMs += elapsed;
+                if (_countdownElapsedMs > 1000)
+                {
+                    _state = _state - 1;
+                    _countdownElapsedMs = 0;
+                }
+                break;
+            case MenuState.COUNTDOWN_1:
+                _countdownElapsedMs += elapsed;
+                if (_countdownElapsedMs > 1000)
+                {
+                    GameMain.StartMatch();
+                    _state = MenuState.MAIN_START; // prepare post match menu state
+                    _countdownElapsedMs = 0;
                 }
                 break;
 
