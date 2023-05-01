@@ -258,7 +258,7 @@ public class Player : GameObject<PlayerState>
         movement.Z *= -1;
 
         // ignore small movements to prevent running in place
-        if (movement.LengthSquared() < 0.5f)
+        if (movement.LengthSquared() < 0.1f)
             movement = Vector3.Zero;
 
         // if any digital horizontal movement input is found, override the analog movement
