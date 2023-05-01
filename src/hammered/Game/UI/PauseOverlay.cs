@@ -55,6 +55,10 @@ public class PauseOverlay : DrawableGameComponent
     public override void Update(GameTime gameTime)
     {
         Visible = GameMain.Match.Map.Paused;
+        if (!GameMain.Match.Map.Paused)
+        {
+            return;
+        }
 
         PauseMenuState prev = _state;
         switch (_state)
