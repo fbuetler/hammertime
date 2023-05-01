@@ -420,7 +420,7 @@ public class Menu : DrawableGameComponent
                 throw new ArgumentOutOfRangeException(nameof(_state), $"Unexpected menu state: {_state}");
         }
 
-        if (_state != prev)
+        if (_state != prev && prev != MenuState.COUNTDOWN_0)
         {
             if (Controls.Interact.Pressed())
             {
