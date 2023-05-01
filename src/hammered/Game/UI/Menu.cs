@@ -206,32 +206,32 @@ public class Menu : DrawableGameComponent
                 break;
 
             // main
-            case MenuState.MAIN_START:
-                if (Controls.FocusPrev.Pressed())
-                    _state = MenuState.MAIN_QUIT;
-                else if (Controls.FocusNext.Pressed())
-                    _state = MenuState.MAIN_OPTIONS;
-                else if (Controls.Interact.Pressed())
-                    _state = MenuState.PLAYERS;
-                else if (Controls.Back.Pressed())
-                    _state = MenuState.TITLE;
-                break;
             case MenuState.MAIN_OPTIONS:
                 if (Controls.FocusPrev.Pressed())
-                    _state = MenuState.MAIN_START;
-                else if (Controls.FocusNext.Pressed())
                     _state = MenuState.MAIN_QUIT;
+                else if (Controls.FocusNext.Pressed())
+                    _state = MenuState.MAIN_START;
                 else if (Controls.Interact.Pressed())
                     // very hacky, but Im too lazy for a switch statement. take this comment instead
                     _state = MenuState.OPTIONS_VOLUME_0 + GetVolumeLevel();
                 else if (Controls.Back.Pressed())
                     _state = MenuState.TITLE;
                 break;
-            case MenuState.MAIN_QUIT:
+            case MenuState.MAIN_START:
                 if (Controls.FocusPrev.Pressed())
                     _state = MenuState.MAIN_OPTIONS;
                 else if (Controls.FocusNext.Pressed())
+                    _state = MenuState.MAIN_QUIT;
+                else if (Controls.Interact.Pressed())
+                    _state = MenuState.PLAYERS;
+                else if (Controls.Back.Pressed())
+                    _state = MenuState.TITLE;
+                break;
+            case MenuState.MAIN_QUIT:
+                if (Controls.FocusPrev.Pressed())
                     _state = MenuState.MAIN_START;
+                else if (Controls.FocusNext.Pressed())
+                    _state = MenuState.MAIN_OPTIONS;
                 else if (Controls.Interact.Pressed())
                     _state = MenuState.QUIT_YES;
                 else if (Controls.Back.Pressed())
