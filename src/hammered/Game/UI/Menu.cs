@@ -82,10 +82,16 @@ public class Menu : DrawableGameComponent
     private List<bool> _playersConfirmed;
 
     private Dictionary<MenuState, MenuComponent> _menus;
+    private Texture2D[] _confirmedTextures;
+    private Texture2D[] _unconfirmedTextures;
 
     private float _countdownElapsedMs = 0;
 
     private static readonly Vector2 nextLineOffset = new Vector2(0, 50);
+
+    // textures
+    private const string confirmedTexturePrefix = "Menu/Players/confirmed";
+    private const string unconfirmedTexturePrefix = "Menu/Players/unconfirmed";
 
     // sound effects
     public const string InteractButtonPressSoundEffect = "MenuAudio/ButtonPress0";
@@ -105,8 +111,8 @@ public class Menu : DrawableGameComponent
         _menus[MenuState.MAIN_OPTIONS] = new MenuComponent("Menu/Start/press_options", null);
         _menus[MenuState.MAIN_QUIT] = new MenuComponent("Menu/Start/press_quit", null);
 
-        _menus[MenuState.PLAYERS] = new MenuComponent("Menu/title", null);
-        _menus[MenuState.PLAYERS_CONFIRMED] = new MenuComponent("Menu/title", null);
+        _menus[MenuState.PLAYERS] = new MenuComponent("Menu/Players/unconfirmed", null);
+        _menus[MenuState.PLAYERS_CONFIRMED] = new MenuComponent("Menu/Players/confirmed", null);
 
         _menus[MenuState.ROUNDS_1] = new MenuComponent("Menu/Goals/goal_1", null);
         _menus[MenuState.ROUNDS_3] = new MenuComponent("Menu/Goals/goal_3", null);
@@ -126,6 +132,9 @@ public class Menu : DrawableGameComponent
 
         _menus[MenuState.QUIT_YES] = new MenuComponent("Menu/Quit/quit_yes", null);
         _menus[MenuState.QUIT_NO] = new MenuComponent("Menu/Quit/quit_no", null);
+
+        _confirmedTextures = new Texture2D[Match.MaxNumberOfPlayers];
+        _unconfirmedTextures = new Texture2D[Match.MaxNumberOfPlayers];
 
         // make update and draw called by monogame
         Enabled = true;
@@ -149,6 +158,15 @@ public class Menu : DrawableGameComponent
             string path = _menus[state].path;
             var texture = GameMain.Content.Load<Texture2D>(path);
             _menus[state] = new MenuComponent(path, texture);
+        }
+
+        for (int i = 0; i < _confirmedTextures.Length; i++)
+        {
+            _confirmedTextures[i] = GameMain.Content.Load<Texture2D>($"{confirmedTexturePrefix}/{i}");
+        }
+        for (int i = 0; i < _unconfirmedTextures.Length; i++)
+        {
+            _unconfirmedTextures[i] = GameMain.Content.Load<Texture2D>($"{unconfirmedTexturePrefix}/{i}");
         }
 
         GameMain.AudioManager.LoadSoundEffect(InteractButtonPressSoundEffect);
@@ -429,8 +447,6 @@ public class Menu : DrawableGameComponent
     {
         GraphicsDevice.Clear(Color.White);
 
-        Vector2 screenCenter = GameMain.GetScreenCenter();
-
         // _spriteBatch.Begin alters the state of the graphics pipeline
         // therefore we have to reenable the depth buffer here
         GameMain.SpriteBatch.Begin(depthStencilState: DepthStencilState.Default);
@@ -439,22 +455,7 @@ public class Menu : DrawableGameComponent
         {
             case MenuState.PLAYERS:
             case MenuState.PLAYERS_CONFIRMED:
-                Vector2 anchor = screenCenter - new Vector2(0, GameMain.GetScreenHeight() / 6);
-                DrawString(GameMain.SpriteBatch, _impactFont, "LOOKING FOR PLAYERS...", anchor);
-                for (int i = 0; i < _playersConnected; i++)
-                {
-                    string s = $"P{i + 1}: ";
-                    if (!_playersConfirmed[i])
-                    {
-                        s += "connected";
-                    }
-                    else
-                    {
-                        s += "confirmed";
-                    }
-                    DrawString(GameMain.SpriteBatch, _impactFont, s, anchor + (i + 1) * nextLineOffset);
-                }
-                DrawMenuGroup(GameMain.SpriteBatch, _playersMenu);
+                DrawPlayerScreen(GameMain.SpriteBatch);
                 break;
             default:
                 DrawFullScreen(GameMain.SpriteBatch, _menus[_state].texture);
@@ -464,6 +465,27 @@ public class Menu : DrawableGameComponent
         GameMain.SpriteBatch.End();
 
         base.Draw(gameTime);
+    }
+
+    private void DrawPlayerScreen(SpriteBatch spriteBatch)
+    {
+        DrawFullScreen(GameMain.SpriteBatch, _menus[_state].texture);
+
+        Vector2 screenCenter = GameMain.GetScreenCenter();
+        Vector2 anchor = screenCenter - new Vector2(0, GameMain.GetScreenHeight() / 6);
+        for (int i = 0; i < _playersConnected; i++)
+        {
+            Texture2D t;
+            if (!_playersConfirmed[i])
+            {
+                t = _confirmedTextures[i];
+            }
+            else
+            {
+                t = _unconfirmedTextures[i];
+            }
+            DrawFullScreen(GameMain.SpriteBatch, t);
+        }
     }
 
     private void DrawFullScreen(SpriteBatch spriteBatch, Texture2D texture)
