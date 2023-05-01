@@ -111,8 +111,8 @@ public class Menu : DrawableGameComponent
         _menus[MenuState.MAIN_OPTIONS] = new MenuComponent("Menu/Start/press_options", null);
         _menus[MenuState.MAIN_QUIT] = new MenuComponent("Menu/Start/press_quit", null);
 
-        _menus[MenuState.PLAYERS] = new MenuComponent("Menu/Players/unconfirmed", null);
-        _menus[MenuState.PLAYERS_CONFIRMED] = new MenuComponent("Menu/Players/confirmed", null);
+        _menus[MenuState.PLAYERS] = new MenuComponent("Menu/Players/unconfirmed/background", null);
+        _menus[MenuState.PLAYERS_CONFIRMED] = new MenuComponent("Menu/Players/confirmed/background", null);
 
         _menus[MenuState.ROUNDS_1] = new MenuComponent("Menu/Goals/goal_1", null);
         _menus[MenuState.ROUNDS_3] = new MenuComponent("Menu/Goals/goal_3", null);
@@ -478,11 +478,11 @@ public class Menu : DrawableGameComponent
             Texture2D t;
             if (!_playersConfirmed[i])
             {
-                t = _confirmedTextures[i];
+                t = _unconfirmedTextures[i];
             }
             else
             {
-                t = _unconfirmedTextures[i];
+                t = _confirmedTextures[i];
             }
             DrawFullScreen(GameMain.SpriteBatch, t);
         }
