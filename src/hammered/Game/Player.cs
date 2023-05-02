@@ -237,7 +237,7 @@ public class Player : GameObject<PlayerState>
         if (IsFalling())
         {
             // Vertical velocity means we're falling :(
-            if (State == PlayerState.ALIVE || State == PlayerState.PUSHBACK)
+            if (State != PlayerState.DASHING && State != PlayerState.FALLING && State != PlayerState.DEAD)
             {
                 _state = PlayerState.FALLING;
                 OnFalling();
