@@ -66,7 +66,7 @@ public class Arrow : GameObject<ArrowState>
                 Center = pos;
 
                 // arrow direction
-                Direction = GameMain.Match.Map.Hammers[OwnerId].Direction;
+                Direction = GameMain.Match.Map.Hammers[OwnerId].AimingDirection();
 
                 // arrow length
                 _throwDistance = GameMain.Match.Map.Players[OwnerId].ThrowDistance;
