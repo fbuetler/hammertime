@@ -125,13 +125,14 @@ public class Player : GameObject<PlayerState>
         _state = PlayerState.STANDING;
 
         _objectModelPaths = new Dictionary<PlayerState, string>();
-        _objectModelPaths[PlayerState.STANDING] = "Player/playerNoHammer";
-        _objectModelPaths[PlayerState.WALKING] = "Player/playerNoHammer";
-        _objectModelPaths[PlayerState.PUSHBACK] = "Player/playerNoHammer";
-        _objectModelPaths[PlayerState.FALLING] = "Player/playerNoHammer";
-        _objectModelPaths[PlayerState.DEAD] = "Player/playerNoHammer";
-        _objectModelPaths[PlayerState.DASHING] = "Player/playerNoHammer";
-        _objectModelPaths[PlayerState.CHARGING] = "Player/playerNoHammer";
+        _objectModelPaths[PlayerState.STANDING] = $"Player/playerNoHammer_{playerId}";
+        _objectModelPaths[PlayerState.WALKING] = $"Player/playerNoHammer_{playerId}";
+        _objectModelPaths[PlayerState.PUSHBACK] = $"Player/playerNoHammer_{playerId}";
+        _objectModelPaths[PlayerState.FALLING] = $"Player/playerNoHammer_{playerId}";
+        _objectModelPaths[PlayerState.DEAD] = $"Player/playerNoHammer_{playerId}";
+        _objectModelPaths[PlayerState.DASHING] = $"Player/playerNoHammer_{playerId}";
+        _objectModelPaths[PlayerState.CHARGING] = $"Player/playerNoHammer_{playerId}";
+
     }
 
     protected override void LoadAudioContent()
