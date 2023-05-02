@@ -154,7 +154,7 @@ public class Player : GameObject<PlayerState>
                 _chargeDurationMs = 0;
                 _state = PlayerState.CHARGING;
                 break;
-            case PlayerState.ALIVE when Controls.Dash(_playerId).Pressed():
+            case PlayerState.ALIVE when Controls.Dash(_playerId).Pressed() && moveInput != Vector3.Zero:
                 _dash = new Dash(Direction, Dash.DashDistance, Dash.DashVelocity);
                 _state = PlayerState.DASHING;
                 Visible = false;
