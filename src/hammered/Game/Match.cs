@@ -133,6 +133,7 @@ public class Match : DrawableGameComponent
         }
 
         // initialize overlays
+        _startOverlay.Visible = true;
         GameMain.Components.Add(_startOverlay);
 
         _pauseOverlay.Visible = false;
