@@ -10,7 +10,8 @@ public enum PlayerState
 {
     DEAD,
     FALLING,
-    ALIVE,
+    STANDING,
+    WALKING,
     PUSHBACK,
     CHARGING,
     DASHING
@@ -121,10 +122,11 @@ public class Player : GameObject<PlayerState>
 
         _playerId = playerId;
 
-        _state = PlayerState.ALIVE;
+        _state = PlayerState.STANDING;
 
         _objectModelPaths = new Dictionary<PlayerState, string>();
-        _objectModelPaths[PlayerState.ALIVE] = "Player/playerNoHammer";
+        _objectModelPaths[PlayerState.STANDING] = "Player/playerNoHammer";
+        _objectModelPaths[PlayerState.WALKING] = "Player/playerNoHammer";
         _objectModelPaths[PlayerState.PUSHBACK] = "Player/playerNoHammer";
         _objectModelPaths[PlayerState.FALLING] = "Player/playerNoHammer";
         _objectModelPaths[PlayerState.DEAD] = "Player/playerNoHammer";
@@ -150,17 +152,24 @@ public class Player : GameObject<PlayerState>
 
         switch (State)
         {
-            case PlayerState.ALIVE when Controls.Throw(_playerId).Held():
+            case PlayerState.STANDING when Controls.Throw(_playerId).Held():
+            case PlayerState.WALKING when Controls.Throw(_playerId).Held():
                 _chargeDurationMs = 0;
                 _state = PlayerState.CHARGING;
                 break;
-            case PlayerState.ALIVE when Controls.Dash(_playerId).Pressed() && moveInput != Vector3.Zero:
+            case PlayerState.WALKING when Controls.Dash(_playerId).Pressed():
                 _dash = new Dash(Direction, Dash.DashDistance, Dash.DashVelocity);
                 _state = PlayerState.DASHING;
                 Visible = false;
                 GameMain.AudioManager.PlaySoundEffect(DashSoundEffect);
                 break;
-            case PlayerState.ALIVE when moveInput != Vector3.Zero:
+            case PlayerState.STANDING when moveInput != Vector3.Zero:
+                _state = PlayerState.WALKING;
+                break;
+            case PlayerState.WALKING when moveInput == Vector3.Zero:
+                _state = PlayerState.STANDING;
+                break;
+            case PlayerState.WALKING:
                 Direction = moveInput;
                 _velocity = ComputeAcceleratedVelocity(_velocity, Direction, MoveAcceleration, GroundDragFactor, gameTime);
                 Move(gameTime, _velocity);
@@ -168,7 +177,7 @@ public class Player : GameObject<PlayerState>
                 break;
             case PlayerState.CHARGING when Controls.Throw(_playerId).Released():
                 GameMain.Match.Map.Hammers[_playerId].Throw(ThrowDistance);
-                _state = PlayerState.ALIVE;
+                _state = PlayerState.STANDING;
                 break;
             case PlayerState.CHARGING:
                 // move
@@ -184,7 +193,7 @@ public class Player : GameObject<PlayerState>
                 break;
             case PlayerState.DASHING when _dash.Distance <= 0:
                 _dash = null;
-                _state = PlayerState.ALIVE;
+                _state = PlayerState.STANDING;
                 Visible = true;
                 break;
             case PlayerState.DASHING:
@@ -193,7 +202,7 @@ public class Player : GameObject<PlayerState>
                 break;
             case PlayerState.PUSHBACK when _pushback.Distance <= 0:
                 _pushback = null;
-                _state = PlayerState.ALIVE;
+                _state = PlayerState.STANDING;
                 break;
             case PlayerState.PUSHBACK:
                 _velocity = ComputeConstantVelocity(_velocity, _pushback.Direction, _pushback.Velocity, GroundDragFactor, gameTime);
