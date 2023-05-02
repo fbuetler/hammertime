@@ -94,13 +94,13 @@ public class Player : GameObject<PlayerState>
 
     // constants for controlling horizontal movement
     private const float MoveAcceleration = 1300f;
-    private const float MaxMoveVelocity = 175f;
+    private const float MaxMoveVelocity = 14f;
     private const float GroundDragFactor = 0.48f;
-    private const float AirDragFactor = 0.58f;
 
     // constants for controlling vertical movement
     private const float GravityAcceleration = 960f;
     private const float MaxFallVelocity = 340f;
+    private const float AirDragFactor = 0.58f;
 
     // sound effects
     private const string HammerHitSoundEffect = "HammerAudio/hammerBong";
@@ -162,7 +162,7 @@ public class Player : GameObject<PlayerState>
                 break;
             case PlayerState.ALIVE when moveInput != Vector3.Zero:
                 Direction = moveInput;
-                _velocity = ComputeVelocity(_velocity, Direction, MoveAcceleration, GroundDragFactor, gameTime);
+                _velocity = ComputeAcceleratedVelocity(_velocity, Direction, MoveAcceleration, GroundDragFactor, gameTime);
                 Move(gameTime, _velocity);
                 PlayStepSoundEffect(gameTime);
                 break;
@@ -175,7 +175,7 @@ public class Player : GameObject<PlayerState>
                 if (moveInput != Vector3.Zero)
                 {
                     Direction = moveInput;
-                    _velocity = ComputeVelocity(_velocity, Direction, MoveAcceleration, GroundDragFactor, gameTime);
+                    _velocity = ComputeAcceleratedVelocity(_velocity, Direction, MoveAcceleration, GroundDragFactor, gameTime);
                     Move(gameTime, _velocity);
                 }
 
@@ -188,7 +188,7 @@ public class Player : GameObject<PlayerState>
                 Visible = true;
                 break;
             case PlayerState.DASHING:
-                _velocity = ComputeVelocity(_velocity, _dash.Direction, _dash.Velocity, GroundDragFactor, gameTime);
+                _velocity = ComputeConstantVelocity(_velocity, _dash.Direction, _dash.Velocity, GroundDragFactor, gameTime);
                 _dash.Distance -= Move(gameTime, _velocity);
                 break;
             case PlayerState.PUSHBACK when _pushback.Distance <= 0:
@@ -196,7 +196,7 @@ public class Player : GameObject<PlayerState>
                 _state = PlayerState.ALIVE;
                 break;
             case PlayerState.PUSHBACK:
-                _velocity = ComputeVelocity(_velocity, _pushback.Direction, _pushback.Velocity, GroundDragFactor, gameTime);
+                _velocity = ComputeConstantVelocity(_velocity, _pushback.Direction, _pushback.Velocity, GroundDragFactor, gameTime);
                 _pushback.Distance -= Move(gameTime, _velocity);
                 break;
             case PlayerState.FALLING when Center.Y < KillPlaneLevel:
@@ -204,10 +204,9 @@ public class Player : GameObject<PlayerState>
                 OnKilled();
                 break;
             case PlayerState.FALLING:
-                // TODO: (lmeinen) there's currently a bug where a player transitions into a FALLING state when they manage to cross a gap
                 if (moveInput != Vector3.Zero)
                     Direction = moveInput;
-                _velocity = ComputeVelocity(_velocity, Direction, MoveAcceleration, AirDragFactor, gameTime);
+                _velocity = ComputeAcceleratedVelocity(_velocity, Direction, MoveAcceleration, AirDragFactor, gameTime);
                 Move(gameTime, _velocity);
                 break;
             default:
@@ -258,7 +257,7 @@ public class Player : GameObject<PlayerState>
         movement.Z *= -1;
 
         // ignore small movements to prevent running in place
-        if (movement.LengthSquared() < 0.1f)
+        if (movement.Length() < 0.3f)
             movement = Vector3.Zero;
 
         // if any digital horizontal movement input is found, override the analog movement
@@ -289,10 +288,32 @@ public class Player : GameObject<PlayerState>
         return movement;
     }
 
-    private Vector3 ComputeVelocity(Vector3 currentVelocity, Vector3 direction, float acceleration, float dragFactor, GameTime gameTime)
+    private Vector3 ComputeAcceleratedVelocity(Vector3 currentVelocity, Vector3 direction, float acceleration, float dragFactor, GameTime gameTime)
     {
         float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
         Vector3 velocity = currentVelocity + direction * acceleration * elapsed;
+
+        // prevent player from walking faster than max move velocity (does not change vertical velocity)
+        Vector2 horizontalVelocity = new Vector2(velocity.X, velocity.Z);
+        if (horizontalVelocity.Length() > MaxMoveVelocity)
+        {
+            horizontalVelocity.Normalize();
+            velocity.X = horizontalVelocity.X;
+            velocity.Z = horizontalVelocity.Y;
+        }
+
+        // always apply gravity forces, and resolve collisions with tiles later
+        velocity.Y = MathHelper.Clamp(currentVelocity.Y - GravityAcceleration * elapsed, -MaxFallVelocity, MaxFallVelocity);
+
+        velocity *= dragFactor;
+
+        return velocity;
+    }
+
+    private Vector3 ComputeConstantVelocity(Vector3 currentVelocity, Vector3 direction, float constantVelocity, float dragFactor, GameTime gameTime)
+    {
+        float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
+        Vector3 velocity = direction * constantVelocity * elapsed;
 
         // always apply gravity forces, and resolve collisions with tiles later
         velocity.Y = MathHelper.Clamp(currentVelocity.Y - GravityAcceleration * elapsed, -MaxFallVelocity, MaxFallVelocity);
