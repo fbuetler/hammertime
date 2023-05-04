@@ -111,6 +111,7 @@ public class Match : DrawableGameComponent
         }
         _scoreboardOverlay = new ScoreboardOverlay(GameMain);
 
+        _mapIndex = GameMain.Random.Next(numberOfMaps);
         LoadMap();
     }
 
@@ -132,6 +133,7 @@ public class Match : DrawableGameComponent
         }
 
         // initialize overlays
+        _startOverlay.Visible = true;
         GameMain.Components.Add(_startOverlay);
 
         _pauseOverlay.Visible = false;

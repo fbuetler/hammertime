@@ -10,7 +10,8 @@ public enum PlayerState
 {
     DEAD,
     FALLING,
-    ALIVE,
+    STANDING,
+    WALKING,
     PUSHBACK,
     CHARGING,
     DASHING
@@ -94,13 +95,13 @@ public class Player : GameObject<PlayerState>
 
     // constants for controlling horizontal movement
     private const float MoveAcceleration = 1300f;
-    private const float MaxMoveVelocity = 175f;
+    private const float MaxMoveVelocity = 14f;
     private const float GroundDragFactor = 0.48f;
-    private const float AirDragFactor = 0.58f;
 
     // constants for controlling vertical movement
     private const float GravityAcceleration = 960f;
     private const float MaxFallVelocity = 340f;
+    private const float AirDragFactor = 0.58f;
 
     // sound effects
     private const string HammerHitSoundEffect = "HammerAudio/hammerBong";
@@ -121,10 +122,11 @@ public class Player : GameObject<PlayerState>
 
         _playerId = playerId;
 
-        _state = PlayerState.ALIVE;
+        _state = PlayerState.STANDING;
 
         _objectModelPaths = new Dictionary<PlayerState, string>();
-        _objectModelPaths[PlayerState.ALIVE] = $"Player/playerNoHammer_{playerId}";
+        _objectModelPaths[PlayerState.STANDING] = $"Player/playerNoHammer_{playerId}";
+        _objectModelPaths[PlayerState.WALKING] = $"Player/playerNoHammer_{playerId}";
         _objectModelPaths[PlayerState.PUSHBACK] = $"Player/playerNoHammer_{playerId}";
         _objectModelPaths[PlayerState.FALLING] = $"Player/playerNoHammer_{playerId}";
         _objectModelPaths[PlayerState.DEAD] = $"Player/playerNoHammer_{playerId}";
@@ -151,32 +153,39 @@ public class Player : GameObject<PlayerState>
 
         switch (State)
         {
-            case PlayerState.ALIVE when Controls.Throw(_playerId).Held():
+            case PlayerState.STANDING when Controls.Throw(_playerId).Held():
+            case PlayerState.WALKING when Controls.Throw(_playerId).Held():
                 _chargeDurationMs = 0;
                 _state = PlayerState.CHARGING;
                 break;
-            case PlayerState.ALIVE when Controls.Dash(_playerId).Pressed():
+            case PlayerState.WALKING when Controls.Dash(_playerId).Pressed():
                 _dash = new Dash(Direction, Dash.DashDistance, Dash.DashVelocity);
                 _state = PlayerState.DASHING;
                 Visible = false;
                 GameMain.AudioManager.PlaySoundEffect(DashSoundEffect);
                 break;
-            case PlayerState.ALIVE when moveInput != Vector3.Zero:
+            case PlayerState.STANDING when moveInput != Vector3.Zero:
+                _state = PlayerState.WALKING;
+                break;
+            case PlayerState.WALKING when moveInput == Vector3.Zero:
+                _state = PlayerState.STANDING;
+                break;
+            case PlayerState.WALKING:
                 Direction = moveInput;
-                _velocity = ComputeVelocity(_velocity, Direction, MoveAcceleration, GroundDragFactor, gameTime);
+                _velocity = ComputeAcceleratedVelocity(_velocity, Direction, MoveAcceleration, GroundDragFactor, gameTime);
                 Move(gameTime, _velocity);
                 PlayStepSoundEffect(gameTime);
                 break;
             case PlayerState.CHARGING when Controls.Throw(_playerId).Released():
                 GameMain.Match.Map.Hammers[_playerId].Throw(ThrowDistance);
-                _state = PlayerState.ALIVE;
+                _state = PlayerState.STANDING;
                 break;
             case PlayerState.CHARGING:
                 // move
                 if (moveInput != Vector3.Zero)
                 {
                     Direction = moveInput;
-                    _velocity = ComputeVelocity(_velocity, Direction, MoveAcceleration, GroundDragFactor, gameTime);
+                    _velocity = ComputeAcceleratedVelocity(_velocity, Direction, MoveAcceleration, GroundDragFactor, gameTime);
                     Move(gameTime, _velocity);
                 }
 
@@ -185,19 +194,19 @@ public class Player : GameObject<PlayerState>
                 break;
             case PlayerState.DASHING when _dash.Distance <= 0:
                 _dash = null;
-                _state = PlayerState.ALIVE;
+                _state = PlayerState.STANDING;
                 Visible = true;
                 break;
             case PlayerState.DASHING:
-                _velocity = ComputeVelocity(_velocity, _dash.Direction, _dash.Velocity, GroundDragFactor, gameTime);
+                _velocity = ComputeConstantVelocity(_velocity, _dash.Direction, _dash.Velocity, GroundDragFactor, gameTime);
                 _dash.Distance -= Move(gameTime, _velocity);
                 break;
             case PlayerState.PUSHBACK when _pushback.Distance <= 0:
                 _pushback = null;
-                _state = PlayerState.ALIVE;
+                _state = PlayerState.STANDING;
                 break;
             case PlayerState.PUSHBACK:
-                _velocity = ComputeVelocity(_velocity, _pushback.Direction, _pushback.Velocity, GroundDragFactor, gameTime);
+                _velocity = ComputeConstantVelocity(_velocity, _pushback.Direction, _pushback.Velocity, GroundDragFactor, gameTime);
                 _pushback.Distance -= Move(gameTime, _velocity);
                 break;
             case PlayerState.FALLING when Center.Y < KillPlaneLevel:
@@ -205,10 +214,9 @@ public class Player : GameObject<PlayerState>
                 OnKilled();
                 break;
             case PlayerState.FALLING:
-                // TODO: (lmeinen) there's currently a bug where a player transitions into a FALLING state when they manage to cross a gap
                 if (moveInput != Vector3.Zero)
                     Direction = moveInput;
-                _velocity = ComputeVelocity(_velocity, Direction, MoveAcceleration, AirDragFactor, gameTime);
+                _velocity = ComputeAcceleratedVelocity(_velocity, Direction, MoveAcceleration, AirDragFactor, gameTime);
                 Move(gameTime, _velocity);
                 break;
             default:
@@ -238,7 +246,7 @@ public class Player : GameObject<PlayerState>
         if (IsFalling())
         {
             // Vertical velocity means we're falling :(
-            if (State == PlayerState.ALIVE || State == PlayerState.PUSHBACK)
+            if (State != PlayerState.DASHING && State != PlayerState.FALLING && State != PlayerState.DEAD)
             {
                 _state = PlayerState.FALLING;
                 OnFalling();
@@ -259,7 +267,7 @@ public class Player : GameObject<PlayerState>
         movement.Z *= -1;
 
         // ignore small movements to prevent running in place
-        if (movement.LengthSquared() < 0.5f)
+        if (movement.Length() < 0.3f)
             movement = Vector3.Zero;
 
         // if any digital horizontal movement input is found, override the analog movement
@@ -290,10 +298,32 @@ public class Player : GameObject<PlayerState>
         return movement;
     }
 
-    private Vector3 ComputeVelocity(Vector3 currentVelocity, Vector3 direction, float acceleration, float dragFactor, GameTime gameTime)
+    private Vector3 ComputeAcceleratedVelocity(Vector3 currentVelocity, Vector3 direction, float acceleration, float dragFactor, GameTime gameTime)
     {
         float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
         Vector3 velocity = currentVelocity + direction * acceleration * elapsed;
+
+        // prevent player from walking faster than max move velocity (does not change vertical velocity)
+        Vector2 horizontalVelocity = new Vector2(velocity.X, velocity.Z);
+        if (horizontalVelocity.Length() > MaxMoveVelocity)
+        {
+            horizontalVelocity.Normalize();
+            velocity.X = horizontalVelocity.X;
+            velocity.Z = horizontalVelocity.Y;
+        }
+
+        // always apply gravity forces, and resolve collisions with tiles later
+        velocity.Y = MathHelper.Clamp(currentVelocity.Y - GravityAcceleration * elapsed, -MaxFallVelocity, MaxFallVelocity);
+
+        velocity *= dragFactor;
+
+        return velocity;
+    }
+
+    private Vector3 ComputeConstantVelocity(Vector3 currentVelocity, Vector3 direction, float constantVelocity, float dragFactor, GameTime gameTime)
+    {
+        float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
+        Vector3 velocity = direction * constantVelocity * elapsed;
 
         // always apply gravity forces, and resolve collisions with tiles later
         velocity.Y = MathHelper.Clamp(currentVelocity.Y - GravityAcceleration * elapsed, -MaxFallVelocity, MaxFallVelocity);
@@ -332,10 +362,10 @@ public class Player : GameObject<PlayerState>
     /// <returns>boolean value indicating whether this player is falling</returns>
     private bool IsFalling()
     {
-        int x_low = (int)Math.Floor((float)BoundingBox.Min.X / Tile.Width);
-        int x_high = (int)Math.Ceiling(((float)BoundingBox.Max.X / Tile.Width)) - 1;
-        int z_low = (int)Math.Floor(((float)BoundingBox.Min.Z / Tile.Depth));
-        int z_high = (int)Math.Ceiling((float)BoundingBox.Max.Z / Tile.Depth) - 1;
+        int x_low = (int)Math.Floor((float)BoundingBox.Min.X / Tile.Width) - 1;
+        int x_high = (int)Math.Ceiling(((float)BoundingBox.Max.X / Tile.Width));
+        int z_low = (int)Math.Floor(((float)BoundingBox.Min.Z / Tile.Depth)) - 1;
+        int z_high = (int)Math.Ceiling((float)BoundingBox.Max.Z / Tile.Depth);
 
         for (int z = z_low; z <= z_high; z++)
         {

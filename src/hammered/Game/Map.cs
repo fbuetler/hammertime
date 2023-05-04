@@ -120,6 +120,14 @@ public class Map : DrawableGameComponent
             }
         }
 
+        // AVOID RACE CONDITION: enable players AFTER all tiles are enabled 
+        foreach (var p in _players.Values)
+            GameMain.Components.Add(p);
+        foreach (var h in _hammers.Values)
+            GameMain.Components.Add(h);
+        foreach (var a in _arrows.Values)
+            GameMain.Components.Add(a);
+
         if (_players.Count < GameMain.Match.NumberOfPlayers)
         {
             throw new NotSupportedException("A map must have starting points for all players");
@@ -184,11 +192,6 @@ public class Map : DrawableGameComponent
             _players.Add(playerId, player);
             _hammers.Add(playerId, hammer);
             _arrows.Add(playerId, arrow);
-
-            // enable components
-            GameMain.Components.Add(player);
-            GameMain.Components.Add(hammer);
-            GameMain.Components.Add(arrow);
         }
     }
 

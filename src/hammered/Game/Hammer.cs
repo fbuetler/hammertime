@@ -167,18 +167,7 @@ public class Hammer : GameObject<HammerState>
         int throwIndex = GameMain.Random.Next(NumThrowSoundEffects);
         GameMain.AudioManager.PlaySoundEffect($"{ThrowSoundEffectPrefix}{throwIndex}");
 
-        // if there is no aiming input, use walking direction or default
-        if (Direction == Vector3.Zero)
-        {
-            if (GameMain.Match.Map.Players[_ownerId].Direction != Vector3.Zero)
-            {
-                Direction = GameMain.Match.Map.Players[_ownerId].Direction;
-            }
-            else
-            {
-                Direction = new Vector3(1, 0, 0);
-            }
-        }
+        Direction = AimingDirection();
 
         // aiming is a unit vector (all in or nothing)
         float angle = MathF.Atan2(Direction.Z, Direction.X);
@@ -197,6 +186,20 @@ public class Hammer : GameObject<HammerState>
         Center = GameMain.Match.Map.Players[_ownerId].Center;
 
         _throwDistance = MathHelper.Clamp(throwDistance, MinThrowDistance, MaxThrowDistance);
+    }
+
+    public Vector3 AimingDirection()
+    {
+        // if there is no aiming input, use walking direction or default
+        if (Direction != Vector3.Zero)
+        {
+            return Direction;
+        }
+        if (GameMain.Match.Map.Players[_ownerId].Direction != Vector3.Zero)
+        {
+            return GameMain.Match.Map.Players[_ownerId].Direction;
+        }
+        return new Vector3(1, 0, 0);
     }
 
     private void FollowOwner()
