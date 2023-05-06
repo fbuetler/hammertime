@@ -172,6 +172,7 @@ public class Player : GameObject<PlayerState>
                 break;
             case PlayerState.WALKING:
                 Direction = moveInput;
+                _velocity = ApplyGravity(gameTime, _velocity);
                 _velocity = ComputeAcceleratedVelocity(_velocity, Direction, MoveAcceleration, GroundDragFactor, gameTime);
                 Move(gameTime, _velocity);
                 PlayStepSoundEffect(gameTime);
@@ -185,6 +186,7 @@ public class Player : GameObject<PlayerState>
                 if (moveInput != Vector3.Zero)
                 {
                     Direction = moveInput;
+                    _velocity = ApplyGravity(gameTime, _velocity);
                     _velocity = ComputeAcceleratedVelocity(_velocity, Direction, MoveAcceleration, GroundDragFactor, gameTime);
                     Move(gameTime, _velocity);
                 }
@@ -206,6 +208,7 @@ public class Player : GameObject<PlayerState>
                 _state = PlayerState.STANDING;
                 break;
             case PlayerState.PUSHBACK:
+                _velocity = ApplyGravity(gameTime, _velocity);
                 _velocity = ComputeConstantVelocity(_velocity, _pushback.Direction, _pushback.Velocity, GroundDragFactor, gameTime);
                 _pushback.Distance -= Move(gameTime, _velocity);
                 break;
@@ -216,6 +219,7 @@ public class Player : GameObject<PlayerState>
             case PlayerState.FALLING:
                 if (moveInput != Vector3.Zero)
                     Direction = moveInput;
+                _velocity = ApplyGravity(gameTime, _velocity);
                 _velocity = ComputeAcceleratedVelocity(_velocity, Direction, MoveAcceleration, AirDragFactor, gameTime);
                 Move(gameTime, _velocity);
                 break;
@@ -312,9 +316,6 @@ public class Player : GameObject<PlayerState>
             velocity.Z = horizontalVelocity.Y;
         }
 
-        // always apply gravity forces, and resolve collisions with tiles later
-        velocity.Y = MathHelper.Clamp(currentVelocity.Y - GravityAcceleration * elapsed, -MaxFallVelocity, MaxFallVelocity);
-
         velocity *= dragFactor;
 
         return velocity;
@@ -325,10 +326,18 @@ public class Player : GameObject<PlayerState>
         float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
         Vector3 velocity = direction * constantVelocity * elapsed;
 
+        velocity *= dragFactor;
+
+        return velocity;
+    }
+
+    private Vector3 ApplyGravity(GameTime gameTime, Vector3 currentVelocity)
+    {
+        float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
+        Vector3 velocity = currentVelocity;
+
         // always apply gravity forces, and resolve collisions with tiles later
         velocity.Y = MathHelper.Clamp(currentVelocity.Y - GravityAcceleration * elapsed, -MaxFallVelocity, MaxFallVelocity);
-
-        velocity *= dragFactor;
 
         return velocity;
     }
