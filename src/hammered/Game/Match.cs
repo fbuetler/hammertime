@@ -75,6 +75,8 @@ public class Match : DrawableGameComponent
     private const int finishedDelayMs = 2000;
     private const int nextRoundTimeoutMs = 4000;
 
+    private const string SlowMapSong = "MusicTracks/MusicMapSlow";
+
     public Match(Game game, int numberOfPlayers, int numberOfRounds) : base(game)
     {
         _game = (GameMain)game;
@@ -112,6 +114,14 @@ public class Match : DrawableGameComponent
         _scoreboardOverlay = new ScoreboardOverlay(GameMain);
 
         _mapIndex = GameMain.Random.Next(numberOfMaps);
+
+        try
+        {
+            GameMain.AudioManager.LoadSong(SlowMapSong);
+            GameMain.AudioManager.PlaySong(SlowMapSong);
+
+        }
+        catch { }
         LoadMap();
     }
 

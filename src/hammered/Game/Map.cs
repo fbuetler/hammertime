@@ -52,8 +52,7 @@ public class Map : DrawableGameComponent
     private bool _paused;
 
     // song
-    private const string SlowMapSong = "MusicTracks/MusicMapSlow";
-    private const string FastMapSong = "MusicTracks/MusicMapFast";
+
 
     public Map(Game game, IServiceProvider serviceProvider, String mapPath) : base(game)
     {
@@ -200,14 +199,7 @@ public class Map : DrawableGameComponent
         // TODO (fbuetler) game crashes sometimes with:
         // Unhandled exception. System.NullReferenceException: Object reference not set to an instance of an object.
         // are we loading not fast enough?
-        try
-        {
-            GameMain.AudioManager.LoadSong(SlowMapSong);
-            GameMain.AudioManager.PlaySong(SlowMapSong);
 
-            GameMain.AudioManager.LoadSong(FastMapSong);
-        }
-        catch { }
     }
 
     private void LoadCamera()
@@ -275,16 +267,7 @@ public class Map : DrawableGameComponent
         }
     }
 
-    public void AdjustSongSpeed()
-    {
-        if (PlayersAlive.Count == 2)
-        {
-            TimeSpan stopPosition = MediaPlayer.PlayPosition;
-            TimeSpan startPosition = TimeSpan.FromSeconds(stopPosition.Seconds);
-            // TODO (fbuetler) what is this math here?
-            GameMain.AudioManager.PlaySong(FastMapSong, 120 * startPosition / 135);
-        }
-    }
+
 
     public override void Draw(GameTime gameTime)
     {
