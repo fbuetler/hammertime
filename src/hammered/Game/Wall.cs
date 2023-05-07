@@ -56,10 +56,8 @@ public class Wall : Tile
 
     private static TileState NextState(TileState tileState) => tileState switch
     {
-        TileState.HP100 => TileState.HP80,
-        TileState.HP80 => TileState.HP60,
-        TileState.HP60 => TileState.HP40,
-        TileState.HP40 => TileState.HP20,
+        TileState.HP100 => TileState.HP60,
+        TileState.HP60 => TileState.HP20,
         TileState.HP20 => TileState.HP0,
         TileState.HP0 => TileState.HP0,
         _ => throw new ArgumentOutOfRangeException(nameof(tileState), $"Unexpected tile state: {tileState}"),
