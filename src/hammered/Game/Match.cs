@@ -69,7 +69,7 @@ public class Match : DrawableGameComponent
     // levels in our content are 0-based and that all numbers under this constant
     // have a level file present. This allows us to not need to check for the file
     // or handle exceptions, both of which can add unnecessary time to level loading.
-    private const int numberOfMaps = 11;
+    private const int numberOfMaps = 13;
 
     private const int startDelayMs = 1000;
     private const int finishedDelayMs = 2000;
