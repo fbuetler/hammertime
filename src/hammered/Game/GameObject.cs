@@ -76,6 +76,11 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
         return displacement.Length();
     }
 
+    protected virtual void LoadAnimationContent()
+    {
+        // do nothing by default
+    }
+
     protected override void LoadContent()
     {
         // _models = new Dictionary<GameObjectState, ScaledModel>();
@@ -84,6 +89,8 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
             string assetName = ObjectModelPaths[state];
             if (!GameMain.Match.Models.ContainsKey(assetName))
             {
+                Console.WriteLine($"Loading asset {assetName}");
+
                 // load model
                 Model model = GameMain.Match.Map.Content.Load<Model>(assetName);
 
@@ -107,6 +114,7 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
         }
 
         LoadAudioContent();
+        LoadAnimationContent();
     }
 
     protected virtual void LoadAudioContent() { }
@@ -160,8 +168,15 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
                 effect.Projection = projection;
             }
 
+            ApplyAnimations(mesh);
+
             mesh.Draw();
         }
+    }
+
+    protected virtual void ApplyAnimations(ModelMesh mesh)
+    {
+        // do nothing by default
     }
 
     private BoundingBox GetModelSize(Model model)
