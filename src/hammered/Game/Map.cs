@@ -51,9 +51,6 @@ public class Map : DrawableGameComponent
     public bool Paused { get => _paused; }
     private bool _paused;
 
-    // song
-
-
     public Map(Game game, IServiceProvider serviceProvider, String mapPath) : base(game)
     {
         if (game == null)
@@ -81,7 +78,6 @@ public class Map : DrawableGameComponent
         using (Stream fileStream = TitleContainer.OpenStream(_mapPath))
             LoadMap(fileStream);
         LoadCamera();
-        LoadAudio();
         LoadKillplane();
     }
 
@@ -194,14 +190,6 @@ public class Map : DrawableGameComponent
         }
     }
 
-    private void LoadAudio()
-    {
-        // TODO (fbuetler) game crashes sometimes with:
-        // Unhandled exception. System.NullReferenceException: Object reference not set to an instance of an object.
-        // are we loading not fast enough?
-
-    }
-
     private void LoadCamera()
     {
         _camera = new Camera(
@@ -266,7 +254,6 @@ public class Map : DrawableGameComponent
             return _tiles[x, y, z].BoundingBox;
         }
     }
-
 
 
     public override void Draw(GameTime gameTime)

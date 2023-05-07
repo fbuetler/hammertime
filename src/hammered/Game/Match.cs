@@ -115,14 +115,21 @@ public class Match : DrawableGameComponent
 
         _mapIndex = GameMain.Random.Next(numberOfMaps);
 
+        LoadAudio();
+        LoadMap();
+    }
+
+    private void LoadAudio()
+    {
+        // TODO (fbuetler) game crashes sometimes with:
+        // Unhandled exception. System.NullReferenceException: Object reference not set to an instance of an object.
+        // are we loading not fast enough?
         try
         {
             GameMain.AudioManager.LoadSong(SlowMapSong);
             GameMain.AudioManager.PlaySong(SlowMapSong);
-
         }
         catch { }
-        LoadMap();
     }
 
     private void LoadNextMap()
