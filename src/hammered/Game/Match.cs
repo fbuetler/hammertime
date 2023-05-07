@@ -75,6 +75,8 @@ public class Match : DrawableGameComponent
     private const int finishedDelayMs = 2000;
     private const int nextRoundTimeoutMs = 4000;
 
+    private const string SlowMapSong = "MusicTracks/MusicMapSlow";
+
     public Match(Game game, int numberOfPlayers, int numberOfRounds) : base(game)
     {
         _game = (GameMain)game;
@@ -112,7 +114,22 @@ public class Match : DrawableGameComponent
         _scoreboardOverlay = new ScoreboardOverlay(GameMain);
 
         _mapIndex = GameMain.Random.Next(numberOfMaps);
+
+        LoadAudio();
         LoadMap();
+    }
+
+    private void LoadAudio()
+    {
+        // TODO (fbuetler) game crashes sometimes with:
+        // Unhandled exception. System.NullReferenceException: Object reference not set to an instance of an object.
+        // are we loading not fast enough?
+        try
+        {
+            GameMain.AudioManager.LoadSong(SlowMapSong);
+            GameMain.AudioManager.PlaySong(SlowMapSong);
+        }
+        catch { }
     }
 
     private void LoadNextMap()

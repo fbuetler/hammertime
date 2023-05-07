@@ -95,7 +95,7 @@ public class Player : GameObject<PlayerState>
 
     // constants for controlling horizontal movement
     private const float MoveAcceleration = 1300f;
-    private const float MaxMoveVelocity = 14f;
+    private const float MaxMoveVelocity = 16f;
     private const float GroundDragFactor = 0.48f;
 
     // constants for controlling vertical movement
@@ -412,7 +412,6 @@ public class Player : GameObject<PlayerState>
         Visible = false;
         Enabled = false;
         GamePad.SetVibration(_playerId, 0.0f, 0.0f, 0.0f, 0.0f);
-        GameMain.Match.Map.AdjustSongSpeed();
     }
 
     public void PlayStepSoundEffect(GameTime gameTime)
