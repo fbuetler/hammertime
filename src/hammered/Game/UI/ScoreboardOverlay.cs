@@ -10,6 +10,8 @@ public class ScoreboardOverlay : DrawableGameComponent
         237, 237
     );
 
+    private static float SCORE_MARGIN = 100;
+
     public GameMain GameMain { get => _game; }
     private GameMain _game;
 
@@ -79,10 +81,10 @@ public class ScoreboardOverlay : DrawableGameComponent
 
     private void DrawScores(SpriteBatch spriteBatch, int[] scores)
     {
-        Vector2 scoresSize = scores.Length * SCORE.Size.ToVector2();
+        float scoresWidth = scores.Length * SCORE.Width + (scores.Length - 1) * SCORE_MARGIN;
         // centered
         Vector2 anchor = new Vector2(
-            0.5f * (GameMain.GetScreenWidth() - scoresSize.X),
+            0.5f * (GameMain.GetScreenWidth() - scoresWidth),
             0
         );
 
@@ -90,7 +92,7 @@ public class ScoreboardOverlay : DrawableGameComponent
         {
             int score = scores[playerId];
             Vector2 scorePosition = new Vector2(
-                anchor.X + playerId * SCORE.Width,
+                anchor.X + playerId * (SCORE.Width + SCORE_MARGIN),
                 anchor.Y
             );
             spriteBatch.Draw(
