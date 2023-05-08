@@ -73,7 +73,6 @@ public class Match : DrawableGameComponent
 
     private const int startDelayMs = 1000;
     private const int finishedDelayMs = 2000;
-    private const int nextRoundTimeoutMs = 4000;
 
     private const string SlowMapSong = "MusicTracks/MusicMapSlow";
 
@@ -283,7 +282,7 @@ public class Match : DrawableGameComponent
                 throw new NotSupportedException(String.Format("Scorestate type '{0}' is not supported", ScoreState));
         }
 
-        if (totalElapsed - _roundFinishedAt > nextRoundTimeoutMs)
+        if (Controls.Interact.Pressed())
         {
             _roundDrawOverlay.Visible = false;
             _roundWinnerOverlays.ToList().ForEach(o => o.Visible = false);
