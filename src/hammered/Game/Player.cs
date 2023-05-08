@@ -153,8 +153,8 @@ public class Player : GameObject<PlayerState>
 
         switch (State)
         {
-            case PlayerState.STANDING when Controls.Throw(_playerId).Held():
-            case PlayerState.WALKING when Controls.Throw(_playerId).Held():
+            case PlayerState.STANDING when Controls.Throw(_playerId).Held() && GameMain.Match.Map.Hammers[_playerId].State == HammerState.IS_HELD:
+            case PlayerState.WALKING when Controls.Throw(_playerId).Held() && GameMain.Match.Map.Hammers[_playerId].State == HammerState.IS_HELD:
                 _chargeDurationMs = 0;
                 _state = PlayerState.CHARGING;
                 break;
