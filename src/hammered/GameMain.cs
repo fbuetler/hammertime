@@ -99,7 +99,11 @@ public class GameMain : Game
         _graphics.PreferredBackBufferWidth = GetScreenWidth();
         _graphics.PreferredBackBufferHeight = GetScreenHeight(); ;
 
+#if DEBUG
         _graphics.IsFullScreen = false;
+#else
+        _graphics.IsFullScreen = true;
+#endif
         _graphics.ApplyChanges();
 
         _debugDraw = new DebugDraw(GraphicsDevice);
