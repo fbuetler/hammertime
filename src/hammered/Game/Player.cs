@@ -379,10 +379,10 @@ public class Player : GameObject<PlayerState>
     /// <returns>boolean value indicating whether this player is falling</returns>
     private bool IsFalling()
     {
-        int x_low = (int)Math.Floor((float)BoundingBox.Min.X / Tile.Width) - 1;
-        int x_high = (int)Math.Ceiling(((float)BoundingBox.Max.X / Tile.Width));
-        int z_low = (int)Math.Floor(((float)BoundingBox.Min.Z / Tile.Depth)) - 1;
-        int z_high = (int)Math.Ceiling((float)BoundingBox.Max.Z / Tile.Depth);
+        int x_low = (int)Math.Floor((float)BoundingBox.Min.X / Tile.Width);
+        int x_high = (int)Math.Ceiling(((float)BoundingBox.Max.X / Tile.Width)) - 1;
+        int z_low = (int)Math.Floor(((float)BoundingBox.Min.Z / Tile.Depth));
+        int z_high = (int)Math.Ceiling((float)BoundingBox.Max.Z / Tile.Depth) - 1;
 
         for (int z = z_low; z <= z_high; z++)
         {
