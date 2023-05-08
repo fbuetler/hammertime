@@ -99,8 +99,8 @@ public class Player : GameObject<PlayerState>
     private const float GroundDragFactor = 0.48f;
 
     // constants for controlling vertical movement
-    private const float GravityAcceleration = 960f;
-    private const float MaxFallVelocity = 340f;
+    private const float GravityAcceleration = 200f;
+    private const float MaxFallVelocity = 20f;
     private const float AirDragFactor = 0.58f;
 
     // sound effects
@@ -167,6 +167,10 @@ public class Player : GameObject<PlayerState>
             case PlayerState.STANDING when moveInput != Vector3.Zero:
                 _state = PlayerState.WALKING;
                 break;
+            case PlayerState.STANDING:
+                _velocity = ApplyGravity(gameTime, _velocity);
+                Move(gameTime, _velocity);
+                break;
             case PlayerState.WALKING when moveInput == Vector3.Zero:
                 _state = PlayerState.STANDING;
                 break;
@@ -217,10 +221,12 @@ public class Player : GameObject<PlayerState>
                 OnKilled();
                 break;
             case PlayerState.FALLING:
-                if (moveInput != Vector3.Zero)
-                    Direction = moveInput;
                 _velocity = ApplyGravity(gameTime, _velocity);
-                _velocity = ComputeAcceleratedVelocity(_velocity, Direction, MoveAcceleration, AirDragFactor, gameTime);
+                if (moveInput != Vector3.Zero)
+                {
+                    Direction = moveInput;
+                    _velocity = ComputeAcceleratedVelocity(_velocity, Direction, MoveAcceleration, AirDragFactor, gameTime);
+                }
                 Move(gameTime, _velocity);
                 break;
             default:
@@ -316,7 +322,8 @@ public class Player : GameObject<PlayerState>
             velocity.Z = horizontalVelocity.Y;
         }
 
-        velocity *= dragFactor;
+        velocity.X *= dragFactor;
+        velocity.Z *= dragFactor;
 
         return velocity;
     }
@@ -326,7 +333,8 @@ public class Player : GameObject<PlayerState>
         float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
         Vector3 velocity = direction * constantVelocity * elapsed;
 
-        velocity *= dragFactor;
+        velocity.X *= dragFactor;
+        velocity.Z *= dragFactor;
 
         return velocity;
     }
