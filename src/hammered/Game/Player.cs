@@ -99,12 +99,12 @@ public class Player : GameObject<PlayerState>
 
     // constants for controlling horizontal movement
     private const float MoveAcceleration = 1300f;
-    private const float MaxMoveVelocity = 14f;
+    private const float MaxMoveVelocity = 16f;
     private const float GroundDragFactor = 0.48f;
 
     // constants for controlling vertical movement
-    private const float GravityAcceleration = 960f;
-    private const float MaxFallVelocity = 340f;
+    private const float GravityAcceleration = 200f;
+    private const float MaxFallVelocity = 20f;
     private const float AirDragFactor = 0.58f;
 
     // sound effects
@@ -164,8 +164,8 @@ public class Player : GameObject<PlayerState>
 
         switch (State)
         {
-            case PlayerState.STANDING when Controls.Throw(_playerId).Held():
-            case PlayerState.WALKING when Controls.Throw(_playerId).Held():
+            case PlayerState.STANDING when Controls.Throw(_playerId).Held() && GameMain.Match.Map.Hammers[_playerId].State == HammerState.IS_HELD:
+            case PlayerState.WALKING when Controls.Throw(_playerId).Held() && GameMain.Match.Map.Hammers[_playerId].State == HammerState.IS_HELD:
                 _chargeDurationMs = 0;
                 _state = PlayerState.CHARGING;
                 break;
@@ -178,11 +178,16 @@ public class Player : GameObject<PlayerState>
             case PlayerState.STANDING when moveInput != Vector3.Zero:
                 _state = PlayerState.WALKING;
                 break;
+            case PlayerState.STANDING:
+                _velocity = ApplyGravity(gameTime, _velocity);
+                Move(gameTime, _velocity);
+                break;
             case PlayerState.WALKING when moveInput == Vector3.Zero:
                 _state = PlayerState.STANDING;
                 break;
             case PlayerState.WALKING:
                 Direction = moveInput;
+                _velocity = ApplyGravity(gameTime, _velocity);
                 _velocity = ComputeAcceleratedVelocity(_velocity, Direction, MoveAcceleration, GroundDragFactor, gameTime);
                 Move(gameTime, _velocity);
                 PlayStepSoundEffect(gameTime);
@@ -196,6 +201,7 @@ public class Player : GameObject<PlayerState>
                 if (moveInput != Vector3.Zero)
                 {
                     Direction = moveInput;
+                    _velocity = ApplyGravity(gameTime, _velocity);
                     _velocity = ComputeAcceleratedVelocity(_velocity, Direction, MoveAcceleration, GroundDragFactor, gameTime);
                     Move(gameTime, _velocity);
                 }
@@ -217,6 +223,7 @@ public class Player : GameObject<PlayerState>
                 _state = PlayerState.STANDING;
                 break;
             case PlayerState.PUSHBACK:
+                _velocity = ApplyGravity(gameTime, _velocity);
                 _velocity = ComputeConstantVelocity(_velocity, _pushback.Direction, _pushback.Velocity, GroundDragFactor, gameTime);
                 _pushback.Distance -= Move(gameTime, _velocity);
                 break;
@@ -225,9 +232,12 @@ public class Player : GameObject<PlayerState>
                 OnKilled();
                 break;
             case PlayerState.FALLING:
+                _velocity = ApplyGravity(gameTime, _velocity);
                 if (moveInput != Vector3.Zero)
+                {
                     Direction = moveInput;
-                _velocity = ComputeAcceleratedVelocity(_velocity, Direction, MoveAcceleration, AirDragFactor, gameTime);
+                    _velocity = ComputeAcceleratedVelocity(_velocity, Direction, MoveAcceleration, AirDragFactor, gameTime);
+                }
                 Move(gameTime, _velocity);
                 break;
             default:
@@ -325,10 +335,8 @@ public class Player : GameObject<PlayerState>
             velocity.Z = horizontalVelocity.Y;
         }
 
-        // always apply gravity forces, and resolve collisions with tiles later
-        velocity.Y = MathHelper.Clamp(currentVelocity.Y - GravityAcceleration * elapsed, -MaxFallVelocity, MaxFallVelocity);
-
-        velocity *= dragFactor;
+        velocity.X *= dragFactor;
+        velocity.Z *= dragFactor;
 
         return velocity;
     }
@@ -338,10 +346,19 @@ public class Player : GameObject<PlayerState>
         float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
         Vector3 velocity = direction * constantVelocity * elapsed;
 
+        velocity.X *= dragFactor;
+        velocity.Z *= dragFactor;
+
+        return velocity;
+    }
+
+    private Vector3 ApplyGravity(GameTime gameTime, Vector3 currentVelocity)
+    {
+        float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
+        Vector3 velocity = currentVelocity;
+
         // always apply gravity forces, and resolve collisions with tiles later
         velocity.Y = MathHelper.Clamp(currentVelocity.Y - GravityAcceleration * elapsed, -MaxFallVelocity, MaxFallVelocity);
-
-        velocity *= dragFactor;
 
         return velocity;
     }
@@ -375,10 +392,10 @@ public class Player : GameObject<PlayerState>
     /// <returns>boolean value indicating whether this player is falling</returns>
     private bool IsFalling()
     {
-        int x_low = (int)Math.Floor((float)BoundingBox.Min.X / Tile.Width) - 1;
-        int x_high = (int)Math.Ceiling(((float)BoundingBox.Max.X / Tile.Width));
-        int z_low = (int)Math.Floor(((float)BoundingBox.Min.Z / Tile.Depth)) - 1;
-        int z_high = (int)Math.Ceiling((float)BoundingBox.Max.Z / Tile.Depth);
+        int x_low = (int)Math.Floor((float)BoundingBox.Min.X / Tile.Width);
+        int x_high = (int)Math.Ceiling(((float)BoundingBox.Max.X / Tile.Width)) - 1;
+        int z_low = (int)Math.Floor(((float)BoundingBox.Min.Z / Tile.Depth));
+        int z_high = (int)Math.Ceiling((float)BoundingBox.Max.Z / Tile.Depth) - 1;
 
         for (int z = z_low; z <= z_high; z++)
         {
@@ -416,7 +433,6 @@ public class Player : GameObject<PlayerState>
         Visible = false;
         Enabled = false;
         GamePad.SetVibration(_playerId, 0.0f, 0.0f, 0.0f, 0.0f);
-        GameMain.Match.Map.AdjustSongSpeed();
     }
 
     public void PlayStepSoundEffect(GameTime gameTime)

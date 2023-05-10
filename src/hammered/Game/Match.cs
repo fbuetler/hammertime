@@ -69,11 +69,12 @@ public class Match : DrawableGameComponent
     // levels in our content are 0-based and that all numbers under this constant
     // have a level file present. This allows us to not need to check for the file
     // or handle exceptions, both of which can add unnecessary time to level loading.
-    private const int numberOfMaps = 11;
+    private const int numberOfMaps = 13;
 
     private const int startDelayMs = 1000;
     private const int finishedDelayMs = 2000;
-    private const int nextRoundTimeoutMs = 4000;
+
+    private const string SlowMapSong = "MusicTracks/MusicMapSlow";
 
     public Match(Game game, int numberOfPlayers, int numberOfRounds) : base(game)
     {
@@ -112,7 +113,22 @@ public class Match : DrawableGameComponent
         _scoreboardOverlay = new ScoreboardOverlay(GameMain);
 
         _mapIndex = GameMain.Random.Next(numberOfMaps);
+
+        LoadAudio();
         LoadMap();
+    }
+
+    private void LoadAudio()
+    {
+        // TODO (fbuetler) game crashes sometimes with:
+        // Unhandled exception. System.NullReferenceException: Object reference not set to an instance of an object.
+        // are we loading not fast enough?
+        try
+        {
+            GameMain.AudioManager.LoadSong(SlowMapSong);
+            GameMain.AudioManager.PlaySong(SlowMapSong);
+        }
+        catch { }
     }
 
     private void LoadNextMap()
@@ -266,7 +282,7 @@ public class Match : DrawableGameComponent
                 throw new NotSupportedException(String.Format("Scorestate type '{0}' is not supported", ScoreState));
         }
 
-        if (totalElapsed - _roundFinishedAt > nextRoundTimeoutMs)
+        if (Controls.Interact.Pressed())
         {
             _roundDrawOverlay.Visible = false;
             _roundWinnerOverlays.ToList().ForEach(o => o.Visible = false);

@@ -80,7 +80,8 @@ public class Hammer : GameObject<HammerState>
         {
             case HammerState.IS_HELD:
                 Vector3 aimInput = ReadAimingInput();
-                Direction = aimInput;
+                if (aimInput != Vector3.Zero)
+                    Direction = aimInput;
                 break;
             case HammerState.IS_FLYING:
                 bool collided = HandleTileCollisions();
@@ -160,9 +161,7 @@ public class Hammer : GameObject<HammerState>
     public void Throw(float throwDistance)
     {
         if (_state != HammerState.IS_HELD)
-        {
             return;
-        }
 
         int throwIndex = GameMain.Random.Next(NumThrowSoundEffects);
         GameMain.AudioManager.PlaySoundEffect($"{ThrowSoundEffectPrefix}{throwIndex}");
@@ -190,15 +189,13 @@ public class Hammer : GameObject<HammerState>
 
     public Vector3 AimingDirection()
     {
-        // if there is no aiming input, use walking direction or default
         if (Direction != Vector3.Zero)
-        {
             return Direction;
-        }
+
+        // if there is no aiming input, use walking direction or default
         if (GameMain.Match.Map.Players[_ownerId].Direction != Vector3.Zero)
-        {
             return GameMain.Match.Map.Players[_ownerId].Direction;
-        }
+
         return new Vector3(1, 0, 0);
     }
 
