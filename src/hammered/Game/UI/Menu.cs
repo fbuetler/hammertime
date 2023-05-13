@@ -16,10 +16,12 @@ enum MenuState
     PLAYERS,
     PLAYERS_CONFIRMED,
 
-    ROUNDS_1,
-    ROUNDS_3,
-    ROUNDS_5,
-    ROUNDS_10,
+    TUTORIAL,
+
+    GOAL_1,
+    GOAL_3,
+    GOAL_5,
+    GOAL_10,
 
     // IMPORTANT: make sure the countdowns are in order
     COUNTDOWN_0,
@@ -88,10 +90,12 @@ public class Menu : DrawableGameComponent
         _menus[MenuState.PLAYERS] = new MenuComponent("Menu/Players/unconfirmed/background", null);
         _menus[MenuState.PLAYERS_CONFIRMED] = new MenuComponent("Menu/Players/confirmed/background", null);
 
-        _menus[MenuState.ROUNDS_1] = new MenuComponent("Menu/Goals/goal_1", null);
-        _menus[MenuState.ROUNDS_3] = new MenuComponent("Menu/Goals/goal_3", null);
-        _menus[MenuState.ROUNDS_5] = new MenuComponent("Menu/Goals/goal_5", null);
-        _menus[MenuState.ROUNDS_10] = new MenuComponent("Menu/Goals/goal_10", null);
+        _menus[MenuState.TUTORIAL] = new MenuComponent("Menu/Tutorial/tutorial", null);
+
+        _menus[MenuState.GOAL_1] = new MenuComponent("Menu/Goals/goal_1", null);
+        _menus[MenuState.GOAL_3] = new MenuComponent("Menu/Goals/goal_3", null);
+        _menus[MenuState.GOAL_5] = new MenuComponent("Menu/Goals/goal_5", null);
+        _menus[MenuState.GOAL_10] = new MenuComponent("Menu/Goals/goal_10", null);
 
         _menus[MenuState.COUNTDOWN_0] = new MenuComponent("Menu/Countdown/0", null);
         _menus[MenuState.COUNTDOWN_1] = new MenuComponent("Menu/Countdown/1", null);
@@ -156,7 +160,6 @@ public class Menu : DrawableGameComponent
                 if (Controls.Start.Pressed())
                     _state = MenuState.MAIN_START;
                 break;
-
             // main
             case MenuState.MAIN_OPTIONS:
                 if (Controls.FocusPrev.Pressed())
@@ -223,7 +226,7 @@ public class Menu : DrawableGameComponent
                 {
                     if (Controls.InteractP(i).Pressed() && _playersConnected > 1)
                     {
-                        _state = MenuState.ROUNDS_5;
+                        _state = MenuState.TUTORIAL;
                     }
                     else if (Controls.BackP(i).Pressed() && _playersConfirmed[i])
                     {
@@ -236,12 +239,12 @@ public class Menu : DrawableGameComponent
                 if (Controls.Start.Pressed())
                 {
                     // helper if a poor, controller-less peasant (lasse) needs to test the game with a keyboard
-                    _state = MenuState.ROUNDS_5;
+                    _state = MenuState.TUTORIAL;
                     _playersConnected = 2;
                 }
 #endif
                 // unconfirm all players
-                if (_state == MenuState.ROUNDS_5)
+                if (_state == MenuState.TUTORIAL)
                 {
                     for (int i = 0; i < _playersConnected; i++)
                     {
@@ -250,10 +253,17 @@ public class Menu : DrawableGameComponent
                 }
                 break;
 
-            case MenuState.ROUNDS_1:
-            case MenuState.ROUNDS_3:
-            case MenuState.ROUNDS_5:
-            case MenuState.ROUNDS_10:
+            case MenuState.TUTORIAL:
+                if (Controls.Back.Pressed())
+                    _state = MenuState.PLAYERS_CONFIRMED;
+                else if (Controls.Interact.Pressed())
+                    _state = MenuState.GOAL_5;
+                break;
+
+            case MenuState.GOAL_1:
+            case MenuState.GOAL_3:
+            case MenuState.GOAL_5:
+            case MenuState.GOAL_10:
                 if (Controls.Back.Pressed())
                     _state = MenuState.PLAYERS_CONFIRMED;
                 else if (Controls.Increase.Pressed())
@@ -261,34 +271,33 @@ public class Menu : DrawableGameComponent
                     // very hacky
                     _state = (MenuState)MathHelper.Clamp(
                         (float)_state + 1,
-                        (float)MenuState.ROUNDS_1,
-                        (float)MenuState.ROUNDS_10
+                        (float)MenuState.GOAL_1,
+                        (float)MenuState.GOAL_10
                     );
                 }
                 else if (Controls.Decrease.Pressed())
                 {
                     // very hacky
-                    // very hacky
                     _state = (MenuState)MathHelper.Clamp(
                         (float)_state - 1,
-                        (float)MenuState.ROUNDS_1,
-                        (float)MenuState.ROUNDS_10
+                        (float)MenuState.GOAL_1,
+                        (float)MenuState.GOAL_10
                     );
                 }
                 else if (Controls.Interact.Pressed())
                 {
                     switch (_state)
                     {
-                        case MenuState.ROUNDS_1:
+                        case MenuState.GOAL_1:
                             GameMain.SetupMatch(_playersConnected, 1);
                             break;
-                        case MenuState.ROUNDS_3:
+                        case MenuState.GOAL_3:
                             GameMain.SetupMatch(_playersConnected, 3);
                             break;
-                        case MenuState.ROUNDS_5:
+                        case MenuState.GOAL_5:
                             GameMain.SetupMatch(_playersConnected, 5);
                             break;
-                        case MenuState.ROUNDS_10:
+                        case MenuState.GOAL_10:
                             GameMain.SetupMatch(_playersConnected, 10);
                             break;
                     }
