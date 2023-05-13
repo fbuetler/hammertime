@@ -43,8 +43,8 @@ public class Arrow : GameObject<ArrowState>
         _state = ArrowState.IS_NOT_CHARGING;
 
         _objectModelPaths = new Dictionary<ArrowState, string>();
-        _objectModelPaths[ArrowState.IS_CHARGING] = "Player/arrow";
-        _objectModelPaths[ArrowState.IS_NOT_CHARGING] = "Player/arrow";
+        _objectModelPaths[ArrowState.IS_CHARGING] = $"Player/arrow_{ownerId}";
+        _objectModelPaths[ArrowState.IS_NOT_CHARGING] = $"Player/arrow_{ownerId}";
     }
 
     public override void Update(GameTime gameTime)
