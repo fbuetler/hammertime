@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
@@ -159,7 +160,8 @@ public class Player : GameObject<PlayerState>
                 _state = PlayerState.CHARGING;
                 break;
             case PlayerState.WALKING when Controls.Dash(_playerId).Pressed():
-                _dash = new Dash(Direction, Dash.DashDistance, Dash.DashVelocity);
+                float distance = FinalFashDistanceCalculator();
+                _dash = new Dash(Direction, distance, Dash.DashVelocity);
                 _state = PlayerState.DASHING;
                 Visible = false;
                 GameMain.AudioManager.PlaySoundEffect(DashSoundEffect);
@@ -400,6 +402,54 @@ public class Player : GameObject<PlayerState>
             }
         }
         return true;
+    }
+
+
+    private bool IsFallingAfterMove(float xmove, float ymove, float zmove)
+    {   //see if afer the dash the player will be standing on anything
+        int x_low = (int)Math.Floor(((float)BoundingBox.Min.X +xmove )/ Tile.Width);
+        int x_high = (int)Math.Ceiling((((float)BoundingBox.Max.X +xmove)/ Tile.Width)) - 1;
+        int z_low = (int)Math.Floor((((float)BoundingBox.Min.Z + zmove) / Tile.Depth));
+        int z_high = (int)Math.Ceiling(((float)BoundingBox.Max.Z + zmove)/ Tile.Depth) - 1;
+
+        for (int z = z_low; z <= z_high; z++)
+        {
+            for (int y = 0; y <= GameMain.Match.Map.Height; y++)
+            {
+                for (int x = x_low; x <= x_high; x++)
+                {
+                    // check if there's a tile below us
+                    BoundingBox? neighbour = GameMain.Match.Map.TryGetTileBounds(x, y, z);
+                    if (neighbour != null && ((BoundingBox)neighbour).Max.Y <= BoundingBox.Min.Y)
+                    {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    private Vector3 DashMovementCalculator(float distance) {
+        //calculate how far the dash would land form the player
+        return new Vector3(Direction.X*distance, Direction.Y * distance, Direction.Z * distance);
+    }
+
+    private float FinalFashDistanceCalculator() {
+        float distance = Dash.DashDistance + 0.5f;
+        while (distance > 0.5f) {
+            Vector3 movement = DashMovementCalculator(distance);
+            bool falling = IsFallingAfterMove(movement.X, movement.Y, movement.Z);
+            Vector3 movementshort = DashMovementCalculator(distance-0.5f);
+            bool fallingshort = IsFallingAfterMove(movement.X, movement.Y, movement.Z);
+            if (!falling && ! fallingshort)
+            {
+                return distance-0.5f;
+            }
+            distance -= 0.25f;
+        }
+        
+        return 0f;
     }
 
     private void OnHit(Hammer hammer)
