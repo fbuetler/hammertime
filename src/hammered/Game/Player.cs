@@ -15,7 +15,8 @@ public enum PlayerState
     WALKING,
     PUSHBACK,
     CHARGING,
-    DASHING
+    DASHING,
+    IMMOBILISED
 }
 
 public abstract class UnstoppableMove
@@ -52,7 +53,7 @@ public class Dash : UnstoppableMove
 
     // how far a player can dash
     public const float DashDistance = 3f;
-    public const float DashVelocity = 8000f;
+    public const float DashVelocity = 8000;
 }
 
 public class Player : GameObject<PlayerState>
@@ -94,6 +95,12 @@ public class Player : GameObject<PlayerState>
     // charge/throw
     private const float ChargeUnit = 0.02f;
 
+    //imobilised after dash timers
+    //the actual timer:
+    private float _imobilisedTimer = 0f;
+    //how much time one has to stay put after dashing
+    private const float _imobilisedTime = 500;
+
     // constants for controlling horizontal movement
     private const float MoveAcceleration = 1300f;
     private const float MaxMoveVelocity = 16f;
@@ -133,6 +140,7 @@ public class Player : GameObject<PlayerState>
         _objectModelPaths[PlayerState.DEAD] = $"Player/playerNoHammer_{playerId}";
         _objectModelPaths[PlayerState.DASHING] = $"Player/playerNoHammer_{playerId}";
         _objectModelPaths[PlayerState.CHARGING] = $"Player/playerNoHammer_{playerId}";
+        _objectModelPaths[PlayerState.IMMOBILISED] = $"Player/playerNoHammer_{playerId}";
 
     }
 
@@ -202,8 +210,16 @@ public class Player : GameObject<PlayerState>
                 break;
             case PlayerState.DASHING when _dash.Distance <= 0:
                 _dash = null;
-                _state = PlayerState.STANDING;
+                _state = PlayerState.IMMOBILISED;
+                _imobilisedTimer = _imobilisedTime;
                 Visible = true;
+                break;
+            case PlayerState.IMMOBILISED when _imobilisedTimer <= 0:
+                _imobilisedTimer = 0;
+                _state = PlayerState.STANDING;
+                break;
+            case PlayerState.IMMOBILISED:
+                _imobilisedTimer -= (float)gameTime.ElapsedGameTime.TotalMilliseconds;
                 break;
             case PlayerState.DASHING:
                 _velocity = ComputeConstantVelocity(_velocity, _dash.Direction, _dash.Velocity, GroundDragFactor, gameTime);
@@ -436,15 +452,13 @@ public class Player : GameObject<PlayerState>
     }
 
     private float FinalFashDistanceCalculator() {
-        float distance = Dash.DashDistance + 0.5f;
+        float distance = Dash.DashDistance;
         while (distance > 0.5f) {
             Vector3 movement = DashMovementCalculator(distance);
             bool falling = IsFallingAfterMove(movement.X, movement.Y, movement.Z);
-            Vector3 movementshort = DashMovementCalculator(distance-0.5f);
-            bool fallingshort = IsFallingAfterMove(movement.X, movement.Y, movement.Z);
-            if (!falling && ! fallingshort)
+            if (!falling )
             {
-                return distance-0.5f;
+                return distance;
             }
             distance -= 0.25f;
         }
