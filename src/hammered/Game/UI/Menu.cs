@@ -278,7 +278,6 @@ public class Menu : DrawableGameComponent
                 else if (Controls.Decrease.Pressed())
                 {
                     // very hacky
-                    // very hacky
                     _state = (MenuState)MathHelper.Clamp(
                         (float)_state - 1,
                         (float)MenuState.GOAL_1,

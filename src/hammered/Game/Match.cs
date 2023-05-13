@@ -61,6 +61,7 @@ public class Match : DrawableGameComponent
     private float _roundFinishedAt = 0;
 
     private bool _roundStarted;
+    private bool _roundFinished;
     public bool MatchFinished { get => _scores.Max() >= _numberOfRounds; }
 
     public const int MaxNumberOfPlayers = 4;
@@ -179,6 +180,7 @@ public class Match : DrawableGameComponent
         _scoreState = ScoreState.None;
         _roundStarted = false;
         _roundStartedAt = 0;
+        _roundFinished = false;
         _roundFinishedAt = 0;
     }
 
@@ -202,11 +204,26 @@ public class Match : DrawableGameComponent
             LoadNextMap();
         }
 
-        if (MatchFinished)
+        if (Controls.Interact.Pressed() && _roundFinished)
         {
-            if (Controls.Interact.Pressed())
+            _roundDrawOverlay.Visible = false;
+            _roundWinnerOverlays.ToList().ForEach(o => o.Visible = false);
+
+            int winnerId = _scores.ToList().IndexOf(_scores.Max());
+            if (MatchFinished)
             {
-                GameMain.EndMatch();
+                if (!_matchWinnerOverlays[winnerId].Visible)
+                {
+                    _matchWinnerOverlays[winnerId].Visible = true;
+                }
+                else
+                {
+                    GameMain.EndMatch();
+                }
+            }
+            else
+            {
+                LoadNextMap();
             }
         }
     }
@@ -250,7 +267,7 @@ public class Match : DrawableGameComponent
         float totalElapsed = (float)gameTime.TotalGameTime.TotalMilliseconds;
 
         List<int> playersAlive = Map.PlayersAlive;
-        switch (GameMain.Match.ScoreState)
+        switch (ScoreState)
         {
             case ScoreState.None:
                 if (playersAlive.Count > 1)
@@ -272,31 +289,20 @@ public class Match : DrawableGameComponent
                 break;
             case ScoreState.Winner:
                 if (totalElapsed - _roundFinishedAt > finishedDelayMs)
+                {
                     _roundWinnerOverlays[(int)_roundWinnerId].Visible = true;
+                    _roundFinished = true;
+                }
                 break;
             case ScoreState.Draw:
                 if (totalElapsed - _roundFinishedAt > finishedDelayMs)
+                {
                     _roundDrawOverlay.Visible = true;
+                    _roundFinished = true;
+                }
                 break;
             default:
                 throw new NotSupportedException(String.Format("Scorestate type '{0}' is not supported", ScoreState));
-        }
-
-        if (Controls.Interact.Pressed())
-        {
-            _roundDrawOverlay.Visible = false;
-            _roundWinnerOverlays.ToList().ForEach(o => o.Visible = false);
-
-            if (MatchFinished)
-            {
-                int winnerId = _scores.ToList().IndexOf(_scores.Max());
-                _matchWinnerOverlays[winnerId].Visible = true;
-            }
-            else
-            {
-                LoadNextMap();
-                _roundWinnerOverlays.ToList().ForEach(o => o.Visible = false);
-            }
         }
     }
 }
