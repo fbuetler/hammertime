@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Aether.Animation;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
 namespace hammered;
@@ -89,8 +87,6 @@ public class Player : GameObject<PlayerState>
     private int _stepIndex = 0;
     private float _timeSinceLastStepMs = 0;
 
-    private Animations _animations;
-
     // if a player is below the kill plane, it disappears
     public const float KillPlaneLevel = -10f;
 
@@ -137,13 +133,6 @@ public class Player : GameObject<PlayerState>
         _objectModelPaths[PlayerState.DASHING] = $"Player/playerNoHammer_{playerId}";
         _objectModelPaths[PlayerState.CHARGING] = $"Player/playerNoHammer_{playerId}";
 
-    }
-
-    protected override void LoadAnimationContent()
-    {
-        _animations = GameMain.Match.Models[ObjectModelPaths[PlayerState.STANDING]].model.GetAnimations();
-        Console.WriteLine($"Available animations:\n\t{string.Join("\n\t", _animations.Clips.Select(pair => $"{pair.Key} => {pair.Value}"))}");
-        _animations.SetClip(_animations.Clips["Armature|Charge"]);
     }
 
     protected override void LoadAudioContent()
@@ -273,8 +262,6 @@ public class Player : GameObject<PlayerState>
                 OnFalling();
             }
         }
-
-        _animations.Update(gameTime.ElapsedGameTime, true, Matrix.Identity);
     }
 
     private Vector3 ReadMovementInput()
@@ -447,14 +434,6 @@ public class Player : GameObject<PlayerState>
         {
             float elapsed = (float)gameTime.ElapsedGameTime.TotalMilliseconds;
             _timeSinceLastStepMs += elapsed;
-        }
-    }
-
-    protected override void ApplyAnimations(ModelMesh mesh)
-    {
-        foreach (var part in mesh.MeshParts)
-        {
-            part.UpdateVertices(_animations.AnimationTransforms);
         }
     }
 }
