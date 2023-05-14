@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection.Metadata.Ecma335;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
@@ -16,7 +15,7 @@ public enum PlayerState
     PUSHBACK,
     CHARGING,
     DASHING,
-    IMMOBILISED
+    IMMOBILIZED
 }
 
 public abstract class UnstoppableMove
@@ -53,7 +52,7 @@ public class Dash : UnstoppableMove
 
     // how far a player can dash
     public const float DashDistance = 3f;
-    public const float DashVelocity = 8000;
+    public const float DashVelocity = 8000f;
 }
 
 public class Player : GameObject<PlayerState>
@@ -82,6 +81,8 @@ public class Player : GameObject<PlayerState>
     // note: this is null when we're not in a dashing state
     private Dash _dash;
 
+    private float _remainingImmobilizedDuration = 0f;
+
     private Dictionary<PlayerState, string> _objectModelPaths;
     public override Dictionary<PlayerState, string> ObjectModelPaths => _objectModelPaths;
 
@@ -95,11 +96,11 @@ public class Player : GameObject<PlayerState>
     // charge/throw
     private const float ChargeUnit = 0.02f;
 
-    //imobilised after dash timers
-    //the actual timer:
-    private float _imobilisedTimer = 0f;
-    //how much time one has to stay put after dashing
-    private const float _imobilisedTime = 500;
+    // dash
+    private const float MinDashDistance = 0.5f;
+
+    // immobilized
+    private const float ImmobilizedDurationMs = 500;
 
     // constants for controlling horizontal movement
     private const float MoveAcceleration = 1300f;
@@ -140,8 +141,7 @@ public class Player : GameObject<PlayerState>
         _objectModelPaths[PlayerState.DEAD] = $"Player/playerNoHammer_{playerId}";
         _objectModelPaths[PlayerState.DASHING] = $"Player/playerNoHammer_{playerId}";
         _objectModelPaths[PlayerState.CHARGING] = $"Player/playerNoHammer_{playerId}";
-        _objectModelPaths[PlayerState.IMMOBILISED] = $"Player/playerNoHammer_{playerId}";
-
+        _objectModelPaths[PlayerState.IMMOBILIZED] = $"Player/playerNoHammer_{playerId}";
     }
 
     protected override void LoadAudioContent()
@@ -168,7 +168,7 @@ public class Player : GameObject<PlayerState>
                 _state = PlayerState.CHARGING;
                 break;
             case PlayerState.WALKING when Controls.Dash(_playerId).Pressed():
-                float distance = FinalFashDistanceCalculator();
+                float distance = CalculateSmartDashDistance();
                 _dash = new Dash(Direction, distance, Dash.DashVelocity);
                 _state = PlayerState.DASHING;
                 Visible = false;
@@ -210,20 +210,24 @@ public class Player : GameObject<PlayerState>
                 break;
             case PlayerState.DASHING when _dash.Distance <= 0:
                 _dash = null;
-                _state = PlayerState.IMMOBILISED;
-                _imobilisedTimer = _imobilisedTime;
+                _state = PlayerState.IMMOBILIZED;
+                _remainingImmobilizedDuration = ImmobilizedDurationMs;
                 Visible = true;
                 break;
-            case PlayerState.IMMOBILISED when _imobilisedTimer <= 0:
-                _imobilisedTimer = 0;
-                _state = PlayerState.STANDING;
-                break;
-            case PlayerState.IMMOBILISED:
-                _imobilisedTimer -= (float)gameTime.ElapsedGameTime.TotalMilliseconds;
-                break;
             case PlayerState.DASHING:
+                // TODO (fbuetler) move might go to far for a fixed distance if too much time elapsed 
                 _velocity = ComputeConstantVelocity(_velocity, _dash.Direction, _dash.Velocity, GroundDragFactor, gameTime);
                 _dash.Distance -= Move(gameTime, _velocity);
+                break;
+            case PlayerState.IMMOBILIZED when _remainingImmobilizedDuration <= 0:
+                _remainingImmobilizedDuration = 0;
+                _state = PlayerState.STANDING;
+                break;
+            case PlayerState.IMMOBILIZED:
+                _remainingImmobilizedDuration -= (float)gameTime.ElapsedGameTime.TotalMilliseconds;
+
+                _velocity = ApplyGravity(gameTime, _velocity);
+                Move(gameTime, _velocity);
                 break;
             case PlayerState.PUSHBACK when _pushback.Distance <= 0:
                 _pushback = null;
@@ -271,7 +275,7 @@ public class Player : GameObject<PlayerState>
         if (prevCenter.Z == Center.Z)
             _velocity.Z = 0;
 
-        if (IsFalling())
+        if (IsFalling(Vector3.Zero))
         {
             // Vertical velocity means we're falling :(
             if (State != PlayerState.DASHING && State != PlayerState.FALLING && State != PlayerState.DEAD)
@@ -395,12 +399,12 @@ public class Player : GameObject<PlayerState>
     /// Determines whether this player is falling by checking if there's a tile anywhere below it
     /// </summary>
     /// <returns>boolean value indicating whether this player is falling</returns>
-    private bool IsFalling()
+    private bool IsFalling(Vector3 shift)
     {
-        int x_low = (int)Math.Floor((float)BoundingBox.Min.X / Tile.Width);
-        int x_high = (int)Math.Ceiling(((float)BoundingBox.Max.X / Tile.Width)) - 1;
-        int z_low = (int)Math.Floor(((float)BoundingBox.Min.Z / Tile.Depth));
-        int z_high = (int)Math.Ceiling((float)BoundingBox.Max.Z / Tile.Depth) - 1;
+        int x_low = (int)Math.Floor(((float)BoundingBox.Min.X + shift.X) / Tile.Width);
+        int x_high = (int)Math.Ceiling((((float)BoundingBox.Max.X + shift.X) / Tile.Width)) - 1;
+        int z_low = (int)Math.Floor((((float)BoundingBox.Min.Z + shift.Z) / Tile.Depth));
+        int z_high = (int)Math.Ceiling(((float)BoundingBox.Max.Z + shift.Z) / Tile.Depth) - 1;
 
         for (int z = z_low; z <= z_high; z++)
         {
@@ -420,49 +424,20 @@ public class Player : GameObject<PlayerState>
         return true;
     }
 
-
-    private bool IsFallingAfterMove(float xmove, float ymove, float zmove)
-    {   //see if afer the dash the player will be standing on anything
-        int x_low = (int)Math.Floor(((float)BoundingBox.Min.X +xmove )/ Tile.Width);
-        int x_high = (int)Math.Ceiling((((float)BoundingBox.Max.X +xmove)/ Tile.Width)) - 1;
-        int z_low = (int)Math.Floor((((float)BoundingBox.Min.Z + zmove) / Tile.Depth));
-        int z_high = (int)Math.Ceiling(((float)BoundingBox.Max.Z + zmove)/ Tile.Depth) - 1;
-
-        for (int z = z_low; z <= z_high; z++)
-        {
-            for (int y = 0; y <= GameMain.Match.Map.Height; y++)
-            {
-                for (int x = x_low; x <= x_high; x++)
-                {
-                    // check if there's a tile below us
-                    BoundingBox? neighbour = GameMain.Match.Map.TryGetTileBounds(x, y, z);
-                    if (neighbour != null && ((BoundingBox)neighbour).Max.Y <= BoundingBox.Min.Y)
-                    {
-                        return false;
-                    }
-                }
-            }
-        }
-        return true;
-    }
-
-    private Vector3 DashMovementCalculator(float distance) {
-        //calculate how far the dash would land form the player
-        return new Vector3(Direction.X*distance, Direction.Y * distance, Direction.Z * distance);
-    }
-
-    private float FinalFashDistanceCalculator() {
+    private float CalculateSmartDashDistance()
+    {
         float distance = Dash.DashDistance;
-        while (distance > 0.5f) {
-            Vector3 movement = DashMovementCalculator(distance);
-            bool falling = IsFallingAfterMove(movement.X, movement.Y, movement.Z);
-            if (!falling )
+        float step = MathF.Min(Size.X, Size.Z);
+        while (distance > MinDashDistance)
+        {
+            Vector3 dashShift = Direction * distance;
+            bool falling = IsFalling(dashShift);
+            if (!falling)
             {
                 return distance;
             }
-            distance -= 0.25f;
+            distance -= step;
         }
-        
         return 0f;
     }
 
