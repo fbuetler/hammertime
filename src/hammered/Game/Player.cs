@@ -14,7 +14,8 @@ public enum PlayerState
     WALKING,
     PUSHBACK,
     CHARGING,
-    DASHING
+    DASHING,
+    IMMOBILIZED
 }
 
 public abstract class UnstoppableMove
@@ -80,6 +81,8 @@ public class Player : GameObject<PlayerState>
     // note: this is null when we're not in a dashing state
     private Dash _dash;
 
+    private float _remainingImmobilizedDuration = 0f;
+
     private Dictionary<PlayerState, string> _objectModelPaths;
     public override Dictionary<PlayerState, string> ObjectModelPaths => _objectModelPaths;
 
@@ -92,6 +95,12 @@ public class Player : GameObject<PlayerState>
 
     // charge/throw
     private const float ChargeUnit = 0.02f;
+
+    // dash
+    private const float MinDashDistance = 0.5f;
+
+    // immobilized
+    private const float ImmobilizedDurationMs = 500;
 
     // constants for controlling horizontal movement
     private const float MoveAcceleration = 1300f;
@@ -132,7 +141,7 @@ public class Player : GameObject<PlayerState>
         _objectModelPaths[PlayerState.DEAD] = $"Player/playerNoHammer_{playerId}";
         _objectModelPaths[PlayerState.DASHING] = $"Player/playerNoHammer_{playerId}";
         _objectModelPaths[PlayerState.CHARGING] = $"Player/playerNoHammer_{playerId}";
-
+        _objectModelPaths[PlayerState.IMMOBILIZED] = $"Player/playerNoHammer_{playerId}";
     }
 
     protected override void LoadAudioContent()
@@ -159,7 +168,8 @@ public class Player : GameObject<PlayerState>
                 _state = PlayerState.CHARGING;
                 break;
             case PlayerState.WALKING when Controls.Dash(_playerId).Pressed():
-                _dash = new Dash(Direction, Dash.DashDistance, Dash.DashVelocity);
+                float distance = CalculateSmartDashDistance();
+                _dash = new Dash(Direction, distance, Dash.DashVelocity);
                 _state = PlayerState.DASHING;
                 Visible = false;
                 GameMain.AudioManager.PlaySoundEffect(DashSoundEffect);
@@ -200,12 +210,24 @@ public class Player : GameObject<PlayerState>
                 break;
             case PlayerState.DASHING when _dash.Distance <= 0:
                 _dash = null;
-                _state = PlayerState.STANDING;
+                _state = PlayerState.IMMOBILIZED;
+                _remainingImmobilizedDuration = ImmobilizedDurationMs;
                 Visible = true;
                 break;
             case PlayerState.DASHING:
+                // TODO (fbuetler) move might go to far for a fixed distance if too much time elapsed 
                 _velocity = ComputeConstantVelocity(_velocity, _dash.Direction, _dash.Velocity, GroundDragFactor, gameTime);
                 _dash.Distance -= Move(gameTime, _velocity);
+                break;
+            case PlayerState.IMMOBILIZED when _remainingImmobilizedDuration <= 0:
+                _remainingImmobilizedDuration = 0;
+                _state = PlayerState.STANDING;
+                break;
+            case PlayerState.IMMOBILIZED:
+                _remainingImmobilizedDuration -= (float)gameTime.ElapsedGameTime.TotalMilliseconds;
+
+                _velocity = ApplyGravity(gameTime, _velocity);
+                Move(gameTime, _velocity);
                 break;
             case PlayerState.PUSHBACK when _pushback.Distance <= 0:
                 _pushback = null;
@@ -253,7 +275,7 @@ public class Player : GameObject<PlayerState>
         if (prevCenter.Z == Center.Z)
             _velocity.Z = 0;
 
-        if (IsFalling())
+        if (IsFalling(Vector3.Zero))
         {
             // Vertical velocity means we're falling :(
             if (State != PlayerState.DASHING && State != PlayerState.FALLING && State != PlayerState.DEAD)
@@ -377,12 +399,12 @@ public class Player : GameObject<PlayerState>
     /// Determines whether this player is falling by checking if there's a tile anywhere below it
     /// </summary>
     /// <returns>boolean value indicating whether this player is falling</returns>
-    private bool IsFalling()
+    private bool IsFalling(Vector3 shift)
     {
-        int x_low = (int)Math.Floor((float)BoundingBox.Min.X / Tile.Width);
-        int x_high = (int)Math.Ceiling(((float)BoundingBox.Max.X / Tile.Width)) - 1;
-        int z_low = (int)Math.Floor(((float)BoundingBox.Min.Z / Tile.Depth));
-        int z_high = (int)Math.Ceiling((float)BoundingBox.Max.Z / Tile.Depth) - 1;
+        int x_low = (int)Math.Floor(((float)BoundingBox.Min.X + shift.X) / Tile.Width);
+        int x_high = (int)Math.Ceiling((((float)BoundingBox.Max.X + shift.X) / Tile.Width)) - 1;
+        int z_low = (int)Math.Floor((((float)BoundingBox.Min.Z + shift.Z) / Tile.Depth));
+        int z_high = (int)Math.Ceiling(((float)BoundingBox.Max.Z + shift.Z) / Tile.Depth) - 1;
 
         for (int z = z_low; z <= z_high; z++)
         {
@@ -400,6 +422,23 @@ public class Player : GameObject<PlayerState>
             }
         }
         return true;
+    }
+
+    private float CalculateSmartDashDistance()
+    {
+        float distance = Dash.DashDistance;
+        float step = MathF.Min(Size.X, Size.Z);
+        while (distance > MinDashDistance)
+        {
+            Vector3 dashShift = Direction * distance;
+            bool falling = IsFalling(dashShift);
+            if (!falling)
+            {
+                return distance;
+            }
+            distance -= step;
+        }
+        return 0f;
     }
 
     private void OnHit(Hammer hammer)

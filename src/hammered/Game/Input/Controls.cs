@@ -103,48 +103,72 @@ public static class Controls
 
     public static ICondition Throw(int playerIndex)
     {
+        if (playerIndex == 0)
+            return new AnyCondition(
+                new KeyboardCondition(Keys.Space),
+                new GamePadCondition(GamePadButton.RightShoulder, playerIndex)
+            );
         return new AnyCondition(
-            new KeyboardCondition(Keys.Space),
             new GamePadCondition(GamePadButton.RightShoulder, playerIndex)
         );
     }
 
     public static ICondition Dash(int playerIndex)
     {
+        if (playerIndex == 0)
+            return new AnyCondition(
+                new KeyboardCondition(Keys.LeftShift),
+                new GamePadCondition(GamePadButton.LeftShoulder, playerIndex)
+            );
         return new AnyCondition(
-            new KeyboardCondition(Keys.LeftShift),
             new GamePadCondition(GamePadButton.LeftShoulder, playerIndex)
         );
     }
 
     public static ICondition MoveUp(int playerIndex)
     {
+        if (playerIndex == 0)
+            return new AnyCondition(
+                new KeyboardCondition(Keys.Up),
+                new GamePadCondition(GamePadButton.Up, playerIndex)
+            );
         return new AnyCondition(
-            new KeyboardCondition(Keys.Up),
             new GamePadCondition(GamePadButton.Up, playerIndex)
         );
     }
 
     public static ICondition MoveDown(int playerIndex)
     {
+        if (playerIndex == 0)
+            return new AnyCondition(
+                new KeyboardCondition(Keys.Down),
+                new GamePadCondition(GamePadButton.Down, playerIndex)
+            );
         return new AnyCondition(
-            new KeyboardCondition(Keys.Down),
             new GamePadCondition(GamePadButton.Down, playerIndex)
         );
     }
 
     public static ICondition MoveLeft(int playerIndex)
     {
+        if (playerIndex == 0)
+            return new AnyCondition(
+                new KeyboardCondition(Keys.Left),
+                new GamePadCondition(GamePadButton.Left, playerIndex)
+            );
         return new AnyCondition(
-            new KeyboardCondition(Keys.Left),
             new GamePadCondition(GamePadButton.Left, playerIndex)
         );
     }
 
     public static ICondition MoveRight(int playerIndex)
     {
+        if (playerIndex == 0)
+            return new AnyCondition(
+                new KeyboardCondition(Keys.Right),
+                new GamePadCondition(GamePadButton.Right, playerIndex)
+            );
         return new AnyCondition(
-            new KeyboardCondition(Keys.Right),
             new GamePadCondition(GamePadButton.Right, playerIndex)
         );
     }
@@ -156,30 +180,38 @@ public static class Controls
 
     public static ICondition AimUp(int playerIndex)
     {
-        return new AnyCondition(
-            new KeyboardCondition(Keys.W)
-        );
+        if (playerIndex == 0)
+            return new AnyCondition(
+                new KeyboardCondition(Keys.W)
+            );
+        return new AnyCondition();
     }
 
     public static ICondition AimDown(int playerIndex)
     {
-        return new AnyCondition(
-            new KeyboardCondition(Keys.S)
-        );
+        if (playerIndex == 0)
+            return new AnyCondition(
+                new KeyboardCondition(Keys.S)
+            );
+        return new AnyCondition();
     }
 
     public static ICondition AimLeft(int playerIndex)
     {
-        return new AnyCondition(
-            new KeyboardCondition(Keys.A)
-        );
+        if (playerIndex == 0)
+            return new AnyCondition(
+                new KeyboardCondition(Keys.A)
+            );
+        return new AnyCondition();
     }
 
     public static ICondition AimRight(int playerIndex)
     {
-        return new AnyCondition(
-            new KeyboardCondition(Keys.D)
-        );
+        if (playerIndex == 0)
+            return new AnyCondition(
+                new KeyboardCondition(Keys.D)
+            );
+        return new AnyCondition();
     }
 
     public static Vector2 Aim(int playerIndex)
