@@ -1,7 +1,7 @@
 using System;
 using Microsoft.Xna.Framework;
 
-namespace hammered;
+namespace hammertime;
 
 public class Camera
 {

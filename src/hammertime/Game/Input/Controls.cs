@@ -3,7 +3,7 @@ using Apos.Input;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
-namespace hammered;
+namespace hammertime;
 
 public static class Controls
 {

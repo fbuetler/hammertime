@@ -4,7 +4,7 @@ using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
-namespace hammered;
+namespace hammertime;
 
 public enum PlayerState
 {

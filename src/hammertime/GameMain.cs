@@ -3,7 +3,7 @@ using Apos.Input;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace hammered;
+namespace hammertime;
 
 public class GameMain : Game
 {

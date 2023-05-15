@@ -10,7 +10,7 @@ using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace hammered;
+namespace hammertime;
 /// <summary>
 /// Debug drawing routines for common collision shapes. These are not designed to be the most
 /// efficent way to submit geometry to the graphics device as they are intended for use in

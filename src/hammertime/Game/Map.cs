@@ -6,7 +6,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Media;
 
-namespace hammered;
+namespace hammertime;
 
 public class Map : DrawableGameComponent
 {

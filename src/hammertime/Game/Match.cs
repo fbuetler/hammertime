@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
 
-namespace hammered;
+namespace hammertime;
 
 public enum ScoreState
 {

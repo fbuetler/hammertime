@@ -1,7 +1,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace hammered;
+namespace hammertime;
 
 public abstract class Overlay : DrawableGameComponent
 {

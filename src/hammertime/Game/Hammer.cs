@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 
-namespace hammered;
+namespace hammertime;
 
 public enum HammerState
 {

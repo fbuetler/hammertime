@@ -2,7 +2,7 @@ using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace hammered;
+namespace hammertime;
 
 
 public class Clouds : DrawableGameComponent

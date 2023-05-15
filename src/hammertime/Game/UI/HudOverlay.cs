@@ -1,5 +1,5 @@
 using System;
-using hammered;
+using hammertime;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
