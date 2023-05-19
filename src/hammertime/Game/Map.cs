@@ -39,7 +39,6 @@ public class Map : DrawableGameComponent
     public Dictionary<int, Arrow> Arrows { get => _arrows; }
     private Dictionary<int, Arrow> _arrows = new Dictionary<int, Arrow>();
 
-    // TODO: (lmeinen) Wait with decreasing playsAlive until player hits ground below (could make for fun animation or items that allow one to come back from falling)
     public List<int> PlayersAlive
     {
         get => Players.Values

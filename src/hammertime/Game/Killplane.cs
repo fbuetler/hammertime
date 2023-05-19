@@ -46,7 +46,6 @@ public class Clouds : DrawableGameComponent
 
     public override void Update(GameTime gameTime)
     {
-        // TODO: (lmeinen) Update position to give the illusion of moving clouds
     }
 
     public override void Draw(GameTime gameTime)
