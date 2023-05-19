@@ -66,7 +66,7 @@ public class Player : GameObject<PlayerState>
 
     // TODO (fbuetler) if a player is smaller than a tile it is immediately falling upon start
     public override Vector3 MaxSize { get => _maxSize; }
-    private static Vector3 _maxSize = new Vector3(1f, 1f, 1f);
+    private static Vector3 _maxSize = new Vector3(1.5f, 1.5f, 1.5f);
 
     public override PlayerState State { get => _state; }
     private PlayerState _state;
