@@ -76,6 +76,13 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
         return displacement.Length();
     }
 
+    public float GetMoveLength(GameTime gameTime, Vector3 velocity)
+    {
+        float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
+        Vector3 displacement = velocity * elapsed;
+        return displacement.Length();
+    }
+
     protected override void LoadContent()
     {
         // _models = new Dictionary<GameObjectState, ScaledModel>();

@@ -216,7 +216,15 @@ public class Player : GameObject<PlayerState>
                 break;
             case PlayerState.DASHING:
                 // TODO (fbuetler) move might go to far for a fixed distance if too much time elapsed 
-                _velocity = ComputeConstantVelocity(_velocity, _dash.Direction, _dash.Velocity, GroundDragFactor, gameTime);
+                if (GetMoveLength(gameTime, _velocity) > _dash.Distance)
+                {
+                    float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
+                    _velocity = _velocity * _dash.Distance / (elapsed * _velocity.Length());
+                }
+                else {
+                    _velocity = ComputeConstantVelocity(_velocity, _dash.Direction, _dash.Velocity, GroundDragFactor, gameTime);
+                }
+                
                 _dash.Distance -= Move(gameTime, _velocity);
                 break;
             case PlayerState.IMMOBILIZED when _remainingImmobilizedDuration <= 0:
