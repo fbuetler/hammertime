@@ -27,6 +27,6 @@ Members: Frederic Necker, Florian Buetler, Lasse Meinen, Deniz Yildiz, and Shira
 
 ## Description
 
-Hammers are flying everywhere, the ground is breaking beneath your feet, and everyone is screaming at you to stop camping in a corner. Hammer Time is a fast-paced game that allows you to prove to your friends that you could best them in combat once and for all! Simple controls, short rounds and fast-paced gameplay make Hammer Time perfect for any party. The light-hearted graphics give the game a fun feel and allow you to enjoy some eye-candy, too. So hook up your controllers to the nearest Windows computer and let the chaos commence!
+Hammers are flying everywhere, the ground is breaking beneath your feet, and everyone is screaming at you to stop camping in a corner. Hammer Time is a fast-paced game that allows you to prove to your friends that you could best them in combat once and for all! Simple controls, short rounds and fast-paced gameplay make Hammer Time perfect for any party. The light-hearted graphics give the game a fun feel and allow you to enjoy some eye-candy, too. So hook up your controllers to the nearest computer and let the chaos commence!
 
-The game is available for free download on [itch.io](https://lonely-hermit.itch.io/hammertime)
+The game is available for free on [itch.io](https://lonely-hermit.itch.io/hammertime)
