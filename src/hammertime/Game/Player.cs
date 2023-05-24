@@ -208,24 +208,15 @@ public class Player : GameObject<PlayerState>
                 // charge
                 _chargeDurationMs += (float)gameTime.ElapsedGameTime.TotalMilliseconds;
                 break;
-            case PlayerState.DASHING when _dash.Distance <= 0:
+            case PlayerState.DASHING when _dash.Distance <= 0.01: // avoid rounding errors
                 _dash = null;
                 _state = PlayerState.IMMOBILIZED;
                 _remainingImmobilizedDuration = ImmobilizedDurationMs;
                 Visible = true;
                 break;
             case PlayerState.DASHING:
-                // TODO (fbuetler) move might go to far for a fixed distance if too much time elapsed 
-                if (GetMoveLength(gameTime, _velocity) > _dash.Distance)
-                {
-                    float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
-                    _velocity = _velocity * _dash.Distance / (elapsed * _velocity.Length());
-                }
-                else {
-                    _velocity = ComputeConstantVelocity(_velocity, _dash.Direction, _dash.Velocity, GroundDragFactor, gameTime);
-                }
-                
-                _dash.Distance -= Move(gameTime, _velocity);
+                _velocity = ComputeConstantVelocity(_velocity, _dash.Direction, _dash.Velocity, GroundDragFactor, gameTime);
+                _dash.Distance -= Move(gameTime, _velocity, _dash.Distance);
                 break;
             case PlayerState.IMMOBILIZED when _remainingImmobilizedDuration <= 0:
                 _remainingImmobilizedDuration = 0;

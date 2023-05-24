@@ -66,20 +66,22 @@ public abstract class GameObject<GameObjectState> : DrawableGameComponent where 
         Center = center;
     }
 
-    public float Move(GameTime gameTime, Vector3 velocity)
+    public float Move(GameTime gameTime, Vector3 velocity, float maxDistance = 0)
     {
         float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
         Vector3 displacement = velocity * elapsed;
+
+        // check if we move too far
+        if (maxDistance > 0 && displacement.Length() > maxDistance)
+        {
+            float shrinkRatio = maxDistance / displacement.Length();
+            displacement *= shrinkRatio;
+        }
+
         Vector3 tmpPos = Center;
         tmpPos += displacement;
         Center = tmpPos;
-        return displacement.Length();
-    }
 
-    public float GetMoveLength(GameTime gameTime, Vector3 velocity)
-    {
-        float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
-        Vector3 displacement = velocity * elapsed;
         return displacement.Length();
     }
 
