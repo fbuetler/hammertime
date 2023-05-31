@@ -31,6 +31,10 @@ Hammers are flying everywhere, the ground is breaking beneath your feet, and eve
 
 The game is available for free on [itch.io](https://lonely-hermit.itch.io/hammertime)
 
+## Gameplay Samples
+
+![gameplay_samples](./gameplay_samples.png)
+
 ## Development
 
 All commands have to be run from within `src/hammertime`.
