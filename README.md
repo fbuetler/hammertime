@@ -30,3 +30,41 @@ Members: Frederic Necker, Florian Buetler, Lasse Meinen, Deniz Yildiz, and Shira
 Hammers are flying everywhere, the ground is breaking beneath your feet, and everyone is screaming at you to stop camping in a corner. Hammer Time is a fast-paced game that allows you to prove to your friends that you could best them in combat once and for all! Simple controls, short rounds and fast-paced gameplay make Hammer Time perfect for any party. The light-hearted graphics give the game a fun feel and allow you to enjoy some eye-candy, too. So hook up your controllers to the nearest computer and let the chaos commence!
 
 The game is available for free on [itch.io](https://lonely-hermit.itch.io/hammertime)
+
+## Development
+
+All commands have to be run from within `src/hammertime`.
+
+For more information see the [MonoGame Documentation](https://docs.monogame.net/) and the [MonoGame Source Code](https://github.com/MonoGame/MonoGame).
+
+### Run
+
+Run the development build:
+
+```bash
+dotnet run Program.cs
+```
+
+Run the release build:
+
+```bash
+dotnet run --configuration Release Program.cs
+```
+
+### Publish
+
+Release for Linux:
+
+```bash
+dotnet publish -c Release -r linux-x64 /p:PublishReadyToRun=false /p:TieredCompilation=false --self-contained
+```
+
+The binary can be found at `bin/Release/net6.0/linux-x64/publish/hammertime`.
+
+Release for Windows:
+
+```bash
+dotnet publish -c Release -r win-x64 /p:PublishReadyToRun=false /p:TieredCompilation=false --self-contained
+```
+
+The exe can be found at `bin/Release/net6.0/win-x64/publish/hammertime.exe`.
