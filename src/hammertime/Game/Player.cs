@@ -171,7 +171,6 @@ public class Player : GameObject<PlayerState>
                 float distance = CalculateSmartDashDistance();
                 _dash = new Dash(Direction, distance, Dash.DashVelocity);
                 _state = PlayerState.DASHING;
-                Visible = false;
                 GameMain.AudioManager.PlaySoundEffect(DashSoundEffect);
                 break;
             case PlayerState.STANDING when moveInput != Vector3.Zero:
@@ -212,7 +211,6 @@ public class Player : GameObject<PlayerState>
                 _dash = null;
                 _state = PlayerState.IMMOBILIZED;
                 _remainingImmobilizedDuration = ImmobilizedDurationMs;
-                Visible = true;
                 break;
             case PlayerState.DASHING:
                 _velocity = ComputeConstantVelocity(_velocity, _dash.Direction, _dash.Velocity, GroundDragFactor, gameTime);
@@ -263,7 +261,6 @@ public class Player : GameObject<PlayerState>
         {
             _pushback = (Pushback)p;
             _state = PlayerState.PUSHBACK;
-            Visible = true; // in case previous state was dashing
         }
 
         // if collision prevented us from moving, reset velocity
