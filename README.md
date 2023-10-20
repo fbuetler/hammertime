@@ -72,3 +72,19 @@ dotnet publish -c Release -r win-x64 /p:PublishReadyToRun=false /p:TieredCompila
 ```
 
 The exe can be found at `bin/Release/net6.0/win-x64/publish/hammertime.exe`.
+
+Release for Apple Silicon:
+
+```bash
+dotnet publish -c Release -r osx-arm64 /p:PublishReadyToRun=false /p:TieredCompilation=false --self-contained
+```
+
+The binary can be found at `bin/Release/net6.0/osx-arm64/publish/hammertime`.
+
+Release for Apple Intel (x86):
+
+```bash
+dotnet publish -c Release -r osx-x64 /p:PublishReadyToRun=false /p:TieredCompilation=false --self-contained
+```
+
+The binary can be found at `bin/Release/net6.0/osx-x64/publish/hammertime`.
